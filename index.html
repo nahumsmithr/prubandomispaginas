@@ -1317,8 +1317,9 @@
                 }
             } catch (err) {
                 console.error("Error autenticando en Firebase", err);
-                setDbStatus(false, "Auth Anónimo Desactivado");
-                mostrarMensaje("Firebase Auth: Habilita el inicio de sesión 'Anónimo' en tu consola.", "error");
+                setDbStatus(false, "Error de Autenticación");
+                // Mostrar el error exacto de Firebase para poder depurar en GitHub
+                mostrarMensaje("Firebase Auth Error: " + err.message, "error");
             }
         };
 
@@ -1369,8 +1370,9 @@
                 window.renderCatalog();
             }, (error) => {
                 console.error("Error BD:", error);
-                setDbStatus(false, "Reglas de BD Bloqueadas");
-                if (window.isAdmin) window.mostrarMensaje("Firebase Firestore: Permiso denegado. Actualiza las 'Reglas' (Rules).", "error");
+                setDbStatus(false, "Bloqueado por Reglas");
+                // Mostrar el error exacto de Firebase para poder depurar en GitHub
+                if (window.isAdmin) window.mostrarMensaje("Firestore Error: " + error.message, "error");
             });
 
             // 2. Escuchar la colección de categorías
