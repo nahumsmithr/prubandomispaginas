@@ -1224,16 +1224,17 @@
         // ==========================================
         //  🚨 INSTRUCCIONES IMPORTANTES SOBRE FIREBASE 🚨
         // ==========================================
-        // Si descargas este archivo y lo pones en tu propia página web (usando la variable userFirebaseConfig de abajo), 
+        // Si descargas este archivo y lo pones en tu propia página web (GitHub Pages), 
         // debes ir a la consola de Firebase:
-        // 1. En Authentication -> Sign-in method -> Activar "Anónimo" (Anonymous).
-        // 2. En Firestore -> Reglas (Rules) -> Pegar esto:
+        // 1. En Firestore Database -> Haz clic en "Crear Base de Datos" si aún no lo has hecho.
+        // 2. En Firestore -> Reglas (Rules) -> Pegar esto para permitir guardar en la raíz:
         //      rules_version = '2';
         //      service cloud.firestore {
         //        match /databases/{database}/documents {
-        //          match /artifacts/{appId}/public/data/{document=**} { allow read, write: if true; }
+        //          match /{document=**} { allow read, write: if true; }
         //        }
         //      }
+        // 3. En Authentication -> Settings (Configuración) -> Authorized domains -> Añade tu dominio de GitHub (ej: tuusuario.github.io).
         // ==========================================
 
         const userFirebaseConfig = {
@@ -1253,7 +1254,8 @@
         const storage = getStorage(app);
         const auth = getAuth(app);
         
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const isCanvas = typeof __app_id !== 'undefined';
+        const appId = isCanvas ? __app_id : 'default-app-id';
         let currentUser = null;
         let isConnected = false;
 
@@ -1291,8 +1293,17 @@
             youtubeUrl: "https://youtube.com"
         };
 
-        const getCollectionRef = (colName) => collection(db, 'artifacts', appId, 'public', 'data', colName);
-        const getDocRef = (colName, docId) => doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
+        const getCollectionRef = (colName) => {
+            return isCanvas 
+                ? collection(db, 'artifacts', appId, 'public', 'data', colName)
+                : collection(db, colName); // Usa la raíz limpia en GitHub/Local
+        };
+
+        const getDocRef = (colName, docId) => {
+            return isCanvas 
+                ? doc(db, 'artifacts', appId, 'public', 'data', colName, docId)
+                : doc(db, colName, docId); // Usa la raíz limpia en GitHub/Local
+        };
 
         /* ======================================================== */
         /* INICIALIZACIÓN DE SESIÓN (OBLIGATORIA)                  */
@@ -1306,7 +1317,8 @@
                 }
             } catch (err) {
                 console.error("Error autenticando en Firebase", err);
-                mostrarMensaje("Error de autenticación. Verifica si habilitaste inicio de sesión anónimo.", "error");
+                setDbStatus(false, "Auth Anónimo Desactivado");
+                mostrarMensaje("Firebase Auth: Habilita el inicio de sesión 'Anónimo' en tu consola.", "error");
             }
         };
 
@@ -1357,8 +1369,8 @@
                 window.renderCatalog();
             }, (error) => {
                 console.error("Error BD:", error);
-                setDbStatus(false, "Permiso Denegado");
-                if (window.isAdmin) window.mostrarMensaje("Base de Datos Bloqueada. Verifica las reglas de Firebase.", "error");
+                setDbStatus(false, "Reglas de BD Bloqueadas");
+                if (window.isAdmin) window.mostrarMensaje("Firebase Firestore: Permiso denegado. Actualiza las 'Reglas' (Rules).", "error");
             });
 
             // 2. Escuchar la colección de categorías
@@ -1393,7 +1405,12 @@
             if (!currentUser) throw new Error("Requiere autenticación para subir archivos.");
             try {
                 const ext = fileBlob.type?.split('/')[1] || 'webp';
-                const path = `artifacts/${appId}/public/storage/${coleccion}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+                
+                // Ruta dinámica para Storage: limpia en GitHub
+                const path = isCanvas 
+                    ? `artifacts/${appId}/public/storage/${coleccion}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`
+                    : `${coleccion}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+                    
                 const storageRef = ref(storage, path);
                 
                 await uploadBytes(storageRef, fileBlob);
