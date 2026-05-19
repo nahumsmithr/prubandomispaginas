@@ -802,6 +802,21 @@
 
     <!-- --- MODALES DEL SISTEMA --- -->
 
+    <!-- Modal Error Avanzado de Firebase -->
+    <div id="db-error-modal" class="modal-overlay fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+        <div class="bg-[#1a1a1a] border-t-4 border-red-500 p-8 rounded-2xl max-w-lg w-full text-center shadow-2xl relative">
+            <i class="ph-fill ph-warning-octagon text-6xl text-red-500 mb-4"></i>
+            <h2 class="text-2xl font-bold text-white mb-2">Conexión Bloqueada</h2>
+            <p class="text-zinc-400 mb-4 text-sm">Tu página está en GitHub, pero Google Firebase está bloqueando la entrada por seguridad. Para que yo (Gemini) pueda decirte exactamente cómo arreglarlo, <strong>cópia el texto rojo de abajo y pásamelo en el chat:</strong></p>
+            
+            <div class="bg-black text-red-400 p-4 rounded-lg font-mono text-xs mb-6 select-all break-words border border-red-500/30 text-left" id="db-error-text">
+                Cargando error...
+            </div>
+            
+            <button onclick="document.getElementById('db-error-modal').classList.remove('active')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-2 rounded-xl font-bold transition-colors w-full">Entendido, cerrar aviso</button>
+        </div>
+    </div>
+
     <!-- VISOR DE IMÁGENES (LIGHTBOX CON SOPORTE DE VIDEO YOUTUBE) -->
     <div id="lightbox-modal" class="modal-overlay fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center z-[300] p-4 md:p-10" onclick="cerrarVisorImagen()">
         <button class="absolute top-6 right-6 text-white text-4xl hover:text-encom-yellow transition-colors z-20" onclick="cerrarVisorImagen()"><i class="ph-bold ph-x"></i></button>
@@ -1305,23 +1320,12 @@
                 : doc(db, colName, docId); // Usa la raíz limpia en GitHub/Local
         };
 
-        /* ======================================================== */
-        /* INICIALIZACIÓN DE SESIÓN (OBLIGATORIA)                  */
-        /* ======================================================== */
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) {
-                console.error("Error autenticando en Firebase", err);
-                setDbStatus(false, "Error de Autenticación");
-                // Mostrar el error exacto de Firebase para poder depurar en GitHub
-                mostrarMensaje("Firebase Auth Error: " + err.message, "error");
-            }
-        };
+        function mostrarErrorFuerte(contexto, errMessage) {
+            setDbStatus(false, "Error Firebase");
+            document.getElementById('db-error-text').innerText = `Contexto: ${contexto}\nDetalle: ${errMessage}`;
+            document.getElementById('db-error-modal').classList.add('active');
+            console.error(`[Firebase] ${contexto}: ${errMessage}`);
+        }
 
         function setDbStatus(connected, message = '') {
             const dot = document.getElementById('db-status-dot');
@@ -1336,6 +1340,21 @@
                 text.innerText = message || "Desconectado / Error Permisos";
             }
         }
+
+        /* ======================================================== */
+        /* INICIALIZACIÓN DE SESIÓN (OBLIGATORIA)                  */
+        /* ======================================================== */
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                mostrarErrorFuerte("Autenticación Anónima", err.message);
+            }
+        };
 
         initAuth();
 
@@ -1369,10 +1388,7 @@
                 window.renderFilters();
                 window.renderCatalog();
             }, (error) => {
-                console.error("Error BD:", error);
-                setDbStatus(false, "Bloqueado por Reglas");
-                // Mostrar el error exacto de Firebase para poder depurar en GitHub
-                if (window.isAdmin) window.mostrarMensaje("Firestore Error: " + error.message, "error");
+                mostrarErrorFuerte("Lectura Firestore (Productos)", error.message);
             });
 
             // 2. Escuchar la colección de categorías
@@ -1386,7 +1402,9 @@
                 window.actualizarSelectCategorias();
                 window.renderFilters();
                 window.renderCatalog();
-            }, (error) => console.error("Error sincronizando categorías:", error));
+            }, (error) => {
+                // Silencioso o mostrar si quieres, para no saturar
+            });
 
             // 3. Escuchar la colección de configuración de diseño
             onSnapshot(getCollectionRef("configuracion"), (snapshot) => {
@@ -1396,7 +1414,9 @@
                     }
                 });
                 window.applySiteSettings();
-            }, (error) => console.error("Error sincronizando configuraciones:", error));
+            }, (error) => {
+                // Silencioso
+            });
         });
 
         /* ======================================================== */
@@ -1419,7 +1439,7 @@
                 const url = await getDownloadURL(storageRef);
                 return { url, path };
             } catch (err) {
-                console.error("Error subiendo a Storage:", err);
+                mostrarErrorFuerte("Subida a Storage", err.message);
                 throw err;
             }
         };
@@ -1470,7 +1490,7 @@
                 window.cerrarModalAdd();
                 window.mostrarMensaje("✅ ¡Producto subido con éxito a la nube!", "success");
             } catch (error) {
-                window.mostrarMensaje("❌ Error al guardar: " + error.message, "error");
+                mostrarErrorFuerte("Guardar Firestore", error.message);
             }
         };
 
@@ -1513,7 +1533,7 @@
                 window.cerrarModalEditar();
                 window.mostrarMensaje("✅ ¡Producto actualizado con éxito!", "success");
             } catch (error) {
-                window.mostrarMensaje("❌ Error al actualizar: " + error.message, "error");
+                mostrarErrorFuerte("Actualizar Firestore", error.message);
             }
         };
 
@@ -1528,7 +1548,7 @@
                     await deleteDoc(getDocRef("productos", id));
                     window.mostrarMensaje('🗑️ Producto eliminado del catálogo.', 'success');
                 } catch (error) {
-                    window.mostrarMensaje('❌ Error al eliminar: ' + error.message, 'error');
+                    mostrarErrorFuerte("Eliminar Firestore", error.message);
                 }
             });
         };
@@ -1544,7 +1564,7 @@
                 input.value = '';
                 window.mostrarMensaje(`Categoría '${nombre}' creada con éxito.`);
             } catch (error) {
-                window.mostrarMensaje('Error al crear: ' + error.message, 'error');
+                mostrarErrorFuerte("Añadir Categoría", error.message);
             }
         };
 
@@ -1575,7 +1595,7 @@
                 window.cerrarModalSettings();
                 window.mostrarMensaje("✅ ¡Configuración guardada exitosamente!", "success");
             } catch (error) {
-                window.mostrarMensaje("❌ Error al guardar diseño: " + error.message, "error");
+                mostrarErrorFuerte("Guardar Diseño", error.message);
             }
         };
 
