@@ -1193,6 +1193,7 @@
         window.cropPreviewId = null;
         window.cropFileType = 'image/jpeg';
         window.base64ImagenRecortada = null;
+        window.tempSettingsImages = {}; 
 
         window.categorias = []; 
         window.productos = []; 
@@ -1442,27 +1443,35 @@
 
         window.guardarSettings = async function() {
             window.mostrarMensaje("⏳ Guardando configuración...", "info");
+            
+            const getValue = (id, key) => {
+                let val = document.getElementById(id).value.trim();
+                if (val === '[Imagen Guardada]') return window.siteSettings[key];
+                if (val === '[Imagen Lista]') return window.tempSettingsImages[id] || "";
+                return val;
+            };
+
             const nuevosAjustes = {
                 bannerActive: document.getElementById('set-banner-active').checked,
                 bannerText: document.getElementById('set-banner-text').value,
-                logoUrl: document.getElementById('set-logo-url').value,
-                heroBg: document.getElementById('set-hero-url').value,
-                servicio1: document.getElementById('set-s1-url').value,
-                servicio2: document.getElementById('set-s2-url').value,
-                servicio3: document.getElementById('set-s3-url').value,
-                appUrl: document.getElementById('set-app-url').value,
-                galeria1: document.getElementById('set-g1-url').value,
-                galeria2: document.getElementById('set-g2-url').value,
-                galeria3: document.getElementById('set-g3-url').value,
-                galeria4: document.getElementById('set-g4-url').value,
+                logoUrl: getValue('set-logo-url', 'logoUrl'),
+                heroBg: getValue('set-hero-url', 'heroBg'),
+                servicio1: getValue('set-s1-url', 'servicio1'),
+                servicio2: getValue('set-s2-url', 'servicio2'),
+                servicio3: getValue('set-s3-url', 'servicio3'),
+                appUrl: getValue('set-app-url', 'appUrl'),
+                galeria1: getValue('set-g1-url', 'galeria1'),
+                galeria2: getValue('set-g2-url', 'galeria2'),
+                galeria3: getValue('set-g3-url', 'galeria3'),
+                galeria4: getValue('set-g4-url', 'galeria4'),
                 facebookUrl: document.getElementById('set-fb-url').value,
                 instagramUrl: document.getElementById('set-ig-url').value,
                 youtubeUrl: document.getElementById('set-yt-url').value
             };
             
             let totalSize = JSON.stringify(nuevosAjustes).length;
-            if (totalSize > 900000) {
-                window.mostrarMensaje(`❌ Error: Has subido demasiadas imágenes. Intenta usar URLs en los ajustes en lugar de subir archivos.`, "error");
+            if (totalSize > 950000) {
+                window.mostrarMensaje(`❌ Error: Has subido demasiadas imágenes y exceden el límite de 1MB. Usa imágenes de menor resolución.`, "error");
                 return;
             }
 
@@ -1742,19 +1751,21 @@
 
         window.guardarRecorte = function() {
             if (!window.cropperInstance) return;
-            // Limitamos las dimensiones y reducimos la calidad a 60% para que el archivo pese muy poco y siempre pase
-            let maxDim = window.cropTargetInputId.includes('hero') ? 1080 : (window.cropTargetInputId.includes('logo') ? 400 : 800);
+            
+            // Compresión alta exclusiva para evitar límites de base de datos
+            let maxDim = window.cropTargetInputId.includes('hero') ? 800 : (window.cropTargetInputId.includes('logo') ? 300 : 500);
             const canvas = window.cropperInstance.getCroppedCanvas({ maxWidth: maxDim, maxHeight: maxDim, fillColor: '#000000' });
             let outputFormat = (window.cropTargetInputId.includes('logo') && window.cropFileType === 'image/png') ? 'image/png' : 'image/webp';
-            let quality = outputFormat === 'image/webp' ? 0.6 : undefined; 
+            let quality = outputFormat === 'image/webp' ? 0.4 : undefined; 
 
-            // Convertimos la imagen directamente a código Base64 ultracomprimido
             const base64Data = canvas.toDataURL(outputFormat, quality);
             window.base64ImagenRecortada = base64Data;
             
             if (window.cropperInstance.isDesignImage) {
+                window.tempSettingsImages = window.tempSettingsImages || {};
+                window.tempSettingsImages[window.cropTargetInputId] = base64Data;
                 const targetInput = document.getElementById(window.cropTargetInputId);
-                if (targetInput) targetInput.value = base64Data;
+                if (targetInput) targetInput.value = "[Imagen Lista]";
                 window.mostrarMensaje("✅ Imagen procesada y lista para aplicar.", "success");
             } else {
                 const targetInput = document.getElementById(window.cropTargetInputId);
@@ -1829,18 +1840,28 @@
         }
 
         window.abrirModalSettings = function() {
+            window.tempSettingsImages = {};
             document.getElementById('set-banner-active').checked = window.siteSettings.bannerActive;
             document.getElementById('set-banner-text').value = window.siteSettings.bannerText || "";
-            document.getElementById('set-logo-url').value = window.siteSettings.logoUrl || "";
-            document.getElementById('set-hero-url').value = window.siteSettings.heroBg || "";
-            document.getElementById('set-s1-url').value = window.siteSettings.servicio1 || "";
-            document.getElementById('set-s2-url').value = window.siteSettings.servicio2 || "";
-            document.getElementById('set-s3-url').value = window.siteSettings.servicio3 || "";
-            document.getElementById('set-app-url').value = window.siteSettings.appUrl || "";
-            document.getElementById('set-g1-url').value = window.siteSettings.galeria1 || "";
-            document.getElementById('set-g2-url').value = window.siteSettings.galeria2 || "";
-            document.getElementById('set-g3-url').value = window.siteSettings.galeria3 || "";
-            document.getElementById('set-g4-url').value = window.siteSettings.galeria4 || "";
+            
+            const imageKeys = [
+                { id: 'set-logo-url', key: 'logoUrl' },
+                { id: 'set-hero-url', key: 'heroBg' },
+                { id: 'set-s1-url', key: 'servicio1' },
+                { id: 'set-s2-url', key: 'servicio2' },
+                { id: 'set-s3-url', key: 'servicio3' },
+                { id: 'set-app-url', key: 'appUrl' },
+                { id: 'set-g1-url', key: 'galeria1' },
+                { id: 'set-g2-url', key: 'galeria2' },
+                { id: 'set-g3-url', key: 'galeria3' },
+                { id: 'set-g4-url', key: 'galeria4' }
+            ];
+
+            imageKeys.forEach(item => {
+                const val = window.siteSettings[item.key] || "";
+                document.getElementById(item.id).value = val.startsWith('data:image') ? '[Imagen Guardada]' : val;
+            });
+
             document.getElementById('set-fb-url').value = window.siteSettings.facebookUrl || "";
             document.getElementById('set-ig-url').value = window.siteSettings.instagramUrl || "";
             document.getElementById('set-yt-url').value = window.siteSettings.youtubeUrl || "";
