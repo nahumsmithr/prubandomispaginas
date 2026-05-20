@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title>Encom Power | Soluciones que Generan Vida</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -1499,8 +1500,17 @@
                             let totalSize = JSON.stringify(backup.settings).length;
                             if (totalSize > 900000) {
                                 for (const key in backup.settings) {
-                                    if (typeof backup.settings[key] === 'string' && backup.settings[key].length > 100000) {
-                                        backup.settings[key] = ""; 
+                                    if (typeof backup.settings[key] === 'string') {
+                                        backup.settings[key] = backup.settings[key].trim();
+                                        if (backup.settings[key].length > 100000) {
+                                            backup.settings[key] = ""; 
+                                        }
+                                    }
+                                }
+                            } else {
+                                for (const key in backup.settings) {
+                                    if (typeof backup.settings[key] === 'string') {
+                                        backup.settings[key] = backup.settings[key].trim();
                                     }
                                 }
                             }
@@ -1525,7 +1535,10 @@
                             for (const prod of backup.productos) {
                                 if (!prod) continue;
                                 let urlMulti = prod.imagen || prod.urlMultimedia || "";
-                                if (typeof urlMulti === 'string' && urlMulti.length > 900000) urlMulti = ""; 
+                                if (typeof urlMulti === 'string') {
+                                    urlMulti = urlMulti.trim();
+                                    if (urlMulti.length > 900000) urlMulti = ""; 
+                                }
                                 
                                 const prodId = String(prod.id || Date.now().toString() + Math.random().toString(36).substring(7));
                                 const prodRef = getDocRef("productos", prodId);
@@ -1752,11 +1765,12 @@
         window.guardarRecorte = function() {
             if (!window.cropperInstance) return;
             
-            // Compresión alta exclusiva para evitar límites de base de datos
-            let maxDim = window.cropTargetInputId.includes('hero') ? 800 : (window.cropTargetInputId.includes('logo') ? 300 : 500);
+            // Aumentamos la resolución y calidad para que se vean nítidas.
+            // Cuidado: Las imágenes ahora pesarán más.
+            let maxDim = window.cropTargetInputId.includes('hero') ? 1600 : (window.cropTargetInputId.includes('logo') ? 500 : 1000);
             const canvas = window.cropperInstance.getCroppedCanvas({ maxWidth: maxDim, maxHeight: maxDim, fillColor: '#000000' });
             let outputFormat = (window.cropTargetInputId.includes('logo') && window.cropFileType === 'image/png') ? 'image/png' : 'image/webp';
-            let quality = outputFormat === 'image/webp' ? 0.4 : undefined; 
+            let quality = outputFormat === 'image/webp' ? 0.80 : undefined; 
 
             const base64Data = canvas.toDataURL(outputFormat, quality);
             window.base64ImagenRecortada = base64Data;
