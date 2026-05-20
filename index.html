@@ -1159,7 +1159,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const userFirebaseConfig = {
@@ -1175,7 +1174,6 @@
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const storage = getStorage(app);
         const auth = getAuth(app);
         
         const isCanvas = typeof __app_id !== 'undefined';
@@ -1194,7 +1192,7 @@
         window.cropTargetInputId = null;
         window.cropPreviewId = null;
         window.cropFileType = 'image/jpeg';
-        window.blobImagenRecortada = null;
+        window.base64ImagenRecortada = null;
 
         window.categorias = []; 
         window.productos = []; 
@@ -1264,8 +1262,7 @@
                         categoria: item.categoria,
                         descripcion: item.descripcion,
                         imagen: item.urlMultimedia,
-                        stock: item.stock || 'disponible',
-                        storagePath: item.storagePath || ''
+                        stock: item.stock || 'disponible'
                     });
                     totalProds++;
                 });
@@ -1300,7 +1297,6 @@
             }, (error) => {});
         });
 
-        /* === CORRECCIÓN DEL BUG: Función faltante añadida aquí === */
         window.actualizarSelectCategorias = function() {
             const selectAdd = document.getElementById('prod-category');
             const selectEdit = document.getElementById('edit-prod-category');
@@ -1324,21 +1320,8 @@
                 }
             });
         }
-        /* ========================================================= */
 
-        /* --- FUNCIONES DE FIREBASE PARA GUARDAR --- */
-        window.subirArchivoAStorage = async function(coleccion, fileBlob) {
-            if (!currentUser) throw new Error("Requiere autenticación");
-            const ext = fileBlob.type?.split('/')[1] || 'webp';
-            const path = isCanvas 
-                ? `artifacts/${String(appId)}/users/${currentUser.uid}/${String(coleccion)}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`
-                : `${String(coleccion)}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
-            const storageRef = ref(storage, path);
-            await uploadBytes(storageRef, fileBlob);
-            const url = await getDownloadURL(storageRef);
-            return { url, path };
-        };
-
+        /* --- FUNCIONES DE GUARDADO DIRECTO A FIRESTORE --- */
         window.agregarProducto = async function() {
             const categoria = document.getElementById('prod-category').value;
             const nombre = document.getElementById('prod-name').value.trim();
@@ -1351,35 +1334,32 @@
 
             try {
                 let urlMultimedia = "";
-                let storagePath = "";
 
-                if (window.addImageMode === 'file' && window.blobImagenRecortada) {
-                    const uploadResult = await window.subirArchivoAStorage("productos", window.blobImagenRecortada);
-                    urlMultimedia = uploadResult.url;
-                    storagePath = uploadResult.path;
+                if (window.addImageMode === 'file' && window.base64ImagenRecortada) {
+                    urlMultimedia = window.base64ImagenRecortada;
                 } else {
                     urlMultimedia = document.getElementById('prod-image').value.trim();
                 }
 
-                if (!urlMultimedia || urlMultimedia === "[Archivo Recortado]") {
+                if (!urlMultimedia || urlMultimedia === "[Imagen Lista]") {
                     return window.mostrarMensaje('Agrega una URL o recorta un archivo.', 'error');
                 }
 
-                if (urlMultimedia.length > 200000) {
-                    return window.mostrarMensaje('❌ La URL de la imagen es muy larga. Usa la pestaña "Archivo" para subirla.', 'error');
+                if (urlMultimedia.length > 900000) {
+                    return window.mostrarMensaje('❌ La imagen es demasiado pesada. Usa una con menor resolución.', 'error');
                 }
 
                 await addDoc(getCollectionRef("productos"), {
-                    nombre, categoria, descripcion, stock, urlMultimedia, storagePath, fechaCreacion: serverTimestamp()
+                    nombre, categoria, descripcion, stock, urlMultimedia, fechaCreacion: serverTimestamp()
                 });
 
                 document.getElementById('form-producto').reset();
-                window.blobImagenRecortada = null;
+                window.base64ImagenRecortada = null;
                 document.getElementById('add-img-preview').classList.add('hidden');
                 document.getElementById('add-img-placeholder').classList.remove('hidden');
                 
                 window.cerrarModalAdd();
-                window.mostrarMensaje("✅ Producto subido a la nube.", "success");
+                window.mostrarMensaje("✅ Producto subido al catálogo.", "success");
             } catch (error) {
                 window.mostrarMensaje("❌ Error: " + error.message, "error");
             }
@@ -1397,31 +1377,22 @@
 
             try {
                 let urlMultimedia = document.getElementById('edit-prod-image').value.trim();
-                let storagePath = "";
 
-                if (window.editImageMode === 'file' && window.blobImagenRecortada) {
-                    const uploadResult = await window.subirArchivoAStorage("productos", window.blobImagenRecortada);
-                    urlMultimedia = uploadResult.url;
-                    storagePath = uploadResult.path;
-                    
-                    const anterior = window.productos.find(p => p.id === id);
-                    if (anterior && anterior.storagePath) {
-                        try { await deleteObject(ref(storage, anterior.storagePath)); } catch(e){}
-                    }
+                if (window.editImageMode === 'file' && window.base64ImagenRecortada) {
+                    urlMultimedia = window.base64ImagenRecortada;
                 }
-                if (urlMultimedia === "[Archivo Recortado]") urlMultimedia = ""; 
+                if (urlMultimedia === "[Imagen Lista]") urlMultimedia = ""; 
 
-                if (urlMultimedia.length > 200000) {
-                    return window.mostrarMensaje('❌ La URL de la imagen es muy larga. Usa la pestaña "Archivo" para subirla.', 'error');
+                if (urlMultimedia.length > 900000) {
+                    return window.mostrarMensaje('❌ La imagen es demasiado pesada.', 'error');
                 }
 
                 const actualizacion = { nombre, categoria, descripcion, stock };
                 if (urlMultimedia) actualizacion.urlMultimedia = urlMultimedia;
-                if (storagePath) actualizacion.storagePath = storagePath;
 
                 await updateDoc(getDocRef("productos", id), actualizacion);
 
-                window.blobImagenRecortada = null;
+                window.base64ImagenRecortada = null;
                 window.cerrarModalEditar();
                 window.mostrarMensaje("✅ Producto actualizado.", "success");
             } catch (error) {
@@ -1433,10 +1404,6 @@
             if (event) event.stopPropagation();
             window.confirmarAccion('¿Seguro de eliminar definitivamente?', async () => {
                 try {
-                    const prod = window.productos.find(p => p.id === id);
-                    if (prod && prod.storagePath) {
-                        try { await deleteObject(ref(storage, prod.storagePath)); } catch (e) {}
-                    }
                     await deleteDoc(getDocRef("productos", id));
                     window.mostrarMensaje('🗑️ Eliminado.', 'success');
                 } catch (error) {
@@ -1450,7 +1417,7 @@
             const nombre = input.value.trim();
             if (!nombre) return window.mostrarMensaje('Ingresa un nombre', 'error');
             try {
-                const safeId = nombre.toLowerCase().replace(/[^a-z0-9]/g, '') || Date.now().toString();
+                const safeId = String(nombre.toLowerCase().replace(/[^a-z0-9]/g, '') || Date.now().toString());
                 await setDoc(getDocRef("categorias", safeId), { nombre });
                 input.value = '';
                 window.mostrarMensaje(`Categoría '${nombre}' creada.`, 'success');
@@ -1493,11 +1460,10 @@
                 youtubeUrl: document.getElementById('set-yt-url').value
             };
             
-            for (const key in nuevosAjustes) {
-                if (typeof nuevosAjustes[key] === 'string' && nuevosAjustes[key].length > 200000) {
-                    window.mostrarMensaje(`❌ Error: La imagen en "${key}" pesa demasiado. Usa el botón de Subir en lugar de pegar.`, "error");
-                    return;
-                }
+            let totalSize = JSON.stringify(nuevosAjustes).length;
+            if (totalSize > 900000) {
+                window.mostrarMensaje(`❌ Error: Has subido demasiadas imágenes. Intenta usar URLs en los ajustes en lugar de subir archivos.`, "error");
+                return;
             }
 
             try {
@@ -1517,15 +1483,16 @@
             reader.onload = async function(e) {
                 try {
                     const backup = JSON.parse(e.target.result);
-                    // Allow backwards compatibility if backup only has productos or categorias
                     if (backup.categorias || backup.productos) {
                         window.mostrarMensaje('⏳ Procesando y subiendo datos...', 'info');
                         
-                        // 1. Process Settings if they exist
                         if (backup.settings) {
-                            for (const key in backup.settings) {
-                                if (typeof backup.settings[key] === 'string' && backup.settings[key].length > 200000) {
-                                    backup.settings[key] = ""; // Clear huge base64 strings
+                            let totalSize = JSON.stringify(backup.settings).length;
+                            if (totalSize > 900000) {
+                                for (const key in backup.settings) {
+                                    if (typeof backup.settings[key] === 'string' && backup.settings[key].length > 100000) {
+                                        backup.settings[key] = ""; 
+                                    }
                                 }
                             }
                             await setDoc(getDocRef("configuracion", "diseno"), backup.settings);
@@ -1533,7 +1500,6 @@
 
                         const batch = writeBatch(db);
 
-                        // 2. Process Categories
                         if (backup.categorias && Array.isArray(backup.categorias)) {
                             for (const cat of backup.categorias) {
                                 if (!cat) continue;
@@ -1546,12 +1512,11 @@
                             }
                         }
 
-                        // 3. Process Products
                         if (backup.productos && Array.isArray(backup.productos)) {
                             for (const prod of backup.productos) {
                                 if (!prod) continue;
                                 let urlMulti = prod.imagen || prod.urlMultimedia || "";
-                                if (typeof urlMulti === 'string' && urlMulti.length > 200000) urlMulti = ""; 
+                                if (typeof urlMulti === 'string' && urlMulti.length > 900000) urlMulti = ""; 
                                 
                                 const prodId = String(prod.id || Date.now().toString() + Math.random().toString(36).substring(7));
                                 const prodRef = getDocRef("productos", prodId);
@@ -1561,7 +1526,6 @@
                                     descripcion: prod.descripcion || "",
                                     stock: prod.stock || 'disponible',
                                     urlMultimedia: urlMulti,
-                                    storagePath: prod.storagePath || "",
                                     fechaCreacion: serverTimestamp()
                                 });
                             }
@@ -1576,23 +1540,11 @@
                     }
                 } catch (error) {
                     console.error("Error al importar:", error);
-                    // Show the specific error message to help debug if it fails again
                     window.mostrarMensaje('Error: ' + error.message, 'error');
                 }
             };
             reader.readAsText(file);
             input.value = ''; 
-        };
-
-        window.subirImagenDiseno = async function(fileBlob, targetInputId) {
-            window.mostrarMensaje("⏳ Subiendo imagen...", "info");
-            try {
-                const uploadResult = await window.subirArchivoAStorage("configuracion", fileBlob);
-                document.getElementById(targetInputId).value = uploadResult.url;
-                window.mostrarMensaje("✅ Imagen subida.", "success");
-            } catch (err) {
-                window.mostrarMensaje("❌ Error al subir archivo: " + err.message, "error");
-            }
         };
 
         window.processSettingFile = function(inputEl, targetInputId) {
@@ -1790,30 +1742,31 @@
 
         window.guardarRecorte = function() {
             if (!window.cropperInstance) return;
-            let maxDim = window.cropTargetInputId.includes('hero') ? 1920 : (window.cropTargetInputId.includes('logo') ? 600 : 1200);
+            // Limitamos las dimensiones y reducimos la calidad a 60% para que el archivo pese muy poco y siempre pase
+            let maxDim = window.cropTargetInputId.includes('hero') ? 1080 : (window.cropTargetInputId.includes('logo') ? 400 : 800);
             const canvas = window.cropperInstance.getCroppedCanvas({ maxWidth: maxDim, maxHeight: maxDim, fillColor: '#000000' });
             let outputFormat = (window.cropTargetInputId.includes('logo') && window.cropFileType === 'image/png') ? 'image/png' : 'image/webp';
-            let quality = outputFormat === 'image/webp' ? 0.85 : undefined; 
+            let quality = outputFormat === 'image/webp' ? 0.6 : undefined; 
 
-            canvas.toBlob(async (blob) => {
-                window.blobImagenRecortada = blob; 
-                const base64Preview = canvas.toDataURL(outputFormat, quality);
-                
-                if (window.cropperInstance.isDesignImage) {
-                    await window.subirImagenDiseno(blob, window.cropTargetInputId);
-                } else {
-                    const targetInput = document.getElementById(window.cropTargetInputId);
-                    if (targetInput && targetInput.type !== 'file') targetInput.value = "[Archivo Recortado]";
-                }
+            // Convertimos la imagen directamente a código Base64 ultracomprimido
+            const base64Data = canvas.toDataURL(outputFormat, quality);
+            window.base64ImagenRecortada = base64Data;
+            
+            if (window.cropperInstance.isDesignImage) {
+                const targetInput = document.getElementById(window.cropTargetInputId);
+                if (targetInput) targetInput.value = base64Data;
+                window.mostrarMensaje("✅ Imagen procesada y lista para aplicar.", "success");
+            } else {
+                const targetInput = document.getElementById(window.cropTargetInputId);
+                if (targetInput && targetInput.type !== 'file') targetInput.value = "[Imagen Lista]";
+            }
 
-                if (window.cropPreviewId) {
-                    const imgEl = document.getElementById(window.cropPreviewId);
-                    const placeholder = document.getElementById(window.cropPreviewId.replace('img-preview', 'img-placeholder'));
-                    if (imgEl) { imgEl.src = base64Preview; imgEl.classList.remove('hidden'); if (placeholder) placeholder.classList.add('hidden'); }
-                }
-                window.cerrarCropper();
-                window.mostrarMensaje('Imagen recortada correctamente.', 'success');
-            }, outputFormat, quality);
+            if (window.cropPreviewId) {
+                const imgEl = document.getElementById(window.cropPreviewId);
+                const placeholder = document.getElementById(window.cropPreviewId.replace('img-preview', 'img-placeholder'));
+                if (imgEl) { imgEl.src = base64Data; imgEl.classList.remove('hidden'); if (placeholder) placeholder.classList.add('hidden'); }
+            }
+            window.cerrarCropper();
         }
 
         window.toggleImageMode = function(context, mode) {
@@ -1906,12 +1859,12 @@
             const imgEl = document.getElementById(previewId);
             const placeholder = document.getElementById(inputId.replace('prod-image', 'add-img-placeholder'));
             
-            if(url && url !== "[Archivo Recortado]") {
+            if(url && url !== "[Imagen Lista]") {
                 imgEl.src = getMediaUrl(url, url); 
                 imgEl.classList.remove('hidden');
                 if(placeholder) placeholder.classList.add('hidden');
                 imgEl.onerror = () => { imgEl.classList.add('hidden'); if(placeholder) { placeholder.innerHTML = '<i class="ph-fill ph-warning-circle text-red-500 text-2xl"></i> Enlace Inválido'; placeholder.classList.remove('hidden'); } };
-            } else if (url !== "[Archivo Recortado]") {
+            } else if (url !== "[Imagen Lista]") {
                 imgEl.classList.add('hidden');
                 if(placeholder) { placeholder.innerHTML = '<i class="ph-fill ph-image text-2xl"></i> Vista previa'; placeholder.classList.remove('hidden'); }
             }
@@ -2060,7 +2013,7 @@
             document.getElementById('prod-image-file').value = '';
             document.getElementById('add-img-preview').classList.add('hidden');
             document.getElementById('add-img-placeholder').classList.remove('hidden');
-            window.blobImagenRecortada = null;
+            window.base64ImagenRecortada = null;
 
             document.getElementById('add-modal').classList.add('active'); 
             document.body.style.overflow = 'hidden'; 
@@ -2084,6 +2037,7 @@
             document.getElementById('edit-prod-image').value = prod.imagen || "";
             document.getElementById('edit-prod-image-file').value = '';
             window.previewImage('edit-prod-image', 'edit-img-preview');
+            window.base64ImagenRecortada = null;
             document.getElementById('edit-modal').classList.add('active'); document.body.style.overflow = 'hidden';
         }
 
