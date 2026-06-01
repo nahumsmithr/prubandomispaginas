@@ -574,43 +574,10 @@
                             <option value="client">Solo Clientes Cerrados</option>
                         </select>
                     </div>
-                </form>
-            </div>
-            <div class="px-6 py-4 border-t border-veloraBorder bg-slate-950/40 rounded-b-2xl">
-                <button type="submit" form="report-form" class="w-full py-3 bg-orange-500 hover:bg-orange-600 transition text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2">
-                    <i class="fas fa-download"></i> Descargar Documento
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Administrar Usuarios (Admin Panel) -->
-    <div id="user-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[150] flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="glass-card rounded-2xl w-full max-w-md mx-4 transform scale-95 transition-transform flex flex-col" id="user-modal-box">
-            <div class="px-6 py-4 border-b border-veloraBorder flex justify-between items-center bg-slate-950/40 rounded-t-2xl">
-                <h3 class="text-lg font-black text-white" id="user-modal-title"><i class="fas fa-user-shield text-purple-500"></i> Cuenta</h3>
-                <button onclick="closeUserModal()" class="text-gray-400 hover:text-white transition"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-6">
-                <form id="user-form" onsubmit="saveUserForm(event)" class="space-y-4">
-                    <input type="hidden" id="edit-user-uid">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre Real</label>
-                        <input type="text" id="new-user-name" class="w-full px-4 py-2.5 bg-slate-900/60 border border-veloraBorder rounded-xl text-white text-sm focus:border-purple-500 transition" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Usuario/Email *</label>
-                        <input type="text" id="new-user-email" class="w-full px-4 py-2.5 bg-slate-900/60 border border-veloraBorder rounded-xl text-white text-sm focus:border-purple-500 transition" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Contraseña *</label>
-                        <input type="text" id="new-user-pass" class="w-full px-4 py-2.5 bg-slate-900/60 border border-veloraBorder rounded-xl text-white text-sm focus:border-purple-500 transition" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Rol de Permisos *</label>
-                        <select id="new-user-role" class="w-full px-4 py-2.5 bg-slate-900/60 border border-veloraBorder rounded-xl text-white text-sm focus:border-purple-500 transition" required>
-                            <option value="normal">Agente Normal (Ve sus propios datos)</option>
-                            <option value="admin">Administrador (Ve datos globales)</option>
+                    <div id="report-agent-container" class="hidden">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Agente / Usuario a Evaluar</label>
+                        <select id="report-agent" class="w-full px-4 py-2.5 bg-slate-900/60 border border-veloraBorder rounded-xl text-white text-sm">
+                            <option value="all">Todos los Agentes</option>
                         </select>
                     </div>
                 </form>
@@ -868,7 +835,13 @@
                     await signInAnonymously(auth); 
                 }
             } catch(e) { 
+                console.error("Auth Err: El dominio actual probablemente no esté autorizado en Firebase Authentication", e);
                 window.updateConnectionStatus(false); 
+                // PARCHE: Quitar el cargador si falla el Auth de Firebase
+                document.getElementById('global-loader').classList.add('opacity-0'); 
+                setTimeout(() => document.getElementById('global-loader').classList.add('hidden'), 500);
+                document.getElementById('auth-screen').classList.remove('hidden');
+                window.showToast("Alerta", "Dominio no autorizado o sin conexión", "error");
             }
         }; 
         init();
@@ -876,10 +849,14 @@
         onAuthStateChanged(auth, async (user) => {
             if(user) {
                 // Auto-generador del usuario Maestro para evitar bloqueos iniciales
-                const admDoc = doc(db, 'artifacts', appId, 'public', 'data', 'app_users', 'admin_nahum');
-                const s = await getDoc(admDoc); 
-                if(!s.exists()) {
-                    await setDoc(admDoc, { uid: 'admin_nahum', name: 'Nahum', email: 'nahumsmithr', password: '28011512', role: 'admin' });
+                try {
+                    const admDoc = doc(db, 'artifacts', appId, 'public', 'data', 'app_users', 'admin_nahum');
+                    const s = await getDoc(admDoc); 
+                    if(!s.exists()) {
+                        await setDoc(admDoc, { uid: 'admin_nahum', name: 'Nahum', email: 'nahumsmithr', password: '28011512', role: 'admin' });
+                    }
+                } catch(err) {
+                    console.warn("Aviso de permisos de lectura inicial: ", err);
                 }
                 
                 // Listener Tiempo Real: USUARIOS
@@ -887,7 +864,7 @@
                     window.allUsers = []; 
                     snap.forEach(d => window.allUsers.push(d.data()));
                     if(window.currentUser && window.currentView === 'admin') window.renderAdmin();
-                });
+                }, (error) => console.error("Error usuarios: ", error));
 
                 // Listener Tiempo Real: CONTACTOS
                 onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'contacts')), snap => {
@@ -911,9 +888,26 @@
                         filterDataAndRender();
                     }
                     window.updateConnectionStatus(true);
-                }, () => window.updateConnectionStatus(false));
+                }, (error) => {
+                    console.error("Error leyendo contactos: ", error);
+                    window.updateConnectionStatus(false);
+                    // PARCHE: Quitar cargador si las reglas de Firestore bloquean la lectura
+                    if(!authStateResolved) {
+                        authStateResolved = true;
+                        document.getElementById('global-loader').classList.add('opacity-0'); 
+                        setTimeout(() => document.getElementById('global-loader').classList.add('hidden'), 500);
+                        document.getElementById('auth-screen').classList.remove('hidden');
+                    }
+                });
             } else {
                 window.updateConnectionStatus(false);
+                // PARCHE: Quitar cargador si no hay usuario
+                if(!authStateResolved) {
+                    authStateResolved = true;
+                    document.getElementById('global-loader').classList.add('opacity-0'); 
+                    setTimeout(() => document.getElementById('global-loader').classList.add('hidden'), 500);
+                    document.getElementById('auth-screen').classList.remove('hidden');
+                }
             }
         });
 
@@ -1477,6 +1471,24 @@
 
         // REPORTES GENERALES (PDF)
         window.openReportModal = () => { 
+            // Cargar dinámica de Agentes si el usuario es Admin
+            const agentContainer = document.getElementById('report-agent-container');
+            const agentSelect = document.getElementById('report-agent');
+            
+            if(window.currentUser && window.currentUser.role === 'admin') {
+                agentContainer.classList.remove('hidden');
+                agentSelect.innerHTML = '<option value="all">Todos los Agentes</option>';
+                window.allUsers.forEach(u => {
+                    agentSelect.innerHTML += `<option value="${u.uid}">${u.name}</option>`;
+                });
+            } else {
+                agentContainer.classList.add('hidden');
+                if (agentSelect) {
+                    agentSelect.innerHTML = '<option value="all">Todos los Agentes</option>';
+                    agentSelect.value = 'all';
+                }
+            }
+
             const m = document.getElementById('report-modal'); 
             m.classList.remove('hidden'); 
             setTimeout(() => {
@@ -1496,6 +1508,8 @@
             e.preventDefault(); 
             const per = document.getElementById('report-period').value; 
             const fil = document.getElementById('report-filter').value;
+            const agentFilter = document.getElementById('report-agent').value;
+            
             const { jsPDF } = window.jspdf; 
             const doc = new jsPDF();
             
@@ -1524,7 +1538,10 @@
             const rows = [];
             
             window.visibleContacts.forEach(c => {
+                // Aplicar filtros
                 if(fil !== 'all' && c.type !== fil) return;
+                if(agentFilter !== 'all' && c.ownerId !== agentFilter) return;
+
                 if(c.calls) {
                     c.calls.forEach(call => { 
                         const cd = new Date(call.date); 
@@ -1543,31 +1560,50 @@
             doc.setTextColor(...textDark); doc.setFontSize(16); doc.setFont("helvetica", "bold"); 
             doc.text("Resumen de Productividad", 14, 50);
 
-            // Cajas Visuales
+            let currentY = 55;
+
+            // Indicar nombre del Agente Evaluado si se seleccionó uno en específico
+            if(agentFilter !== 'all') {
+                const targetAgent = window.allUsers.find(u => u.uid === agentFilter);
+                if(targetAgent) {
+                    doc.setFontSize(10); doc.setTextColor(...textMuted); doc.setFont("helvetica", "normal");
+                    doc.text("Agente Evaluado:", 14, 56);
+                    doc.setTextColor(...accentBlue); doc.setFont("helvetica", "bold");
+                    doc.text(targetAgent.name, 45, 56);
+                    currentY = 62; // Mover las cajas hacia abajo para que no choquen
+                }
+            }
+
+            // Cajas Visuales de Métricas
             doc.setFillColor(248, 250, 252); doc.setDrawColor(226, 232, 240);
-            doc.roundedRect(14, 55, 55, 25, 2, 2, 'FD');
-            doc.roundedRect(77, 55, 55, 25, 2, 2, 'FD');
-            doc.roundedRect(140, 55, 56, 25, 2, 2, 'FD');
+            doc.roundedRect(14, currentY, 55, 25, 2, 2, 'FD');
+            doc.roundedRect(77, currentY, 55, 25, 2, 2, 'FD');
+            doc.roundedRect(140, currentY, 56, 25, 2, 2, 'FD');
 
             doc.setTextColor(...textMuted); doc.setFontSize(9); doc.setFont("helvetica", "bold");
-            doc.text("TOTAL LLAMADAS", 41.5, 63, null, null, "center");
-            doc.text("INTERESADOS", 104.5, 63, null, null, "center");
-            doc.text("CIERRES / VENTAS", 168, 63, null, null, "center");
+            doc.text("TOTAL LLAMADAS", 41.5, currentY + 8, null, null, "center");
+            doc.text("INTERESADOS", 104.5, currentY + 8, null, null, "center");
+            doc.text("CIERRES / VENTAS", 168, currentY + 8, null, null, "center");
 
             doc.setTextColor(...accentBlue); doc.setFontSize(22); doc.setFont("helvetica", "bold");
-            doc.text(`${tc}`, 41.5, 75, null, null, "center");
-            doc.setTextColor(24, 160, 251); doc.text(`${ti}`, 104.5, 75, null, null, "center");
-            doc.setTextColor(16, 185, 129); doc.text(`${tv}`, 168, 75, null, null, "center");
+            doc.text(`${tc}`, 41.5, currentY + 20, null, null, "center");
+            doc.setTextColor(24, 160, 251); doc.text(`${ti}`, 104.5, currentY + 20, null, null, "center");
+            doc.setTextColor(16, 185, 129); doc.text(`${tv}`, 168, currentY + 20, null, null, "center");
 
-            // Tabla Striped
+            // Tabla Striped Premium
             doc.autoTable({ 
-                startY: 95, head: [["Fecha / Hora", "Contacto Evaluado", "Estado", "Agente"]], body: rows, theme: 'striped', 
+                startY: currentY + 32, 
+                head: [["Fecha / Hora", "Contacto Evaluado", "Estado", "Agente"]], 
+                body: rows, 
+                theme: 'striped', 
                 headStyles: { fillColor: darkBlue, textColor: 255, fontStyle: 'bold' },
-                bodyStyles: { textColor: textDark }, alternateRowStyles: { fillColor: [248, 250, 252] },
-                styles: { fontSize: 9, cellPadding: 5 }, columnStyles: { 0: { cellWidth: 35 }, 2: { fontStyle: 'bold' } }
+                bodyStyles: { textColor: textDark }, 
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                styles: { fontSize: 9, cellPadding: 5 }, 
+                columnStyles: { 0: { cellWidth: 35 }, 2: { fontStyle: 'bold' } }
             });
 
-            // Footer
+            // Footer Confidencial
             const pageCount = doc.internal.getNumberOfPages();
             for(let i = 1; i <= pageCount; i++) {
                 doc.setPage(i); doc.setFontSize(8); doc.setTextColor(...textMuted);
