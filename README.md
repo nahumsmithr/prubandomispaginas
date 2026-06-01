@@ -583,6 +583,45 @@
                 </form>
             </div>
             <div class="px-6 py-4 border-t border-veloraBorder bg-slate-950/40 rounded-b-2xl">
+                <button type="submit" form="report-form" class="w-full py-3 bg-orange-500 hover:bg-orange-600 transition text-white font-bold rounded-xl shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2">
+                    <i class="fas fa-download"></i> Descargar Reporte PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Administrar Usuarios (Admin Panel) -->
+    <div id="user-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[150] flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="glass-card rounded-2xl w-full max-w-md mx-4 transform scale-95 transition-transform flex flex-col" id="user-modal-box">
+            <div class="px-6 py-4 border-b border-veloraBorder flex justify-between items-center bg-slate-950/40 rounded-t-2xl">
+                <h3 class="text-lg font-black text-white" id="user-modal-title"><i class="fas fa-user-shield text-purple-500"></i> Cuenta</h3>
+                <button onclick="closeUserModal()" class="text-gray-400 hover:text-white transition"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6">
+                <form id="user-form" onsubmit="saveUserForm(event)" class="space-y-4">
+                    <input type="hidden" id="edit-user-uid">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre Real</label>
+                        <input type="text" id="new-user-name" class="w-full px-4 py-2.5 bg-slate-900/60 border border-veloraBorder rounded-xl text-white text-sm focus:border-purple-500 transition" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Usuario/Email *</label>
+                        <input type="text" id="new-user-email" class="w-full px-4 py-2.5 bg-slate-900/60 border border-veloraBorder rounded-xl text-white text-sm focus:border-purple-500 transition" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Contraseña *</label>
+                        <input type="text" id="new-user-pass" class="w-full px-4 py-2.5 bg-slate-900/60 border border-veloraBorder rounded-xl text-white text-sm focus:border-purple-500 transition" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Rol de Permisos *</label>
+                        <select id="new-user-role" class="w-full px-4 py-2.5 bg-slate-900/60 border border-veloraBorder rounded-xl text-white text-sm focus:border-purple-500 transition" required>
+                            <option value="normal">Agente Normal (Ve sus propios datos)</option>
+                            <option value="admin">Administrador (Ve datos globales)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="px-6 py-4 border-t border-veloraBorder bg-slate-950/40 rounded-b-2xl">
                 <button type="submit" form="user-form" id="user-submit-btn" class="w-full py-3 bg-purple-600 hover:bg-purple-700 transition text-white font-bold rounded-xl shadow-lg shadow-purple-500/20">Guardar Cambios</button>
             </div>
         </div>
@@ -827,6 +866,31 @@
         // --------------------------------------------------------
         // INICIO DE FIREBASE REAL-TIME
         // --------------------------------------------------------
+        
+        // 🚀 PARCHE ANTI-CONGELAMIENTO (SAFETY NET)
+        // Si Firebase se queda "colgado" más de 4 segundos, forzamos el acceso al sistema.
+        setTimeout(() => {
+            if (!authStateResolved) {
+                console.warn("Safety Net: Forzando salida de la pantalla de carga. Verifica tu consola de Firebase.");
+                authStateResolved = true;
+                
+                const loader = document.getElementById('global-loader');
+                if(loader) {
+                    loader.classList.add('opacity-0');
+                    setTimeout(() => loader.classList.add('hidden'), 500);
+                }
+                
+                // Restaurar sesión sin esperar a Firebase para no bloquear al usuario
+                const ses = localStorage.getItem('velora_auth_session');
+                if(ses) {
+                    try { processLogin(JSON.parse(ses)); } catch(e) { document.getElementById('auth-screen').classList.remove('hidden'); }
+                } else {
+                    document.getElementById('auth-screen').classList.remove('hidden');
+                }
+                window.updateConnectionStatus(false);
+            }
+        }, 4000); // 4 segundos de límite
+
         const init = async () => {
             try { 
                 if(typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -835,20 +899,21 @@
                     await signInAnonymously(auth); 
                 }
             } catch(e) { 
-                console.error("Auth Err: El dominio actual probablemente no esté autorizado en Firebase Authentication", e);
+                console.error("Auth Error: Dominio no autorizado o Autenticación Anónima apagada en Firebase.", e);
                 window.updateConnectionStatus(false); 
-                // PARCHE: Quitar el cargador si falla el Auth de Firebase
-                document.getElementById('global-loader').classList.add('opacity-0'); 
-                setTimeout(() => document.getElementById('global-loader').classList.add('hidden'), 500);
-                document.getElementById('auth-screen').classList.remove('hidden');
-                window.showToast("Alerta", "Dominio no autorizado o sin conexión", "error");
+                // Forzar UI a destrabarse si la auth falla instantáneamente
+                if(!authStateResolved) {
+                    authStateResolved = true;
+                    document.getElementById('global-loader').classList.add('opacity-0'); 
+                    setTimeout(() => document.getElementById('global-loader').classList.add('hidden'), 500);
+                    document.getElementById('auth-screen').classList.remove('hidden');
+                }
             }
         }; 
         init();
 
         onAuthStateChanged(auth, async (user) => {
             if(user) {
-                // Auto-generador del usuario Maestro para evitar bloqueos iniciales
                 try {
                     const admDoc = doc(db, 'artifacts', appId, 'public', 'data', 'app_users', 'admin_nahum');
                     const s = await getDoc(admDoc); 
@@ -856,7 +921,7 @@
                         await setDoc(admDoc, { uid: 'admin_nahum', name: 'Nahum', email: 'nahumsmithr', password: '28011512', role: 'admin' });
                     }
                 } catch(err) {
-                    console.warn("Aviso de permisos de lectura inicial: ", err);
+                    console.warn("Aviso de seguridad/lectura: ", err);
                 }
                 
                 // Listener Tiempo Real: USUARIOS
@@ -864,7 +929,7 @@
                     window.allUsers = []; 
                     snap.forEach(d => window.allUsers.push(d.data()));
                     if(window.currentUser && window.currentView === 'admin') window.renderAdmin();
-                }, (error) => console.error("Error usuarios: ", error));
+                }, (error) => console.warn("Modo Offline o Permisos limitados para Usuarios"));
 
                 // Listener Tiempo Real: CONTACTOS
                 onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'contacts')), snap => {
@@ -876,22 +941,20 @@
                         document.getElementById('global-loader').classList.add('opacity-0'); 
                         setTimeout(() => document.getElementById('global-loader').classList.add('hidden'), 500);
                         
-                        // Retomar sesión si existía en LocalStorage
+                        // Retomar sesión si existía en LocalStorage de forma segura
                         const ses = localStorage.getItem('velora_auth_session');
-                        if(ses && window.allUsers.find(x => x.uid === JSON.parse(ses).uid)) {
+                        if(ses) {
                             processLogin(JSON.parse(ses)); 
                         } else {
                             document.getElementById('auth-screen').classList.remove('hidden');
                         }
                     } else {
-                        // Sincronizar Vistas en Tiempo Real
                         filterDataAndRender();
                     }
                     window.updateConnectionStatus(true);
                 }, (error) => {
-                    console.error("Error leyendo contactos: ", error);
+                    console.error("Modo Offline Activado - Firestore Bloqueado: ", error);
                     window.updateConnectionStatus(false);
-                    // PARCHE: Quitar cargador si las reglas de Firestore bloquean la lectura
                     if(!authStateResolved) {
                         authStateResolved = true;
                         document.getElementById('global-loader').classList.add('opacity-0'); 
@@ -901,7 +964,6 @@
                 });
             } else {
                 window.updateConnectionStatus(false);
-                // PARCHE: Quitar cargador si no hay usuario
                 if(!authStateResolved) {
                     authStateResolved = true;
                     document.getElementById('global-loader').classList.add('opacity-0'); 
