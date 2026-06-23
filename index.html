@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Velora | Premium CRM</title>
+    <title>Velora | Premium CRM & Workspace</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -35,8 +35,9 @@
                         veloraSidebar: '#05080f',
                     },
                     boxShadow: {
-                        'glow': '0 0 20px rgba(59, 130, 246, 0.2)',
-                        'glow-green': '0 0 20px rgba(16, 185, 129, 0.25)',
+                        'glow': '0 0 20px rgba(59, 130, 246, 0.25)',
+                        'glow-green': '0 0 20px rgba(16, 185, 129, 0.3)',
+                        'glow-purple': '0 0 20px rgba(168, 85, 247, 0.3)',
                     }
                 }
             }
@@ -71,14 +72,14 @@
             to { opacity: 1; transform: translateY(0); } 
         }
 
-        /* --- SISTEMA DE FONDOS BRUTALES --- */
+        /* --- SISTEMA DE FONDOS DINÁMICOS --- */
         .theme-monolith { background: linear-gradient(to bottom right, #080c14, #04060a) !important; }
-        .theme-cyberpunk { background: linear-gradient(135deg, #0f172a 0%, #3b0764 50%, #020617 100%) !important; }
-        .theme-emerald { background: radial-gradient(circle at top right, #064e3b, #020617, #000000) !important; }
-        .theme-crimson { background: radial-gradient(circle at top left, #450a0a, #020617, #000000) !important; }
-        .theme-nebula { background: radial-gradient(ellipse at center, #4c1d95 0%, #0f172a 50%, #000000 100%) !important; }
+        .theme-cyberpunk { background: linear-gradient(135deg, #05080f 0%, #1e0730 50%, #02040a 100%) !important; }
+        .theme-emerald { background: radial-gradient(circle at top right, #022c22, #020617, #000000) !important; }
+        .theme-crimson { background: radial-gradient(circle at top left, #300303, #020617, #000000) !important; }
+        .theme-nebula { background: radial-gradient(ellipse at center, #2e1065 0%, #080c14 60%, #000000 100%) !important; }
         .theme-aurora {
-            background: linear-gradient(45deg, #080c14, #1e1b4b, #064e3b, #080c14) !important;
+            background: linear-gradient(45deg, #05080f, #12102e, #022c22, #05080f) !important;
             background-size: 400% 400% !important;
             animation: gradientBG 15s ease infinite !important;
         }
@@ -87,9 +88,18 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+
+        .cyber-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .cyber-btn:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
-<body class="bg-veloraDark text-gray-100 font-sans h-screen flex overflow-hidden theme-monolith" id="app-body">
+<body class="bg-veloraDark text-gray-100 font-sans h-screen flex overflow-hidden theme-monolith relative" id="app-body">
+
+    <canvas id="bg-space-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-40"></canvas>
 
     <!-- ========================================== -->
     <!-- 1. GLOBAL LOADER                           -->
@@ -100,8 +110,8 @@
             <path d="M2 17L12 22L22 17" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
             <path d="M2 12L12 17L22 12" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
         </svg>
-        <div class="text-white font-black tracking-widest uppercase text-sm">VELORA INICIANDO</div>
-        <div class="text-gray-500 text-xs mt-2">Sincronizando protocolos de seguridad...</div>
+        <div class="text-white font-black tracking-widest uppercase text-sm">VELORA WORKSPACE</div>
+        <div class="text-gray-500 text-xs mt-2">Cargando módulos de sincronización avanzada...</div>
     </div>
 
     <!-- ========================================== -->
@@ -135,7 +145,7 @@
                 <div>
                     <div class="relative">
                         <i class="fas fa-envelope absolute left-4 top-4 text-gray-500"></i>
-                        <input type="text" id="auth-email" class="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-veloraBorder rounded-2xl text-white text-sm focus:border-veloraAccent focus:bg-slate-900/80 outline-none transition font-medium" placeholder="Correo Corporativo" required>
+                        <input type="text" id="auth-email" class="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-veloraBorder rounded-2xl text-white text-sm focus:border-veloraAccent focus:bg-slate-900/80 outline-none transition font-medium" placeholder="Correo de Acceso" required>
                     </div>
                 </div>
 
@@ -146,8 +156,8 @@
                     </div>
                 </div>
 
-                <button type="submit" id="auth-btn" class="w-full py-4 mt-2 bg-white text-veloraDark rounded-2xl font-black tracking-widest uppercase text-xs hover:bg-gray-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-                    Ingresar al Sistema
+                <button type="submit" id="auth-btn" class="w-full py-4 mt-2 bg-white text-veloraDark rounded-2xl font-black tracking-widest uppercase text-xs hover:bg-gray-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)] cyber-btn">
+                    Ingresar al Workspace
                 </button>
             </form>
 
@@ -159,10 +169,6 @@
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- 3. APP CONTAINER (MAIN INTERFACE)          -->
-    <!-- ========================================== -->
-    
     <!-- SIDEBAR -->
     <aside id="app-sidebar" class="w-[280px] bg-veloraSidebar flex flex-col flex-shrink-0 z-40 border-r border-veloraBorder hidden md:flex relative h-full">
         <!-- Logo Area -->
@@ -174,32 +180,55 @@
             </svg>
             <span class="text-2xl font-black tracking-[0.15em] text-white mt-1">VELORA</span>
         </div>
+
+        <!-- GAMIFICACIÓN: Tarjeta de Nivel RPG -->
+        <div class="mx-5 mt-6 p-4 rounded-2xl bg-gradient-to-br from-purple-900/40 to-slate-900/60 border border-purple-500/20 shadow-glow-purple">
+            <div class="flex justify-between items-center mb-1">
+                <span class="text-[10px] font-black tracking-widest text-purple-400 uppercase">SISTEMA CORTEX</span>
+                <span class="text-xs font-black text-white bg-purple-600 px-2 py-0.5 rounded-md" id="rpg-level-badge">LV 1</span>
+            </div>
+            <p class="text-[11px] font-bold text-gray-300">Rango: <span class="text-white font-black" id="rpg-rank-text">Operador Novato</span></p>
+            <div class="mt-3">
+                <div class="flex justify-between text-[9px] text-gray-400 font-bold mb-1">
+                    <span>XP TOTAL: <span id="rpg-xp-text">0</span>/100</span>
+                    <span id="rpg-streak-days">🔥 0 días</span>
+                </div>
+                <div class="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                    <div id="rpg-xp-bar" class="h-full bg-gradient-to-r from-purple-500 to-veloraAccent w-[0%] transition-all duration-500"></div>
+                </div>
+            </div>
+        </div>
         
-        <nav class="flex-1 py-8 px-5 space-y-2 overflow-y-auto">
+        <nav class="flex-1 py-6 px-5 space-y-2 overflow-y-auto">
             <p class="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 mb-3">Principal</p>
-            <button onclick="showView('dashboard')" id="nav-dashboard" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl text-white bg-slate-800/60 shadow-glow font-bold transition-all border border-veloraBorder">
+            <button onclick="showView('dashboard')" id="nav-dashboard" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl text-white bg-slate-800/60 shadow-glow font-bold transition-all border border-veloraBorder cyber-btn">
                 <i class="fas fa-chart-pie w-5 text-center text-lg text-veloraAccent"></i> Dashboard
             </button>
-            <button onclick="showView('leads')" id="nav-leads" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent">
-                <i class="fas fa-filter w-5 text-center text-lg text-orange-500"></i> Leads <span class="ml-auto text-[10px] bg-slate-800 px-2 py-0.5 rounded-md" id="sidebar-leads-count">0</span>
+            <button onclick="showView('leads')" id="nav-leads" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent cyber-btn">
+                <i class="fas fa-filter w-5 text-center text-lg text-orange-500"></i> Directorio/CRM <span class="ml-auto text-[10px] bg-slate-800 px-2 py-0.5 rounded-md" id="sidebar-leads-count">0</span>
             </button>
-            <button onclick="showView('clients')" id="nav-clients" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent">
-                <i class="fas fa-users w-5 text-center text-lg text-veloraGreen"></i> Clientes <span class="ml-auto text-[10px] bg-slate-800 px-2 py-0.5 rounded-md" id="sidebar-clients-count">0</span>
+            <button onclick="showView('tasks')" id="nav-tasks" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent cyber-btn">
+                <i class="fas fa-calendar-check w-5 text-center text-lg text-yellow-500"></i> Eisenhower Matrix <span class="ml-auto text-[10px] bg-slate-800 px-2 py-0.5 rounded-md text-yellow-500 font-black" id="sidebar-tasks-count">0</span>
             </button>
-            <button onclick="showView('tasks')" id="nav-tasks" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent">
-                <i class="fas fa-calendar-check w-5 text-center text-lg text-yellow-500"></i> Tareas <span class="ml-auto text-[10px] bg-slate-800 px-2 py-0.5 rounded-md text-yellow-500 font-black" id="sidebar-tasks-count">0</span>
+            <button onclick="showView('habits')" id="nav-habits" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent cyber-btn">
+                <i class="fas fa-seedling w-5 text-center text-lg text-emerald-400"></i> Hábitos & Pomodoro
+            </button>
+            
+            <p class="text-[10px] font-bold text-purple-500/70 uppercase tracking-widest px-3 pt-6 mb-3">Avanzado</p>
+            <button onclick="showView('customizer')" id="nav-customizer" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent cyber-btn">
+                <i class="fas fa-sliders-h w-5 text-center text-lg text-purple-400"></i> Personalizar Workspace
             </button>
             
             <div id="admin-nav-section" class="hidden pt-6">
                 <p class="text-[10px] font-bold text-purple-500/70 uppercase tracking-widest px-3 mb-3">Workspace Admin</p>
-                <button onclick="showView('admin')" id="nav-admin" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-purple-900/20 text-gray-400 hover:text-purple-300 font-bold transition-all border border-transparent">
+                <button onclick="showView('admin')" id="nav-admin" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-purple-900/20 text-gray-400 hover:text-purple-300 font-bold transition-all border border-transparent cyber-btn">
                     <i class="fas fa-shield-alt w-5 text-center text-lg text-purple-500"></i> Panel de Control
                 </button>
             </div>
 
             <div class="pt-6">
                 <p class="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 mb-3">Preferencias</p>
-                <button onclick="showView('settings')" id="nav-settings" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent">
+                <button onclick="showView('settings')" id="nav-settings" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent cyber-btn">
                     <i class="fas fa-cog w-5 text-center text-lg text-gray-400"></i> Configuración
                 </button>
             </div>
@@ -216,19 +245,19 @@
                     <p class="text-[10px] text-veloraAccent font-black uppercase tracking-wider" id="user-display-role">Normal</p>
                 </div>
             </div>
-            <button onclick="openContactModal()" class="w-full mt-6 py-3.5 bg-white text-veloraDark hover:bg-gray-200 rounded-xl font-black uppercase text-[11px] tracking-widest shadow-glow transition-all flex items-center justify-center gap-2">
-                <i class="fas fa-plus"></i> Nuevo Registro
+            <button onclick="openContactModal()" class="w-full mt-6 py-3.5 bg-white text-veloraDark hover:bg-gray-200 rounded-xl font-black uppercase text-[11px] tracking-widest shadow-glow transition-all flex items-center justify-center gap-2 cyber-btn">
+                <i class="fas fa-plus"></i> Nuevo Contacto
             </button>
         </div>
     </aside>
 
     <!-- MOBILE NAV BTN -->
-    <button onclick="toggleMobileMenu()" class="md:hidden absolute top-4 left-4 z-50 p-2.5 bg-veloraCard rounded-lg border border-veloraBorder shadow text-gray-300 hover:text-white transition">
+    <button onclick="toggleMobileMenu()" class="md:hidden absolute top-4 left-4 z-50 p-2.5 bg-veloraCard rounded-lg border border-veloraBorder shadow text-gray-300 hover:text-white transition cyber-btn">
         <i class="fas fa-bars text-lg"></i>
     </button>
 
     <!-- MAIN CONTENT AREA -->
-    <main class="flex-1 flex flex-col h-screen overflow-hidden relative w-full bg-transparent hidden" id="app-main-view">
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative w-full bg-transparent hidden z-10" id="app-main-view">
         
         <!-- HEADER SUPERIOR -->
         <header class="px-8 py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 z-10 pl-16 md:pl-8 bg-gradient-to-b from-veloraDark/80 to-transparent">
@@ -239,8 +268,13 @@
             
             <div class="flex items-center gap-4 w-full sm:w-auto flex-wrap sm:flex-nowrap">
                 
-                <!-- Sincronización Google Calendar (Botón Rápido) -->
-                <button id="btn-google-auth" onclick="handleGoogleAuth()" class="px-4 py-2.5 bg-slate-900/60 border border-veloraBorder text-gray-300 rounded-full flex items-center gap-2 text-[10px] font-black tracking-widest uppercase hover:text-white hover:bg-slate-800 transition shadow-sm backdrop-blur-md">
+                <!-- SINTETIZADOR ZEN DRONE DE FOCUS -->
+                <button onclick="toggleAmbientDrone()" id="btn-zen-drone" class="px-4 py-2.5 bg-slate-900/60 border border-purple-500/20 text-purple-400 rounded-full flex items-center gap-2 text-[10px] font-black tracking-widest uppercase hover:text-white hover:bg-slate-800 transition shadow-sm backdrop-blur-md cyber-btn" title="Activa un sintetizador espacial de fondo para focus">
+                    <i class="fas fa-wave-square animate-pulse"></i> <span id="zen-drone-text">Zen Ambient: Off</span>
+                </button>
+
+                <!-- Sincronización Google Calendar -->
+                <button id="btn-google-auth" onclick="handleGoogleAuth()" class="px-4 py-2.5 bg-slate-900/60 border border-veloraBorder text-gray-300 rounded-full flex items-center gap-2 text-[10px] font-black tracking-widest uppercase hover:text-white hover:bg-slate-800 transition shadow-sm backdrop-blur-md cyber-btn">
                     <i class="fab fa-google text-red-500"></i> <span id="google-auth-text">Google Cal Desconectado</span>
                 </button>
 
@@ -255,7 +289,7 @@
 
                 <!-- MENÚ DE HERRAMIENTAS GLOBALES -->
                 <div class="relative group hidden sm:block">
-                    <button class="px-5 py-2.5 glass-card text-white rounded-full hover:bg-white/10 flex items-center gap-2 transition text-xs font-bold tracking-widest uppercase">
+                    <button class="px-5 py-2.5 glass-card text-white rounded-full hover:bg-white/10 flex items-center gap-2 transition text-xs font-bold tracking-widest uppercase cyber-btn">
                         <i class="fas fa-bolt text-veloraAccent"></i> Acciones <i class="fas fa-chevron-down text-[10px] ml-1 opacity-50"></i>
                     </button>
                     <div class="absolute right-0 mt-2 w-64 glass-card rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden py-2">
@@ -282,6 +316,15 @@
                 </div>
             </div>
         </header>
+
+        <!-- CAJA DE CAPTURA RÁPIDA (MIND DUMP) -->
+        <div class="px-8 mb-4">
+            <div class="glass-card rounded-2xl p-1 px-4 flex items-center gap-4 border border-white/5 focus-within:border-veloraAccent/40 transition-colors shadow-glow">
+                <i class="fas fa-brain text-purple-400 animate-pulse"></i>
+                <input type="text" id="mind-dump-input" onkeydown="handleMindDump(event)" placeholder="¿Qué tienes en mente? Escríbelo y presiona Enter para crear una tarea rápida..." class="flex-1 bg-transparent py-3 text-sm text-gray-200 placeholder-gray-500 outline-none">
+                <span class="text-[9px] font-black text-gray-500 uppercase tracking-widest bg-black/40 px-2 py-1 rounded">Captura Rápida</span>
+            </div>
+        </div>
 
         <!-- CONTENEDOR DE VISTAS -->
         <div class="flex-1 overflow-y-auto p-4 sm:p-8 relative scroll-smooth" id="main-container">
@@ -336,7 +379,7 @@
                         <div>
                             <div class="flex justify-between items-center mb-6">
                                 <h3 class="text-sm font-black text-white uppercase tracking-widest">Top Prospectos</h3>
-                                <button class="text-[10px] font-bold text-veloraAccent uppercase tracking-widest bg-veloraAccent/10 px-3 py-1.5 rounded-full hover:bg-veloraAccent/20 transition" onclick="showView('leads')">Ver Todos</button>
+                                <button class="text-[10px] font-bold text-veloraAccent uppercase tracking-widest bg-veloraAccent/10 px-3 py-1.5 rounded-full hover:bg-veloraAccent/20 transition cyber-btn" onclick="showView('leads')">Ver Todos</button>
                             </div>
                             <div class="space-y-3" id="top-leads-list">
                                 <!-- Dinámico -->
@@ -354,7 +397,6 @@
                     </div>
                 </div>
 
-                <!-- TIL Idea: Bloque de Agenda de Hoy en Dashboard -->
                 <div class="grid grid-cols-1 gap-6">
                     <div class="glass-card rounded-3xl p-6">
                         <div class="flex justify-between items-center border-b border-veloraBorder pb-4 mb-4">
@@ -362,7 +404,7 @@
                                 <h3 class="font-black text-white text-md uppercase tracking-wider"><i class="fas fa-calendar-day text-yellow-500 mr-2"></i> Tu Agenda para Hoy</h3>
                                 <p class="text-xs text-gray-500 mt-1">Llamadas, correos y citas programadas para resolver el día de hoy</p>
                             </div>
-                            <button onclick="showView('tasks')" class="text-[10px] font-bold text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded-full hover:bg-yellow-500/20 transition uppercase tracking-widest">Ver Calendario Completo</button>
+                            <button onclick="showView('tasks')" class="text-[10px] font-bold text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded-full hover:bg-yellow-500/20 transition uppercase tracking-widest cyber-btn">Ver Calendario Completo</button>
                         </div>
                         <div id="dashboard-today-tasks" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <!-- Dinámico -->
@@ -406,11 +448,11 @@
                         </div>
                         
                         <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                            <!-- TIL Idea: Píldoras de Filtro Rápido -->
+                            <!-- Filtros rápidos -->
                             <div class="flex bg-black/40 p-1 rounded-xl border border-veloraBorder overflow-x-auto w-full sm:w-auto hide-scroll">
-                                <button onclick="quickFilter('all')" id="qf-all" class="qf-btn active px-4 py-2 rounded-lg text-xs font-bold text-white bg-white/10 transition whitespace-nowrap">Todos</button>
-                                <button onclick="quickFilter('interesado')" id="qf-int" class="qf-btn px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition whitespace-nowrap">Interesados</button>
-                                <button onclick="quickFilter('cerrada')" id="qf-cer" class="qf-btn px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition whitespace-nowrap">Cierres</button>
+                                <button onclick="quickFilter('all')" id="qf-all" class="qf-btn active px-4 py-2 rounded-lg text-xs font-bold text-white bg-white/10 transition whitespace-nowrap cyber-btn">Todos</button>
+                                <button onclick="quickFilter('interesado')" id="qf-int" class="qf-btn px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition whitespace-nowrap cyber-btn">Interesados</button>
+                                <button onclick="quickFilter('cerrada')" id="qf-cer" class="qf-btn px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition whitespace-nowrap cyber-btn">Cierres</button>
                             </div>
 
                             <div class="relative w-full sm:w-64">
@@ -443,12 +485,12 @@
             <!-- ================================== -->
             <div id="view-detail" class="hidden fade-in space-y-6">
                 <div class="flex justify-between items-center mb-2">
-                    <button onclick="goBack()" class="flex items-center gap-2 text-gray-400 hover:text-white transition font-bold text-xs uppercase tracking-widest bg-black/40 border border-veloraBorder px-4 py-2.5 rounded-full">
+                    <button onclick="goBack()" class="flex items-center gap-2 text-gray-400 hover:text-white transition font-bold text-xs uppercase tracking-widest bg-black/40 border border-veloraBorder px-4 py-2.5 rounded-full cyber-btn">
                         <i class="fas fa-arrow-left"></i> Volver
                     </button>
                     <div class="flex gap-2">
-                        <button onclick="editCurrentContact()" class="w-10 h-10 flex items-center justify-center bg-black/40 text-gray-300 hover:text-white rounded-full border border-veloraBorder transition" title="Editar"><i class="fas fa-pen"></i></button>
-                        <button onclick="deleteCurrentContact()" class="w-10 h-10 flex items-center justify-center bg-black/40 text-gray-400 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/10 rounded-full border border-veloraBorder transition" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        <button onclick="editCurrentContact()" class="w-10 h-10 flex items-center justify-center bg-black/40 text-gray-300 hover:text-white rounded-full border border-veloraBorder transition cyber-btn" title="Editar"><i class="fas fa-pen"></i></button>
+                        <button onclick="deleteCurrentContact()" class="w-10 h-10 flex items-center justify-center bg-black/40 text-gray-400 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/10 rounded-full border border-veloraBorder transition cyber-btn" title="Eliminar"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
                 
@@ -469,11 +511,10 @@
                             </div>
                         </div>
                         <div class="flex gap-2 relative z-10">
-                            <!-- TIL Idea: Botón para agendarle una tarea rápida -->
-                            <button onclick="openTaskModalForContact()" class="px-5 py-4 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 rounded-2xl font-black uppercase tracking-widest text-xs transition">
+                            <button onclick="openTaskModalForContact()" class="px-5 py-4 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 rounded-2xl font-black uppercase tracking-widest text-xs transition cyber-btn">
                                 <i class="fas fa-calendar-plus mr-1"></i> Agendar Tarea
                             </button>
-                            <button onclick="exportToPDF()" class="px-8 py-4 bg-white text-veloraDark rounded-2xl font-black uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:bg-gray-200 transition">
+                            <button onclick="exportToPDF()" class="px-8 py-4 bg-white text-veloraDark rounded-2xl font-black uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:bg-gray-200 transition cyber-btn">
                                 <i class="fas fa-file-pdf mr-2"></i> Exportar Ficha
                             </button>
                         </div>
@@ -489,15 +530,10 @@
                                     <input type="datetime-local" id="call-date" class="w-full px-4 py-3 bg-black/50 border border-veloraBorder rounded-xl text-white text-sm focus:border-veloraAccent outline-none" required>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Resultado</label>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Resultado / Interacción</label>
                                     <div class="relative">
                                         <select id="call-status" class="w-full px-4 py-3 bg-black/50 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-veloraAccent outline-none" required>
                                             <option value="" disabled selected>Seleccionar estado...</option>
-                                            <option value="Contestó - Interesado" class="bg-veloraDark text-blue-400">Interesado / Prospecto Caliente</option>
-                                            <option value="Contestó - No Interesado" class="bg-veloraDark text-red-400">No Interesado / Descartado</option>
-                                            <option value="Buzón de voz" class="bg-veloraDark text-orange-400">No Contactado / Buzón</option>
-                                            <option value="Cita Agendada" class="bg-veloraDark text-purple-400">Cita / Reunión Agendada</option>
-                                            <option value="Venta Cerrada" class="bg-veloraDark font-bold text-veloraGreen">⭐ Venta Cerrada (WIN)</option>
                                         </select>
                                         <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
                                     </div>
@@ -506,7 +542,7 @@
                                     <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Detalles</label>
                                     <textarea id="call-notes" rows="5" class="w-full px-4 py-3 bg-black/50 border border-veloraBorder rounded-xl text-white text-sm resize-none focus:border-veloraAccent outline-none" placeholder="Minuta de la conversación..." required></textarea>
                                 </div>
-                                <button type="submit" class="w-full py-4 bg-veloraAccent text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-glow hover:bg-blue-600 transition">
+                                <button type="submit" class="w-full py-4 bg-veloraAccent text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-glow hover:bg-blue-600 transition cyber-btn">
                                     Guardar
                                 </button>
                             </form>
@@ -530,55 +566,191 @@
             </div>
 
             <!-- ================================== -->
-            <!-- VISTA 4: TAREAS (CALENDAR / TASKS) -->
+            <!-- VISTA 4: TAREAS (EISENHOWER MATRIX)-->
             <!-- ================================== -->
             <div id="view-tasks" class="hidden fade-in space-y-6">
-                <div class="flex justify-between items-center mb-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div>
-                        <h3 class="text-xl font-black text-white uppercase tracking-wider">Gestión de Tareas y Agenda</h3>
-                        <p class="text-xs text-gray-400 mt-1">Sincroniza tus llamadas de seguimiento y citas con Google Calendar</p>
+                        <h3 class="text-xl font-black text-white uppercase tracking-wider">Priorización Metodológica: Matriz de Eisenhower</h3>
+                        <p class="text-xs text-gray-400 mt-1">Organiza tus tareas en cuadrantes para optimizar tus decisiones de productividad diaria.</p>
                     </div>
-                    <button onclick="openTaskModal()" class="px-5 py-3 bg-yellow-500 hover:bg-yellow-600 text-veloraDark rounded-xl font-black uppercase text-xs tracking-widest transition shadow-lg flex items-center gap-2">
+                    <button onclick="openTaskModal()" class="px-5 py-3 bg-yellow-500 hover:bg-yellow-600 text-veloraDark rounded-xl font-black uppercase text-xs tracking-widest transition shadow-lg flex items-center gap-2 cyber-btn">
                         <i class="fas fa-calendar-plus"></i> Nueva Tarea
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Columnas de estados de Tareas -->
-                    <div class="glass-card rounded-3xl p-6 flex flex-col h-[calc(100vh-240px)]">
+                <!-- Matriz de Eisenhower de 4 Cuadrantes -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="eisenhower-matrix-container">
+                    
+                    <!-- Cuadrante 1: Urgente e Importante -->
+                    <div class="glass-card rounded-3xl p-6 border-l-4 border-red-500 flex flex-col h-[350px]">
                         <div class="flex justify-between items-center mb-4 border-b border-veloraBorder pb-3">
-                            <span class="text-xs font-black text-orange-400 uppercase tracking-widest"><i class="fas fa-clock mr-1.5"></i> Pendientes</span>
-                            <span id="task-badge-pending" class="text-[10px] bg-slate-800 px-2.5 py-1 rounded-full text-white font-bold">0</span>
+                            <span class="text-xs font-black text-red-400 uppercase tracking-widest"><i class="fas fa-fire mr-1.5"></i> 1. Hacer de Inmediato (Urgente + Importante)</span>
+                            <span id="task-badge-q1" class="text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-full font-bold">0</span>
                         </div>
-                        <div id="tasks-list-pending" class="space-y-4 flex-1 overflow-y-auto pr-2">
+                        <div id="tasks-q1" class="space-y-3 flex-1 overflow-y-auto pr-2">
                             <!-- Dinámico -->
                         </div>
                     </div>
 
-                    <div class="glass-card rounded-3xl p-6 flex flex-col h-[calc(100vh-240px)]">
+                    <!-- Cuadrante 2: No Urgente pero Importante -->
+                    <div class="glass-card rounded-3xl p-6 border-l-4 border-blue-500 flex flex-col h-[350px]">
                         <div class="flex justify-between items-center mb-4 border-b border-veloraBorder pb-3">
-                            <span class="text-xs font-black text-veloraGreen uppercase tracking-widest"><i class="fas fa-check-circle mr-1.5"></i> Completadas</span>
-                            <span id="task-badge-completed" class="text-[10px] bg-slate-800 px-2.5 py-1 rounded-full text-white font-bold">0</span>
+                            <span class="text-xs font-black text-blue-400 uppercase tracking-widest"><i class="fas fa-calendar-alt mr-1.5"></i> 2. Programar (No Urgente + Importante)</span>
+                            <span id="task-badge-q2" class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full font-bold">0</span>
                         </div>
-                        <div id="tasks-list-completed" class="space-y-4 flex-1 overflow-y-auto pr-2">
+                        <div id="tasks-q2" class="space-y-3 flex-1 overflow-y-auto pr-2">
                             <!-- Dinámico -->
                         </div>
                     </div>
 
-                    <div class="glass-card rounded-3xl p-6 flex flex-col h-[calc(100vh-240px)]">
+                    <!-- Cuadrante 3: Urgente pero No Importante -->
+                    <div class="glass-card rounded-3xl p-6 border-l-4 border-orange-500 flex flex-col h-[350px]">
                         <div class="flex justify-between items-center mb-4 border-b border-veloraBorder pb-3">
-                            <span class="text-xs font-black text-red-500 uppercase tracking-widest"><i class="fas fa-exclamation-circle mr-1.5"></i> Vencidas</span>
-                            <span id="task-badge-overdue" class="text-[10px] bg-slate-800 px-2.5 py-1 rounded-full text-white font-bold">0</span>
+                            <span class="text-xs font-black text-orange-400 uppercase tracking-widest"><i class="fas fa-user-friends mr-1.5"></i> 3. Delegar / Automatizar (Urgente + No Importante)</span>
+                            <span id="task-badge-q3" class="text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2.5 py-1 rounded-full font-bold">0</span>
                         </div>
-                        <div id="tasks-list-overdue" class="space-y-4 flex-1 overflow-y-auto pr-2">
+                        <div id="tasks-q3" class="space-y-3 flex-1 overflow-y-auto pr-2">
                             <!-- Dinámico -->
                         </div>
+                    </div>
+
+                    <!-- Cuadrante 4: Ni Urgente Ni Importante -->
+                    <div class="glass-card rounded-3xl p-6 border-l-4 border-gray-500 flex flex-col h-[350px]">
+                        <div class="flex justify-between items-center mb-4 border-b border-veloraBorder pb-3">
+                            <span class="text-xs font-black text-gray-400 uppercase tracking-widest"><i class="fas fa-trash-alt mr-1.5"></i> 4. Eliminar / Archivar (No Urgente + No Importante)</span>
+                            <span id="task-badge-q4" class="text-[10px] bg-gray-500/10 text-gray-400 border border-gray-500/20 px-2.5 py-1 rounded-full font-bold">0</span>
+                        </div>
+                        <div id="tasks-q4" class="space-y-3 flex-1 overflow-y-auto pr-2">
+                            <!-- Dinámico -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Historial de Tareas Completadas -->
+                <div class="glass-card rounded-3xl p-6">
+                    <h3 class="text-sm font-black text-white uppercase tracking-wider mb-4"><i class="fas fa-check-circle text-veloraGreen mr-2"></i> Tareas Completadas Recientemente</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="tasks-completed-grid">
+                        <!-- Dinámico -->
                     </div>
                 </div>
             </div>
 
             <!-- ================================== -->
-            <!-- VISTA 5: CONFIGURACIÓN (SETTINGS)  -->
+            <!-- VISTA 5: HÁBITOS & ENFOQUE POMODORO-->
+            <!-- ================================== -->
+            <div id="view-habits" class="hidden fade-in space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Pomodoro Timer Widget -->
+                    <div class="glass-card rounded-3xl p-8 flex flex-col items-center justify-between text-center relative overflow-hidden">
+                        <div class="absolute -left-12 -top-12 w-32 h-32 bg-red-500/10 rounded-full blur-2xl"></div>
+                        <div class="relative">
+                            <span class="text-[10px] font-black text-red-500 uppercase tracking-widest block mb-1">MÓDULO DE ENFOQUE PROFUNDO</span>
+                            <h3 class="text-lg font-black text-white uppercase tracking-wider">TEMPORIZADOR POMODORO</h3>
+                        </div>
+
+                        <!-- Timer Display -->
+                        <div class="my-8 relative flex items-center justify-center">
+                            <svg class="w-48 h-48 transform -rotate-90">
+                                <circle cx="96" cy="96" r="80" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent"/>
+                                <circle id="pomodoro-progress" cx="96" cy="96" r="80" stroke="#ef4444" stroke-width="8" fill="transparent" stroke-dasharray="502" stroke-dashoffset="0" class="transition-all duration-1000"/>
+                            </svg>
+                            <div class="absolute flex flex-col items-center">
+                                <span class="text-4xl font-black text-white tracking-widest" id="pomodoro-time">25:00</span>
+                                <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1" id="pomodoro-status-label">ENFOQUE</span>
+                            </div>
+                        </div>
+
+                        <!-- Timer Controls -->
+                        <div class="flex gap-4 w-full">
+                            <button id="btn-pomodoro-start" onclick="togglePomodoro()" class="flex-1 py-3.5 bg-red-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-600 transition shadow-[0_0_15px_rgba(239,68,68,0.3)] cyber-btn">
+                                Iniciar
+                            </button>
+                            <button onclick="resetPomodoro()" class="px-5 py-3.5 bg-black/40 border border-veloraBorder text-gray-400 rounded-2xl font-black uppercase text-xs hover:text-white hover:bg-black/60 transition cyber-btn">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Habit Tracker -->
+                    <div class="glass-card rounded-3xl p-8 lg:col-span-2 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-6 pb-4 border-b border-veloraBorder">
+                                <div>
+                                    <h3 class="text-lg font-black text-white uppercase tracking-wider">Control de Hábitos Diarios</h3>
+                                    <p class="text-xs text-gray-500 mt-1">Registra tu consistencia en objetivos personales y profesionales para hoy.</p>
+                                </div>
+                                <button onclick="openAddHabitModal()" class="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 rounded-xl font-black text-[10px] uppercase tracking-widest transition cyber-btn">
+                                    Nuevo Hábito
+                                </button>
+                            </div>
+
+                            <!-- Listado de Hábitos para Hoy -->
+                            <div class="space-y-4" id="habits-list-today">
+                                <!-- Dinámico -->
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-6 border-t border-veloraBorder flex justify-between items-center text-xs text-gray-500">
+                            <span>Consistencia Promedio Hoy:</span>
+                            <span class="font-black text-emerald-400 text-glow-green" id="habits-today-percentage">0%</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ================================== -->
+            <!-- VISTA 6: PERSONALIZAR WORKSPACE    -->
+            <!-- ================================== -->
+            <div id="view-customizer" class="hidden fade-in space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <!-- Configuración de Categorías de Tareas -->
+                    <div class="glass-card rounded-3xl p-8 space-y-6">
+                        <div>
+                            <h3 class="text-lg font-black text-white uppercase tracking-wider"><i class="fas fa-tags text-purple-400 mr-2"></i> Categorías de Tarea</h3>
+                            <p class="text-xs text-gray-500 mt-1">Crea tus propias etiquetas con colores y emojis personalizados.</p>
+                        </div>
+
+                        <!-- Formulario para agregar categoría de tarea -->
+                        <form onsubmit="handleAddCustomCategory(event, 'task')" class="flex gap-2">
+                            <input type="text" id="custom-task-emoji" placeholder="📂" class="w-12 text-center bg-black/40 border border-veloraBorder rounded-xl text-white outline-none focus:border-purple-500 text-lg" required>
+                            <input type="text" id="custom-task-name" placeholder="Nueva Categoría..." class="flex-1 px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm outline-none focus:border-purple-500 font-medium" required>
+                            <button type="submit" class="px-5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black uppercase text-xs tracking-widest transition cyber-btn"><i class="fas fa-plus"></i></button>
+                        </form>
+
+                        <div class="space-y-3" id="custom-task-categories-list">
+                            <!-- Cargado Dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Configuración de Estados de Interacción / Bitácora -->
+                    <div class="glass-card rounded-3xl p-8 space-y-6">
+                        <div>
+                            <h3 class="text-lg font-black text-white uppercase tracking-wider"><i class="fas fa-heartbeat text-blue-400 mr-2"></i> Estados de Interacción</h3>
+                            <p class="text-xs text-gray-500 mt-1">Personaliza los estados aplicables a tu bitácora de seguimiento.</p>
+                        </div>
+
+                        <!-- Formulario para agregar estado de interacción -->
+                        <form onsubmit="handleAddCustomCategory(event, 'interaction')" class="flex gap-2">
+                            <input type="text" id="custom-int-emoji" placeholder="📞" class="w-12 text-center bg-black/40 border border-veloraBorder rounded-xl text-white outline-none focus:border-blue-500 text-lg" required>
+                            <input type="text" id="custom-int-name" placeholder="Ej: Demostración Realizada" class="flex-1 px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm outline-none focus:border-blue-500 font-medium" required>
+                            <button type="submit" class="px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase text-xs tracking-widest transition cyber-btn"><i class="fas fa-plus"></i></button>
+                        </form>
+
+                        <div class="space-y-3" id="custom-int-categories-list">
+                            <!-- Cargado Dinámicamente -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ================================== -->
+            <!-- VISTA 7: CONFIGURACIÓN (SETTINGS)  -->
             <!-- ================================== -->
             <div id="view-settings" class="hidden fade-in space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -619,40 +791,53 @@
                                 <input type="text" id="setting-bio" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-veloraAccent outline-none" placeholder="Ej. Senior Sales Executive">
                             </div>
                             <div class="pt-4 text-right">
-                                <button type="submit" class="px-8 py-3 bg-white text-veloraDark rounded-xl font-black uppercase text-xs tracking-widest shadow-glow hover:bg-gray-200 transition">
+                                <button type="submit" class="px-8 py-3 bg-white text-veloraDark rounded-xl font-black uppercase text-xs tracking-widest shadow-glow hover:bg-gray-200 transition cyber-btn">
                                     Guardar Cambios
                                 </button>
                             </div>
                         </form>
 
+                        <!-- INTEGRACIÓN DE GOOGLE CALENDAR CLIENT ID -->
+                        <h3 class="text-sm font-black text-white uppercase tracking-widest mt-8 mb-6 border-b border-veloraBorder pb-4"><i class="fab fa-google text-red-500 mr-2"></i> Integración Google Cloud</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Google OAuth Client ID</label>
+                                <div class="flex gap-3">
+                                    <input type="text" id="setting-google-client-id" class="flex-1 px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-xs focus:border-red-500 outline-none font-mono" placeholder="Pega tu Client ID de Google Cloud aquí...">
+                                    <button onclick="saveGoogleClientId()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black uppercase text-xs tracking-widest transition shadow-glow cyber-btn">Guardar ID</button>
+                                </div>
+                                <p class="text-[10px] text-gray-500 mt-2">Este identificador permite conectar tu cuenta de correo a Google Calendar para programar tareas directamente en la agenda real.</p>
+                            </div>
+                        </div>
+
                         <h3 class="text-sm font-black text-white uppercase tracking-widest mt-12 mb-6 border-b border-veloraBorder pb-4">Entorno Visual (Workspace)</h3>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            <button onclick="applyTheme('theme-monolith')" class="theme-btn theme-monolith relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg">
+                            <button onclick="applyTheme('theme-monolith')" class="theme-btn theme-monolith relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
                                 <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
                                     <span class="text-white font-black tracking-widest text-[10px]">MONOLITH (DEFAULT)</span>
                                 </div>
                             </button>
-                            <button onclick="applyTheme('theme-cyberpunk')" class="theme-btn theme-cyberpunk relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg">
+                            <button onclick="applyTheme('theme-cyberpunk')" class="theme-btn theme-cyberpunk relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
                                 <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
                                     <span class="text-white font-black tracking-widest text-[10px]">CYBER NEON</span>
                                 </div>
                             </button>
-                            <button onclick="applyTheme('theme-emerald')" class="theme-btn theme-emerald relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg">
+                            <button onclick="applyTheme('theme-emerald')" class="theme-btn theme-emerald relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
                                 <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
                                     <span class="text-white font-black tracking-widest text-[10px]">EMERALD CORE</span>
                                 </div>
                             </button>
-                            <button onclick="applyTheme('theme-crimson')" class="theme-btn theme-crimson relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg">
+                            <button onclick="applyTheme('theme-crimson')" class="theme-btn theme-crimson relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
                                 <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
                                     <span class="text-white font-black tracking-widest text-[10px]">CRIMSON</span>
                                 </div>
                             </button>
-                            <button onclick="applyTheme('theme-nebula')" class="theme-btn theme-nebula relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg">
+                            <button onclick="applyTheme('theme-nebula')" class="theme-btn theme-nebula relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
                                 <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
                                     <span class="text-white font-black tracking-widest text-[10px]">COSMIC VOID</span>
                                 </div>
                             </button>
-                            <button onclick="applyTheme('theme-aurora')" class="theme-btn theme-aurora relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg">
+                            <button onclick="applyTheme('theme-aurora')" class="theme-btn theme-aurora relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
                                 <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
                                     <span class="text-white font-black tracking-widest text-[10px] animate-pulse">AURORA (LIVE)</span>
                                 </div>
@@ -663,7 +848,7 @@
             </div>
 
             <!-- ================================== -->
-            <!-- VISTA 6: ADMIN PANEL               -->
+            <!-- VISTA 8: ADMIN PANEL               -->
             <!-- ================================== -->
             <div id="view-admin" class="hidden fade-in space-y-6">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -684,7 +869,7 @@
                 <div class="glass-card rounded-3xl overflow-hidden">
                     <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5">
                         <h3 class="font-bold text-white tracking-wide"><i class="fas fa-shield-alt text-purple-500 mr-2"></i> Control de Accesos</h3>
-                        <button onclick="openUserModal()" class="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:bg-purple-700 transition">
+                        <button onclick="openUserModal()" class="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:bg-purple-700 transition cyber-btn">
                             <i class="fas fa-plus mr-1"></i> Agente
                         </button>
                     </div>
@@ -718,14 +903,14 @@
         <div class="glass-card rounded-3xl w-full max-w-lg mx-4 transform scale-95 transition-transform flex flex-col" id="task-modal-box">
             <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5 rounded-t-3xl">
                 <h3 class="text-lg font-black text-white uppercase tracking-widest" id="task-modal-title"><i class="fas fa-calendar-check text-yellow-500 mr-2"></i> Agendar Tarea</h3>
-                <button onclick="closeTaskModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition"><i class="fas fa-times"></i></button>
+                <button onclick="closeTaskModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition cyber-btn"><i class="fas fa-times"></i></button>
             </div>
             <div class="p-8">
                 <form id="task-form" onsubmit="saveTaskForm(event)" class="space-y-5">
                     <input type="hidden" id="form-task-id">
                     <div>
                         <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Título de la Tarea / Seguimiento *</label>
-                        <input type="text" id="task-form-title" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-yellow-500 outline-none font-medium" placeholder="Ej. Llamar a Nahum para cerrar contrato" required>
+                        <input type="text" id="task-form-title" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-yellow-500 outline-none font-medium" placeholder="Ej. Terminar diseño de prototipo..." required>
                     </div>
                     <div class="grid grid-cols-2 gap-5">
                         <div>
@@ -737,42 +922,48 @@
                             <div class="relative">
                                 <select id="task-form-contact" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-yellow-500 outline-none font-bold">
                                     <option value="none">Sin contacto</option>
-                                    <!-- Dinámico -->
                                 </select>
                                 <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
                             </div>
                         </div>
                     </div>
-                    <!-- Nuevas opciones de categoría y prioridad -->
+                    
                     <div class="grid grid-cols-2 gap-5">
                         <div>
                             <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Categoría *</label>
                             <div class="relative">
                                 <select id="task-form-category" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-yellow-500 outline-none font-bold" required>
-                                    <option value="Llamada">📞 Llamada de Venta</option>
-                                    <option value="Email">✉️ Enviar Correo</option>
-                                    <option value="Demo">🖥️ Demostración</option>
-                                    <option value="Contrato">📄 Enviar Contrato</option>
-                                    <option value="Reunión">🤝 Reunión Presencial</option>
                                 </select>
                                 <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Prioridad *</label>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Cuadrante Eisenhower *</label>
                             <div class="relative">
-                                <select id="task-form-priority" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-yellow-500 outline-none font-bold" required>
-                                    <option value="Alta">🔴 Alta (Crítica)</option>
-                                    <option value="Media">🟡 Media (Normal)</option>
-                                    <option value="Baja">🔵 Baja (Informativa)</option>
+                                <select id="task-form-quadrant" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-yellow-500 outline-none font-bold" required>
+                                    <option value="Q1">🔥 Q1: Hacer (Urgente + Importante)</option>
+                                    <option value="Q2">📅 Q2: Programar (No Urgente + Importante)</option>
+                                    <option value="Q3">🤝 Q3: Delegar (Urgente + No Importante)</option>
+                                    <option value="Q4">🗑️ Q4: Eliminar (No Urgente + No Importante)</option>
                                 </select>
                                 <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
                             </div>
                         </div>
                     </div>
                     <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Prioridad *</label>
+                        <div class="relative">
+                            <select id="task-form-priority" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-yellow-500 outline-none font-bold" required>
+                                <option value="Alta">🔴 Alta (Crítica)</option>
+                                <option value="Media">🟡 Media (Normal)</option>
+                                <option value="Baja">🔵 Baja (Informativa)</option>
+                            </select>
+                            <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
+                        </div>
+                    </div>
+                    <div>
                         <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Notas de Instrucción</label>
-                        <textarea id="task-form-notes" rows="3" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm resize-none focus:border-yellow-500 outline-none font-medium" placeholder="Escribe el objetivo del recordatorio..."></textarea>
+                        <textarea id="task-form-notes" rows="3" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm resize-none focus:border-yellow-500 outline-none font-medium" placeholder="Escribe el objetivo de la tarea..."></textarea>
                     </div>
                     <div class="flex items-center gap-3 bg-slate-900/40 p-4 rounded-xl border border-veloraBorder">
                         <input type="checkbox" id="task-form-sync-google" class="w-4 h-4 text-veloraAccent bg-black border-veloraBorder rounded focus:ring-veloraAccent">
@@ -781,8 +972,34 @@
                 </form>
             </div>
             <div class="px-8 py-5 border-t border-veloraBorder bg-black/20 rounded-b-3xl flex justify-end gap-3">
-                <button type="button" onclick="closeTaskModal()" class="px-6 py-3 bg-transparent border border-veloraBorder text-gray-400 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-white/5 transition">Cancelar</button>
-                <button type="submit" form="task-form" class="px-8 py-3 bg-yellow-500 hover:bg-yellow-600 text-veloraDark font-black text-xs uppercase tracking-widest rounded-xl shadow-lg transition">Agendar</button>
+                <button type="button" onclick="closeTaskModal()" class="px-6 py-3 bg-transparent border border-veloraBorder text-gray-400 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-white/5 transition cyber-btn">Cancelar</button>
+                <button type="submit" form="task-form" class="px-8 py-3 bg-yellow-500 hover:bg-yellow-600 text-veloraDark font-black text-xs uppercase tracking-widest rounded-xl shadow-lg transition cyber-btn">Agendar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Agregar Hábito -->
+    <div id="habit-modal" class="hidden fixed inset-0 bg-veloraDark/95 backdrop-blur-sm z-[150] flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="glass-card rounded-3xl w-full max-w-md mx-4 transform scale-95 transition-transform flex flex-col" id="habit-modal-box">
+            <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5 rounded-t-3xl">
+                <h3 class="text-lg font-black text-white uppercase tracking-widest"><i class="fas fa-seedling text-emerald-400 mr-2"></i> Crear Hábito</h3>
+                <button onclick="closeAddHabitModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition cyber-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-8">
+                <form id="habit-form" onsubmit="saveHabitForm(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Emoji *</label>
+                        <input type="text" id="habit-form-emoji" placeholder="🏃‍♂️" class="w-16 text-center py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-lg focus:border-emerald-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Nombre del Hábito *</label>
+                        <input type="text" id="habit-form-name" placeholder="Ej. Beber 2L de agua" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-emerald-500 outline-none" required>
+                    </div>
+                </form>
+            </div>
+            <div class="px-8 py-5 border-t border-veloraBorder bg-black/20 rounded-b-3xl flex justify-end gap-3">
+                <button type="button" onclick="closeAddHabitModal()" class="px-6 py-3 bg-transparent border border-veloraBorder text-gray-400 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-white/5 transition cyber-btn">Cancelar</button>
+                <button type="submit" form="habit-form" class="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-lg transition cyber-btn">Crear</button>
             </div>
         </div>
     </div>
@@ -792,7 +1009,7 @@
         <div class="glass-card rounded-3xl w-full max-w-xl mx-4 transform scale-95 transition-transform flex flex-col" id="contact-modal-box">
             <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5 rounded-t-3xl">
                 <h3 class="text-lg font-black text-white uppercase tracking-widest" id="modal-title"><i class="fas fa-cube text-veloraAccent mr-2"></i> Ficha</h3>
-                <button onclick="closeContactModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition"><i class="fas fa-times"></i></button>
+                <button onclick="closeContactModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition cyber-btn"><i class="fas fa-times"></i></button>
             </div>
             <div class="p-8">
                 <form id="contact-form" onsubmit="saveContactForm(event)" class="space-y-5">
@@ -828,8 +1045,8 @@
                 </form>
             </div>
             <div class="px-8 py-5 border-t border-veloraBorder bg-black/20 rounded-b-3xl flex justify-end gap-3">
-                <button type="button" onclick="closeContactModal()" class="px-6 py-3 bg-transparent border border-veloraBorder text-gray-400 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-white/5 transition">Cancelar</button>
-                <button type="submit" form="contact-form" class="px-8 py-3 bg-white text-veloraDark font-black text-xs uppercase tracking-widest rounded-xl shadow-glow hover:bg-gray-200 transition">Guardar</button>
+                <button type="button" onclick="closeContactModal()" class="px-6 py-3 bg-transparent border border-veloraBorder text-gray-400 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-white/5 transition cyber-btn">Cancelar</button>
+                <button type="submit" form="contact-form" class="px-8 py-3 bg-white text-veloraDark font-black text-xs uppercase tracking-widest rounded-xl shadow-glow hover:bg-gray-200 transition cyber-btn">Guardar</button>
             </div>
         </div>
     </div>
@@ -839,7 +1056,7 @@
         <div class="glass-card rounded-2xl w-full max-w-md mx-4 transform scale-95 transition-transform flex flex-col" id="report-modal-box">
             <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5 rounded-t-3xl">
                 <h3 class="text-lg font-black text-white uppercase tracking-widest"><i class="fas fa-file-pdf text-orange-500 mr-2"></i> Reporte PDF</h3>
-                <button onclick="closeReportModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition"><i class="fas fa-times"></i></button>
+                <button onclick="closeReportModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition cyber-btn"><i class="fas fa-times"></i></button>
             </div>
             <div class="p-8">
                 <form id="report-form" onsubmit="generateGeneralReport(event)" class="space-y-6">
@@ -866,13 +1083,11 @@
                         </div>
                     </div>
                     
-                    <!-- Este es el campo exclusivo para Admin -->
                     <div id="report-agent-container" class="hidden">
                         <label class="block text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-2"><i class="fas fa-shield-alt mr-1"></i> Análisis por Agente</label>
                         <div class="relative">
                             <select id="report-agent" class="w-full px-4 py-3 bg-purple-900/10 border border-purple-500/30 rounded-xl text-white text-sm appearance-none focus:border-purple-500 outline-none">
                                 <option value="all">Toda la empresa (Global)</option>
-                                <!-- Dinámico -->
                             </select>
                             <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-purple-400 pointer-events-none"></i>
                         </div>
@@ -880,7 +1095,7 @@
                 </form>
             </div>
             <div class="px-8 py-5 border-t border-veloraBorder bg-black/20 rounded-b-3xl">
-                <button type="submit" form="report-form" class="w-full py-4 bg-orange-500 hover:bg-orange-600 transition text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-[0_0_15px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2">
+                <button type="submit" form="report-form" class="w-full py-4 bg-orange-500 hover:bg-orange-600 transition text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-[0_0_15px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2 cyber-btn">
                     <i class="fas fa-download"></i> Descargar Documento
                 </button>
             </div>
@@ -892,7 +1107,7 @@
         <div class="glass-card rounded-3xl w-full max-w-md mx-4 transform scale-95 transition-transform flex flex-col" id="user-modal-box">
             <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5 rounded-t-3xl">
                 <h3 class="text-lg font-black text-white uppercase tracking-widest" id="user-modal-title"><i class="fas fa-user-shield text-purple-500 mr-2"></i> Cuenta</h3>
-                <button onclick="closeUserModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition"><i class="fas fa-times"></i></button>
+                <button onclick="closeUserModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition cyber-btn"><i class="fas fa-times"></i></button>
             </div>
             <div class="p-8">
                 <form id="user-form" onsubmit="saveUserForm(event)" class="space-y-5">
@@ -922,8 +1137,32 @@
                 </form>
             </div>
             <div class="px-8 py-5 border-t border-veloraBorder bg-black/20 rounded-b-3xl">
-                <button type="submit" form="user-form" id="user-submit-btn" class="w-full py-3 bg-purple-600 hover:bg-purple-700 transition text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-[0_0_15px_rgba(168,85,247,0.3)]">Guardar Cambios</button>
+                <button type="submit" form="user-form" id="user-submit-btn" class="w-full py-3 bg-purple-600 hover:bg-purple-700 transition text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-[0_0_15px_rgba(168,85,247,0.3)] cyber-btn">Guardar Cambios</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal: ¡LEVEL UP! (Celebración Gamificada) -->
+    <div id="level-up-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-[300] flex items-center justify-center opacity-0 transition-opacity duration-500">
+        <div class="glass-card rounded-[2.5rem] w-full max-w-sm mx-4 p-8 text-center border-2 border-purple-500 shadow-glow-purple transform scale-90 transition-transform duration-500" id="level-up-box">
+            <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-purple-600 to-veloraAccent mx-auto mb-6 flex items-center justify-center border-4 border-white/20 shadow-glow animate-bounce">
+                <i class="fas fa-trophy text-4xl text-white"></i>
+            </div>
+            <span class="text-[10px] font-black tracking-widest text-purple-400 uppercase">EVOLUCIÓN COMPLETA</span>
+            <h3 class="text-3xl font-black text-white mt-1 uppercase">¡Sube de Nivel!</h3>
+            <p class="text-xs text-gray-400 mt-2 mb-6">Has acumulado suficiente XP para ascender al siguiente rango operativo en Velora.</p>
+            <div class="p-4 rounded-2xl bg-black/40 border border-purple-500/20 mb-6 flex justify-around items-center">
+                <div>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase block">Nivel Anterior</span>
+                    <span class="text-lg font-black text-gray-400" id="lvl-up-prev">LV -</span>
+                </div>
+                <i class="fas fa-chevron-right text-purple-400"></i>
+                <div>
+                    <span class="text-[10px] font-bold text-purple-400 uppercase block">Nuevo Nivel</span>
+                    <span class="text-2xl font-black text-purple-300 text-glow-green" id="lvl-up-next">LV -</span>
+                </div>
+            </div>
+            <button onclick="closeLevelUpModal()" class="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-xs tracking-widest uppercase shadow-lg transition cyber-btn">Aceptar Recompensa</button>
         </div>
     </div>
 
@@ -944,8 +1183,8 @@
             <h3 class="text-lg font-black text-white mb-2 uppercase tracking-widest" id="confirm-title">¿Seguro?</h3>
             <p class="text-xs text-gray-400 mb-8" id="confirm-msg">Esta acción se sincronizará y no se puede deshacer.</p>
             <div class="flex gap-4">
-                <button onclick="closeModal()" class="flex-1 py-3 bg-transparent text-gray-400 rounded-xl font-black text-[10px] uppercase tracking-widest border border-veloraBorder hover:bg-white/5 transition">Cancelar</button>
-                <button id="confirm-btn" class="flex-1 py-3 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-700 transition shadow-lg">Confirmar</button>
+                <button onclick="closeModal()" class="flex-1 py-3 bg-transparent text-gray-400 rounded-xl font-black text-[10px] uppercase tracking-widest border border-veloraBorder hover:bg-white/5 transition cyber-btn">Cancelar</button>
+                <button id="confirm-btn" class="flex-1 py-3 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-700 transition shadow-lg cyber-btn">Confirmar</button>
             </div>
         </div>
     </div>
@@ -958,7 +1197,6 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, collection, query, onSnapshot, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Configuración oficial de tu Firebase
         const userFirebaseConfig = {
             apiKey: "AIzaSyD2fytCdF9re-36Op7Nhx4KXmwqZVM8F5E",
             authDomain: "callreport-8a323.firebaseapp.com",
@@ -982,12 +1220,348 @@
         window.visibleContacts = []; 
         window.allTasks = [];
         window.visibleTasks = [];
+        window.allHabits = [];
         window.currentUser = null;
         window.currentContactId = null; 
         window.currentView = 'dashboard'; 
         window.currentListType = 'lead'; 
         window.callsChartInstance = null;
         let authStateResolved = false;
+
+        // Categorías Personalizadas Predeterminadas
+        window.workspaceConfig = {
+            googleClientId: localStorage.getItem('velora_google_client_id') || '',
+            taskCategories: [
+                { emoji: "📞", name: "Llamada de Venta" },
+                { emoji: "✉️", name: "Enviar Correo" },
+                { emoji: "🖥️", name: "Demostración" },
+                { emoji: "📄", name: "Enviar Contrato" },
+                { emoji: "🤝", name: "Reunión Presencial" },
+                { emoji: "🚀", name: "Despliegue" }
+            ],
+            interactionStatuses: [
+                { emoji: "🔥", name: "Contestó - Interesado" },
+                { emoji: "❌", name: "Contestó - No Interesado" },
+                { emoji: "⏳", name: "Buzón de voz" },
+                { emoji: "📅", name: "Cita Agendada" },
+                { emoji: "⭐", name: "Venta Cerrada" }
+            ]
+        };
+
+        // --------------------------------------------------------
+        // MOTOR DE AUDIO SINCRÓNICO INTEGRADO
+        // --------------------------------------------------------
+        let audioCtx = null;
+        let ambientOscillator = null;
+        let ambientGainNode = null;
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        window.playSynthSound = (frequency, type, duration, volume) => {
+            try {
+                initAudioContext();
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        };
+
+        window.playClickSound = () => {
+            window.playSynthSound(1200, 'sine', 0.08, 0.15);
+        };
+
+        window.playSuccessSound = () => {
+            try {
+                initAudioContext();
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => {
+                        window.playSynthSound(freq, 'triangle', 0.35, 0.12);
+                    }, idx * 75);
+                });
+            } catch(e) {}
+        };
+
+        window.playLevelUpSound = () => {
+            try {
+                initAudioContext();
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50, 1318.51];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => {
+                        window.playSynthSound(freq, 'sine', 0.5, 0.15);
+                    }, idx * 60);
+                });
+            } catch(e) {}
+        };
+
+        window.toggleAmbientDrone = () => {
+            try {
+                initAudioContext();
+                const btn = document.getElementById('btn-zen-drone');
+                const text = document.getElementById('zen-drone-text');
+
+                if (ambientOscillator) {
+                    ambientOscillator.stop();
+                    ambientOscillator = null;
+                    text.innerText = "Zen Ambient: Off";
+                    btn.classList.replace('text-purple-300', 'text-purple-400');
+                    btn.classList.remove('ring-2', 'ring-purple-500/50');
+                } else {
+                    if (audioCtx.state === 'suspended') {
+                        audioCtx.resume();
+                    }
+                    ambientOscillator = audioCtx.createOscillator();
+                    ambientGainNode = audioCtx.createGain();
+
+                    ambientOscillator.type = 'sine';
+                    ambientOscillator.frequency.setValueAtTime(110, audioCtx.currentTime);
+
+                    const lowpass = audioCtx.createBiquadFilter();
+                    lowpass.type = 'lowpass';
+                    lowpass.frequency.setValueAtTime(250, audioCtx.currentTime);
+
+                    ambientGainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+
+                    ambientOscillator.connect(lowpass);
+                    lowpass.connect(ambientGainNode);
+                    ambientGainNode.connect(audioCtx.destination);
+
+                    ambientOscillator.start();
+                    text.innerText = "Zen Ambient: On";
+                    btn.classList.replace('text-purple-400', 'text-purple-300');
+                    btn.classList.add('ring-2', 'ring-purple-500/50');
+                    window.showToast("Zen Drone Activo", "Sintetizador de concentración encendido.", "success");
+                }
+            } catch(e) {}
+        };
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.cyber-btn') || e.target.closest('button')) {
+                window.playClickSound();
+            }
+        });
+
+        // --------------------------------------------------------
+        // SISTEMA DE GAMIFICACIÓN / RPG CORE
+        // --------------------------------------------------------
+        window.rpgState = {
+            xp: 0,
+            level: 1,
+            streak: 0,
+            lastActivityDate: null
+        };
+
+        function loadRPGState() {
+            const saved = localStorage.getItem('velora_rpg_state');
+            if (saved) {
+                window.rpgState = JSON.parse(saved);
+            }
+            updateRPGUI();
+        }
+
+        function saveRPGState() {
+            localStorage.setItem('velora_rpg_state', JSON.stringify(window.rpgState));
+            updateRPGUI();
+        }
+
+        window.gainXP = (amount) => {
+            window.rpgState.xp += amount;
+            if (window.rpgState.xp >= 100) {
+                window.rpgState.xp = window.rpgState.xp % 100;
+                window.rpgState.level += 1;
+                triggerLevelUpCelebration();
+            }
+            saveRPGState();
+        };
+
+        function triggerLevelUpCelebration() {
+            window.playLevelUpSound();
+            document.getElementById('lvl-up-prev').innerText = `LV ${window.rpgState.level - 1}`;
+            document.getElementById('lvl-up-next').innerText = `LV ${window.rpgState.level}`;
+            
+            const modal = document.getElementById('level-up-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('level-up-box').classList.remove('scale-90');
+            }, 50);
+
+            spawnParticles(window.innerWidth / 2, window.innerHeight / 2, '#a855f7', 80);
+        }
+
+        window.closeLevelUpModal = () => {
+            const modal = document.getElementById('level-up-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('level-up-box').classList.add('scale-90');
+            setTimeout(() => modal.classList.add('hidden'), 500);
+        };
+
+        function updateRPGUI() {
+            document.getElementById('rpg-level-badge').innerText = `LV ${window.rpgState.level}`;
+            document.getElementById('rpg-xp-text').innerText = window.rpgState.xp;
+            document.getElementById('rpg-xp-bar').style.width = `${window.rpgState.xp}%`;
+            document.getElementById('rpg-streak-days').innerText = `🔥 ${window.rpgState.streak} días`;
+
+            const ranks = [
+                "Operador Novato", "Planificador Junior", "Estratega Pragmático", 
+                "Maestro de Enfoque", "Arquitecto del Tiempo", "Titán del Pipeline", 
+                "Córtex Supremo"
+            ];
+            const rankIndex = Math.min(Math.floor((window.rpgState.level - 1) / 3), ranks.length - 1);
+            document.getElementById('rpg-rank-text').innerText = ranks[rankIndex];
+        }
+
+        function checkDailyStreak() {
+            const todayStr = new Date().toDateString();
+            if (window.rpgState.lastActivityDate !== todayStr) {
+                if (window.rpgState.lastActivityDate) {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    if (window.rpgState.lastActivityDate === yesterday.toDateString()) {
+                        window.rpgState.streak += 1;
+                    } else {
+                        window.rpgState.streak = 1;
+                    }
+                } else {
+                    window.rpgState.streak = 1;
+                }
+                window.rpgState.lastActivityDate = todayStr;
+                saveRPGState();
+            }
+        }
+
+        // --------------------------------------------------------
+        // SISTEMA DE CAPTURA RÁPIDA (MIND DUMP)
+        // --------------------------------------------------------
+        window.handleMindDump = async (e) => {
+            if (e.key === 'Enter') {
+                const text = e.target.value.trim();
+                if (!text) return;
+
+                window.playSynthSound(800, 'triangle', 0.15, 0.2);
+
+                const taskId = 't_' + Date.now();
+                const nowLocal = new Date();
+                nowLocal.setMinutes(nowLocal.getMinutes() - nowLocal.getTimezoneOffset());
+
+                const taskObj = {
+                    id: taskId,
+                    title: text,
+                    dueDate: nowLocal.toISOString().slice(0, 16),
+                    contactId: null,
+                    category: "General",
+                    quadrant: "Q1",
+                    priority: "Media",
+                    notes: "Creada con Captura Rápida (Mind Dump)",
+                    status: "pending",
+                    ownerId: window.currentUser ? window.currentUser.uid : 'system',
+                    ownerName: window.currentUser ? window.currentUser.name : 'Sistema',
+                    created: new Date().toISOString()
+                };
+
+                await window.saveTaskToDatabase(taskObj);
+                e.target.value = '';
+                
+                const inputRect = e.target.getBoundingClientRect();
+                spawnParticles(inputRect.left + 50, inputRect.top + 20, '#3b82f6', 20);
+
+                window.gainXP(15);
+                window.showToast("Capturado exitosamente", "Se agendó como tarea prioritaria.", "success");
+            }
+        };
+
+        // --------------------------------------------------------
+        // MOTOR DE PARTÍCULAS INTERACTIVAS
+        // --------------------------------------------------------
+        const spaceCanvas = document.getElementById('bg-space-canvas');
+        const sCtx = spaceCanvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            spaceCanvas.width = window.innerWidth;
+            spaceCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const stars = [];
+        for (let i = 0; i < 60; i++) {
+            stars.push({
+                x: Math.random() * spaceCanvas.width,
+                y: Math.random() * spaceCanvas.height,
+                radius: Math.random() * 1.5,
+                alpha: Math.random(),
+                speed: 0.15 + Math.random() * 0.2
+            });
+        }
+
+        window.spawnParticles = (x, y, color, count) => {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8 - 2,
+                    radius: 2 + Math.random() * 4,
+                    color: color,
+                    alpha: 1,
+                    decay: 0.015 + Math.random() * 0.02
+                });
+            }
+        };
+
+        function animateBg() {
+            sCtx.clearRect(0, 0, spaceCanvas.width, spaceCanvas.height);
+
+            stars.forEach(star => {
+                star.y -= star.speed;
+                if (star.y < 0) star.y = spaceCanvas.height;
+                sCtx.beginPath();
+                sCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                sCtx.fillStyle = `rgba(168, 85, 247, ${star.alpha})`;
+                sCtx.fill();
+            });
+
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.05;
+                p.alpha -= p.decay;
+
+                if (p.alpha <= 0) {
+                    particles.splice(idx, 1);
+                } else {
+                    sCtx.beginPath();
+                    sCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    sCtx.fillStyle = p.color;
+                    sCtx.globalAlpha = p.alpha;
+                    sCtx.fill();
+                    sCtx.globalAlpha = 1.0;
+                }
+            });
+
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
 
         // UI Helpers
         window.showToast = (title, msg, type='success') => {
@@ -1028,7 +1602,6 @@
         window.addEventListener('online', () => window.updateConnectionStatus(true)); 
         window.addEventListener('offline', () => window.updateConnectionStatus(false));
 
-        // DB Functions
         window.saveContactToDatabase = async (c) => {
             if (!auth.currentUser) return;
             if(!c.ownerId) { c.ownerId = window.currentUser.uid; c.ownerName = window.currentUser.name; }
@@ -1036,7 +1609,6 @@
         };
         window.deleteContactFromDatabase = async (id) => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contacts', id));
 
-        // Tareas DB Functions
         window.saveTaskToDatabase = async (t) => {
             if (!auth.currentUser) return;
             if (!t.ownerId) { t.ownerId = window.currentUser.uid; t.ownerName = window.currentUser.name; }
@@ -1044,12 +1616,22 @@
         };
         window.deleteTaskFromDatabase = async (id) => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id));
 
-        // Autenticación
+        window.saveHabitToDatabase = async (h) => {
+            if (!auth.currentUser) return;
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'habits', h.id), h);
+        };
+        window.deleteHabitFromDatabase = async (id) => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'habits', id));
+
+        window.saveWorkspaceConfig = async () => {
+            if (!auth.currentUser) return;
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'workspace_config', 'settings'), window.workspaceConfig);
+        };
+
         let authMode = 'login';
         window.toggleAuthMode = () => {
             authMode = authMode === 'login' ? 'register' : 'login';
             document.getElementById('register-fields').classList.toggle('hidden', authMode === 'login');
-            document.getElementById('auth-btn').innerText = authMode === 'login' ? 'Ingresar al Sistema' : 'Crear Workspace';
+            document.getElementById('auth-btn').innerText = authMode === 'login' ? 'Ingresar al Workspace' : 'Crear Workspace';
             document.getElementById('auth-subtitle').innerText = authMode === 'login' ? 'Workspace' : 'Registro';
             document.getElementById('auth-toggle-btn').innerHTML = authMode === 'login' ? '¿No tienes cuenta? <span class="text-veloraAccent font-bold">Regístrate aquí</span>' : '¿Ya tienes cuenta? <span class="text-veloraAccent font-bold">Inicia Sesión</span>';
         };
@@ -1066,28 +1648,25 @@
                 if(window.allUsers.find(x => x.email.toLowerCase() === email.toLowerCase())) return window.showToast("Error", "Usuario ya existe", "error");
                 const newU = { uid: 'u_' + Date.now(), name, email, password: pass, role: 'normal' };
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', newU.uid), newU);
-                processLogin(newU); window.showToast("Acceso Autorizado", "Bienvenido a Velora", "success");
+                processLogin(newU); window.showToast("Acceso Autorizado", "Bienvenido a Velora Workspace", "success");
             }
         };
 
         function updateAvatars(u) {
             const sidebarFallback = document.getElementById('sidebar-avatar-fallback');
             const sidebarImg = document.getElementById('sidebar-avatar');
-            const navFallback = document.getElementById('user-avatar-icon');
             const sImg = document.getElementById('settings-avatar');
             const sFallback = document.getElementById('settings-avatar-fallback');
 
             if(u.avatarBase64) {
                 if (sidebarImg) { sidebarImg.src = u.avatarBase64; sidebarImg.classList.remove('hidden'); }
                 if (sidebarFallback) sidebarFallback.classList.add('hidden');
-                if (navFallback) navFallback.innerHTML = `<img src="${u.avatarBase64}" class="w-full h-full rounded-full object-cover">`;
                 if (sImg) { sImg.src = u.avatarBase64; sImg.classList.remove('hidden'); }
                 if (sFallback) sFallback.classList.add('hidden');
             } else {
                 const ini = (u.name || u.email).charAt(0).toUpperCase();
                 if (sidebarImg) sidebarImg.classList.add('hidden');
                 if (sidebarFallback) { sidebarFallback.classList.remove('hidden'); sidebarFallback.innerText = ini; }
-                if (navFallback) navFallback.innerHTML = ini;
                 if (sImg) sImg.classList.add('hidden');
                 if (sFallback) { sFallback.classList.remove('hidden'); sFallback.innerText = ini; }
             }
@@ -1098,9 +1677,11 @@
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('app-sidebar').classList.remove('hidden'); document.getElementById('app-main-view').classList.remove('hidden');
             document.getElementById('user-display-name').innerText = u.name; 
-            document.getElementById('user-display-role').innerText = u.role === 'admin' ? 'SYSTEM ADMIN' : (u.position || 'AGENTE');
+            document.getElementById('user-display-role').innerText = u.role === 'admin' ? 'SYSTEM ADMIN' : (u.position || 'WORKSPACE AGENT');
             
             updateAvatars(u);
+            loadRPGState();
+            checkDailyStreak();
             
             if(u.role === 'admin') {
                 document.getElementById('admin-nav-section').classList.remove('hidden');
@@ -1121,27 +1702,47 @@
             window.visibleContacts = window.currentUser.role === 'admin' ? window.allContacts : window.allContacts.filter(c => c.ownerId === window.currentUser.uid);
             window.visibleTasks = window.currentUser.role === 'admin' ? window.allTasks : window.allTasks.filter(t => t.ownerId === window.currentUser.uid);
 
-            // Llenar datos en Settings
+            // Cargar datos en Configuración
             document.getElementById('settings-name-display').innerText = window.currentUser.name;
             document.getElementById('settings-role-display').innerText = window.currentUser.role === 'admin' ? 'ADMINISTRADOR' : 'AGENTE';
             document.getElementById('settings-email-display').innerText = window.currentUser.email;
             document.getElementById('setting-name').value = window.currentUser.name;
             document.getElementById('setting-phone').value = window.currentUser.phone || '';
             document.getElementById('setting-bio').value = window.currentUser.position || '';
+            document.getElementById('setting-google-client-id').value = window.workspaceConfig.googleClientId || '';
+
+            populateCustomSelects();
 
             if(window.currentView === 'dashboard') window.updateDashboard(); 
             else if(window.currentView === 'leads' || window.currentView === 'clients') window.renderDirectory(window.currentListType); 
             else if(window.currentView === 'tasks') window.renderTasks();
+            else if(window.currentView === 'habits') window.renderHabits();
+            else if(window.currentView === 'customizer') window.renderCustomizer();
             else if(window.currentView === 'admin' && window.currentUser.role === 'admin') window.renderAdmin();
             else if(window.currentView === 'detail' && window.currentContactId) window.openProfile(window.currentContactId);
             
-            // Actualizar contadores globales en sidebar
             document.getElementById('sidebar-leads-count').innerText = window.visibleContacts.filter(c=>c.type==='lead').length;
-            document.getElementById('sidebar-clients-count').innerText = window.visibleContacts.filter(c=>c.type==='client').length;
             document.getElementById('sidebar-tasks-count').innerText = window.visibleTasks.filter(t=>t.status==='pending').length;
         }
 
-        // INIT & SAFETY NET
+        function populateCustomSelects() {
+            const catSelect = document.getElementById('task-form-category');
+            if (catSelect) {
+                catSelect.innerHTML = '';
+                window.workspaceConfig.taskCategories.forEach(cat => {
+                    catSelect.innerHTML += `<option value="${cat.name}">${cat.emoji} ${cat.name}</option>`;
+                });
+            }
+
+            const callSelect = document.getElementById('call-status');
+            if (callSelect) {
+                callSelect.innerHTML = '<option value="" disabled selected>Seleccionar estado...</option>';
+                window.workspaceConfig.interactionStatuses.forEach(st => {
+                    callSelect.innerHTML += `<option value="${st.name}">${st.emoji} ${st.name}</option>`;
+                });
+            }
+        }
+
         setTimeout(() => {
             if (!authStateResolved) {
                 authStateResolved = true;
@@ -1152,7 +1753,7 @@
                 else document.getElementById('auth-screen').classList.remove('hidden');
                 window.updateConnectionStatus(false);
             }
-        }, 4000); 
+        }, 1500); 
 
         const init = async () => {
             try { 
@@ -1171,6 +1772,17 @@
                     const s = await getDoc(admDoc); 
                     if(!s.exists()) await setDoc(admDoc, { uid: 'admin_nahum', name: 'Nahum', email: 'nahumsmithr', password: '28011512', role: 'admin' });
                 } catch(err) {}
+
+                onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'workspace_config', 'settings'), snap => {
+                    if (snap.exists()) {
+                        window.workspaceConfig = snap.data();
+                        // Actualizar localmente por si acaso
+                        if(window.workspaceConfig.googleClientId) {
+                            localStorage.setItem('velora_google_client_id', window.workspaceConfig.googleClientId);
+                        }
+                    }
+                    filterDataAndRender();
+                });
                 
                 onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'app_users')), snap => {
                     window.allUsers = []; snap.forEach(d => window.allUsers.push(d.data()));
@@ -1181,10 +1793,15 @@
                     }
                 });
 
-                // Escuchar Tareas
                 onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'tasks')), snap => {
                     window.allTasks = [];
                     snap.forEach(d => window.allTasks.push(d.data()));
+                    filterDataAndRender();
+                });
+
+                onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'habits')), snap => {
+                    window.allHabits = [];
+                    snap.forEach(d => window.allHabits.push(d.data()));
                     filterDataAndRender();
                 });
 
@@ -1213,9 +1830,12 @@
         
         window.showView = (viewName) => {
             if(!window.currentUser) return;
-            ['dashboard','list','detail','admin','settings','tasks'].forEach(x => document.getElementById(`view-${x}`).classList.add('hidden'));
+            ['dashboard','list','detail','admin','settings','tasks', 'habits', 'customizer'].forEach(x => {
+                const el = document.getElementById(`view-${x}`);
+                if (el) el.classList.add('hidden');
+            });
             
-            ['nav-dashboard','nav-leads','nav-clients','nav-admin','nav-settings','nav-tasks'].forEach(x => { 
+            ['nav-dashboard','nav-leads','nav-tasks','nav-habits','nav-customizer','nav-admin','nav-settings'].forEach(x => { 
                 const btn = document.getElementById(x); 
                 if(btn) { btn.classList.remove('bg-slate-800/60','text-white','shadow-glow', 'border-veloraBorder'); btn.classList.add('text-gray-400', 'border-transparent'); } 
             });
@@ -1231,21 +1851,25 @@
                 window.updateDashboard(); 
             } else if(viewName === 'leads') { 
                 document.getElementById('view-list').classList.remove('hidden'); 
-                topTitle.innerText = "Data Pipeline"; topSub.innerText = "Gestión de Prospectos";
-                document.getElementById('list-title').innerText = "Prospectos (Leads)"; 
+                topTitle.innerText = "Directorio y Pipeline"; topSub.innerText = "Gestión de Contactos y Base de Datos";
+                document.getElementById('list-title').innerText = "Directorio Unificado"; 
                 document.getElementById('nav-leads').classList.add('bg-slate-800/60','text-white', 'shadow-glow', 'border-veloraBorder'); 
                 window.currentListType = 'lead'; window.currentFilter = 'all'; window.updateQuickFilters(); document.getElementById('search-input').value = ''; window.renderDirectory('lead'); 
-            } else if(viewName === 'clients') { 
-                document.getElementById('view-list').classList.remove('hidden'); 
-                topTitle.innerText = "Data Pipeline"; topSub.innerText = "Cartera de Cuentas";
-                document.getElementById('list-title').innerText = "Cartera Segura"; 
-                document.getElementById('nav-clients').classList.add('bg-slate-800/60','text-white', 'shadow-glow', 'border-veloraBorder'); 
-                window.currentListType = 'client'; window.currentFilter = 'all'; window.updateQuickFilters(); document.getElementById('search-input').value = ''; window.renderDirectory('client'); 
             } else if(viewName === 'tasks') {
                 document.getElementById('view-tasks').classList.remove('hidden'); 
-                topTitle.innerText = "Schedule Control"; topSub.innerText = "Agenda y Recordatorios Inteligentes";
+                topTitle.innerText = "Priorización Estratégica"; topSub.innerText = "Cuadrantes de Eisenhower para tareas del día";
                 document.getElementById('nav-tasks').classList.add('bg-slate-800/60','text-white', 'shadow-glow', 'border-veloraBorder');
                 window.renderTasks();
+            } else if(viewName === 'habits') {
+                document.getElementById('view-habits').classList.remove('hidden'); 
+                topTitle.innerText = "Crecimiento Diario"; topSub.innerText = "Seguimiento de hábitos y foco profundo Pomodoro";
+                document.getElementById('nav-habits').classList.add('bg-slate-800/60','text-white', 'shadow-glow', 'border-veloraBorder');
+                window.renderHabits();
+            } else if(viewName === 'customizer') {
+                document.getElementById('view-customizer').classList.remove('hidden'); 
+                topTitle.innerText = "Personalización de Workspace"; topSub.innerText = "Configura tus propias categorías, prioridades y estados";
+                document.getElementById('nav-customizer').classList.add('bg-slate-800/60','text-white', 'shadow-glow', 'border-veloraBorder');
+                window.renderCustomizer();
             } else if(viewName === 'admin' && window.currentUser.role === 'admin') { 
                 document.getElementById('view-admin').classList.remove('hidden'); 
                 topTitle.innerText = "Centro de Comando"; topSub.innerText = "Gestión de Accesos y Permisos";
@@ -1258,7 +1882,7 @@
             }
             window.currentView = viewName;
         };
-        window.goBack = () => window.showView(window.currentListType === 'lead' ? 'leads' : 'clients');
+        window.goBack = () => window.showView('leads');
 
         // --------------------------------------------------------
         // DASHBOARD
@@ -1288,7 +1912,7 @@
             if(leadsArr.length === 0) topL.innerHTML = `<div class="text-xs text-gray-500 text-center py-6 font-semibold">Sin prospectos</div>`;
             else leadsArr.forEach(l => { topL.innerHTML += `<div class="flex items-center justify-between p-4 rounded-2xl bg-black/30 border border-veloraBorder cursor-pointer hover:border-veloraAccent transition group" onclick="window.openProfile('${l.id}')"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-xl bg-white/5 text-veloraAccent flex items-center justify-center text-sm font-black border border-white/5 group-hover:bg-veloraAccent/20">${l.name.substring(0,2).toUpperCase()}</div><div><p class="text-xs font-black text-white uppercase tracking-wider">${l.name}</p><p class="text-[10px] text-gray-500 mt-1 font-bold tracking-widest">${l.phone}</p></div></div><i class="fas fa-chevron-right text-[10px] text-veloraAccent opacity-0 group-hover:opacity-100 transition-opacity"></i></div>`; });
 
-            // Renderizar las tareas de hoy en el Dashboard (TIL Idea)
+            // Agenda de Hoy en Dashboard
             const todayContainer = document.getElementById('dashboard-today-tasks');
             todayContainer.innerHTML = '';
             const todayStr = new Date().toDateString();
@@ -1299,7 +1923,7 @@
                 todayContainer.innerHTML = `
                     <div>
                         <i class="fas fa-calendar-check text-2xl text-emerald-400 mb-2"></i>
-                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">¡Al día! No tienes tareas pendientes agendadas para hoy.</p>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">¡Al día! No tienes tareas prioritarias agendadas para hoy.</p>
                     </div>`;
             } else {
                 todayContainer.className = "grid grid-cols-1 md:grid-cols-3 gap-4 col-span-3";
@@ -1323,7 +1947,7 @@
                             </div>
                             <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
                                 ${targetContact ? `<span class="text-[9px] text-veloraAccent font-bold truncate max-w-[120px] hover:underline cursor-pointer" onclick="window.openProfile('${targetContact.id}')">${targetContact.name}</span>` : '<span class="text-[9px] text-gray-600 font-bold">General</span>'}
-                                <button onclick="markTaskComplete('${task.id}')" class="text-[9px] font-black text-veloraGreen hover:underline uppercase tracking-widest"><i class="fas fa-check mr-1"></i> Listo</button>
+                                <button onclick="markTaskComplete('${task.id}', event)" class="text-[9px] font-black text-veloraGreen hover:underline uppercase tracking-widest cyber-btn"><i class="fas fa-check mr-1"></i> Listo</button>
                             </div>
                         </div>
                     `;
@@ -1341,7 +1965,7 @@
         };
 
         // --------------------------------------------------------
-        // DIRECTORIO CON FILTROS (TIL IDEAS)
+        // DIRECTORIO CON FILTROS
         // --------------------------------------------------------
         window.currentFilter = 'all';
         window.quickFilter = (f) => {
@@ -1352,7 +1976,7 @@
         window.updateQuickFilters = () => {
             ['qf-all','qf-int','qf-cer'].forEach(id => {
                 const el = document.getElementById(id);
-                el.className = 'px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-gray-400 hover:text-white';
+                el.className = 'px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-gray-400 hover:text-white cyber-btn';
             });
             if(window.currentFilter === 'all') document.getElementById('qf-all').classList.add('bg-white/10', 'text-white');
             if(window.currentFilter === 'interesado') document.getElementById('qf-int').classList.add('bg-blue-500/20', 'text-blue-400');
@@ -1366,7 +1990,6 @@
             let filtered = window.visibleContacts.filter(c => c.type === type);
             if(term) filtered = filtered.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
             
-            // Filtro Píldoras (TIL Ideas)
             if(window.currentFilter !== 'all') {
                 filtered = filtered.filter(c => {
                     if(!c.calls || c.calls.length === 0) return false;
@@ -1391,7 +2014,10 @@
         window.openProfile = (id) => {
             const c = window.visibleContacts.find(x => x.id === id); if(!c) return;
             window.currentContactId = id; window.currentListType = c.type;
-            ['dashboard','list','admin','settings','tasks'].forEach(x => document.getElementById(`view-${x}`).classList.add('hidden')); 
+            ['dashboard','list','admin','settings','tasks', 'habits', 'customizer'].forEach(x => {
+                const el = document.getElementById(`view-${x}`);
+                if (el) el.classList.add('hidden');
+            });
             document.getElementById('view-detail').classList.remove('hidden');
             
             document.getElementById('detail-name').innerText = c.name; document.getElementById('detail-phone').innerText = c.phone; document.getElementById('detail-email').innerText = c.email || 'No proporcionado'; document.getElementById('detail-owner').innerText = c.ownerName || 'No asignado'; document.getElementById('detail-avatar').innerText = c.name.substring(0,2).toUpperCase();
@@ -1408,11 +2034,15 @@
             [...c.calls].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(call => {
                 const dt = new Date(call.date); const isT = new Date().toDateString() === dt.toDateString();
                 let iC = 'fa-history', cC = 'text-gray-400', bC = 'bg-black/50 border-veloraBorder'; const stL = call.status.toLowerCase();
+                
+                const foundStatus = window.workspaceConfig.interactionStatuses.find(st => st.name === call.status);
+                const emoji = foundStatus ? foundStatus.emoji : '📝';
+
                 if(stL.includes('interesado') && !stL.includes('no')) { iC = 'fa-check'; cC = 'text-blue-400'; bC = 'bg-blue-500/10 border-blue-500/30'; } 
                 else if(stL.includes('cerrada')) { iC = 'fa-trophy'; cC = 'text-emerald-400'; bC = 'bg-emerald-500/10 border-emerald-500/30'; } 
                 else if(stL.includes('no interesado')) { iC = 'fa-times'; cC = 'text-red-400'; bC = 'bg-red-500/10 border-red-500/30'; }
 
-                t.innerHTML += `<li class="relative pl-12 fade-in"><div class="absolute left-0 top-1 w-12 h-12 bg-veloraDark border rounded-2xl flex items-center justify-center z-10 shadow-lg ${bC} ${cC}"><i class="fas ${iC}"></i></div><div class="bg-black/20 p-6 rounded-3xl border border-veloraBorder hover:border-white/10 transition"><div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4"><div class="text-[10px] font-black text-gray-500 uppercase tracking-widest"><i class="far fa-calendar-alt mr-1"></i> ${isT ? 'Hoy' : dt.toLocaleDateString()} <span class="mx-1 opacity-50">|</span> ${dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><span class="text-[10px] font-black uppercase tracking-widest border border-white/5 rounded-lg px-3 py-1.5 ${cC} ${bC}">${call.status}</span></div><p class="text-gray-300 text-sm leading-relaxed">${call.notes}</p></div></li>`;
+                t.innerHTML += `<li class="relative pl-12 fade-in"><div class="absolute left-0 top-1 w-12 h-12 bg-veloraDark border rounded-2xl flex items-center justify-center z-10 shadow-lg ${bC} ${cC} text-lg">${emoji}</div><div class="bg-black/20 p-6 rounded-3xl border border-veloraBorder hover:border-white/10 transition"><div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4"><div class="text-[10px] font-black text-gray-500 uppercase tracking-widest"><i class="far fa-calendar-alt mr-1"></i> ${isT ? 'Hoy' : dt.toLocaleDateString()} <span class="mx-1 opacity-50">|</span> ${dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><span class="text-[10px] font-black uppercase tracking-widest border border-white/5 rounded-lg px-3 py-1.5 ${cC} ${bC}">${call.status}</span></div><p class="text-gray-300 text-sm leading-relaxed">${call.notes}</p></div></li>`;
             });
         };
 
@@ -1420,55 +2050,50 @@
             e.preventDefault(); const c = window.visibleContacts.find(x => x.id === window.currentContactId); if(!c) return;
             if(!c.calls) c.calls = []; const stat = document.getElementById('call-status').value;
             c.calls.push({ id: 'c_' + Date.now(), date: document.getElementById('call-date').value, status: stat, notes: document.getElementById('call-notes').value });
+            
+            window.gainXP(20);
+
             if(stat === 'Venta Cerrada' && c.type === 'lead') {
-                window.showConfirm("¡VENTA LOGRADA!", "Has cerrado la venta. ¿Promover a la Cartera de Clientes Automáticamente?", async () => { c.type = 'client'; await window.saveContactToDatabase(c); window.showToast("Excelente", "Promovido a Cliente.", "success"); window.openProfile(c.id); });
-            } else { await window.saveContactToDatabase(c); window.showToast("Guardado", "Gestión guardada exitosamente.", "success"); window.openProfile(c.id); }
+                window.showConfirm("¡VENTA LOGRADA!", "Has cerrado la venta. ¿Promover a la Cartera de Clientes Automáticamente?", async () => { 
+                    c.type = 'client'; 
+                    await window.saveContactToDatabase(c); 
+                    window.playSuccessSound();
+                    window.gainXP(50);
+                    window.showToast("Excelente", "Promovido a Cliente y +50 XP.", "success"); 
+                    window.openProfile(c.id); 
+                });
+            } else { 
+                await window.saveContactToDatabase(c); 
+                window.playSuccessSound();
+                window.showToast("Guardado", "Gestión guardada exitosamente y +20 XP.", "success"); 
+                window.openProfile(c.id); 
+            }
         };
 
         // --------------------------------------------------------
-        // GESTOR DE TAREAS Y GOOGLE CALENDAR INTERFACE
+        // GESTOR DE TAREAS & REAL GOOGLE CALENDAR SYNC
         // --------------------------------------------------------
         let gapiInited = false;
-        let gisInited = false;
+        let gisinited = false;
         let tokenClient;
 
-        // Configuración OAuth
-        const CLIENT_ID = '520764678129-dummyclientid.apps.googleusercontent.com'; 
         const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 
         window.gapiLoadCallback = () => {
             gapi.load('client', async () => {
                 await gapi.client.init({
-                    apiKey: window.firebaseConfig ? window.firebaseConfig.apiKey : '',
                     discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
                 });
                 gapiInited = true;
                 checkGoogleAuthStatus();
+                checkPersistedGoogleToken();
             });
         };
 
         window.gisLoadCallback = () => {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: '', 
-            });
-            gisInited = true;
+            gisinited = true;
             checkGoogleAuthStatus();
         };
-
-        if (typeof gapi === 'undefined') {
-            const scriptGapi = document.createElement('script');
-            scriptGapi.src = "https://apis.google.com/js/api.js";
-            scriptGapi.onload = () => window.gapiLoadCallback();
-            document.body.appendChild(scriptGapi);
-        }
-        if (typeof google === 'undefined' || !google.accounts) {
-            const scriptGis = document.createElement('script');
-            scriptGis.src = "https://accounts.google.com/gsi/client";
-            scriptGis.onload = () => window.gisLoadCallback();
-            document.body.appendChild(scriptGis);
-        }
 
         function checkGoogleAuthStatus() {
             const btnText = document.getElementById('google-auth-text');
@@ -1476,25 +2101,58 @@
             if (token) {
                 btnText.innerText = "Google Cal Conectado";
                 document.getElementById('btn-google-auth').classList.replace('text-gray-300', 'text-emerald-400');
+                document.getElementById('btn-google-auth').classList.add('shadow-glow-green');
             } else {
                 btnText.innerText = "Google Cal Desconectado";
                 document.getElementById('btn-google-auth').classList.replace('text-emerald-400', 'text-gray-300');
+                document.getElementById('btn-google-auth').classList.remove('shadow-glow-green');
             }
         }
 
+        // Restaurar token si existe y no ha expirado
+        function checkPersistedGoogleToken() {
+            try {
+                const tokenStr = localStorage.getItem('gcal_token');
+                const expires = localStorage.getItem('gcal_token_expires');
+                if (tokenStr && expires && Date.now() < Number(expires)) {
+                    gapi.client.setToken(JSON.parse(tokenStr));
+                    checkGoogleAuthStatus();
+                }
+            } catch (e) {
+                console.error("No se pudo restaurar la sesión de Google Calendar", e);
+            }
+        }
+
+        // Conectar Google Calendar Real con el Client ID del panel de configuración
         window.handleGoogleAuth = () => {
-            if (!gapiInited || !gisInited) {
-                window.showToast("Google API", "La integración se está iniciando, por favor espera.", "error");
+            const clientId = window.workspaceConfig.googleClientId;
+            if (!clientId || clientId.trim() === '') {
+                window.showToast("Configuración Requerida", "Por favor, ingresa tu Google Client ID en Preferencias/Configuración.", "error");
+                window.showView('settings');
                 return;
             }
-            
-            tokenClient.callback = async (resp) => {
-                if (resp.error !== undefined) {
-                    throw (resp);
-                }
-                window.showToast("Google Calendar", "Sincronización de Agenda Autorizada.", "success");
-                checkGoogleAuthStatus();
-            };
+
+            if (!gapiInited || !gisinited) {
+                window.showToast("Google API", "La API de Google se está iniciando, espera un segundo.", "error");
+                return;
+            }
+
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: clientId,
+                scope: SCOPES,
+                callback: async (resp) => {
+                    if (resp.error !== undefined) {
+                        throw (resp);
+                    }
+                    // Guardar y persistir el token de forma local
+                    const token = gapi.client.getToken();
+                    localStorage.setItem('gcal_token', JSON.stringify(token));
+                    localStorage.setItem('gcal_token_expires', (Date.now() + (resp.expires_in * 1000)).toString());
+                    
+                    window.showToast("Google Calendar", "Sincronización de Agenda Autorizada.", "success");
+                    checkGoogleAuthStatus();
+                },
+            });
 
             if (gapi.client.getToken() === null) {
                 tokenClient.requestAccessToken({prompt: 'consent'});
@@ -1503,90 +2161,95 @@
             }
         };
 
+        // Guardar el Client ID de Google de manera colectiva en Firebase y LocalStorage
+        window.saveGoogleClientId = async () => {
+            const inputVal = document.getElementById('setting-google-client-id').value.trim();
+            window.workspaceConfig.googleClientId = inputVal;
+            localStorage.setItem('velora_google_client_id', inputVal);
+            await window.workspaceConfig.googleClientId;
+            await window.saveWorkspaceConfig();
+            window.showToast("Guardado", "Google Client ID actualizado en la configuración.", "success");
+        };
+
         window.renderTasks = () => {
-            const pendingList = document.getElementById('tasks-list-pending');
-            const completedList = document.getElementById('tasks-list-completed');
-            const overdueList = document.getElementById('tasks-list-overdue');
+            const q1List = document.getElementById('tasks-q1');
+            const q2List = document.getElementById('tasks-q2');
+            const q3List = document.getElementById('tasks-q3');
+            const q4List = document.getElementById('tasks-q4');
+            const completedGrid = document.getElementById('tasks-completed-grid');
 
-            pendingList.innerHTML = '';
-            completedList.innerHTML = '';
-            overdueList.innerHTML = '';
+            q1List.innerHTML = ''; q2List.innerHTML = ''; q3List.innerHTML = ''; q4List.innerHTML = ''; completedGrid.innerHTML = '';
 
-            let pCount = 0, cCount = 0, oCount = 0;
-            const now = new Date();
+            let cQ1 = 0, cQ2 = 0, cQ3 = 0, cQ4 = 0;
 
             window.visibleTasks.forEach(task => {
                 const taskDate = new Date(task.dueDate);
-                const isOverdue = taskDate < now && task.status === 'pending';
-                let currentStatus = task.status;
-
-                if (isOverdue) currentStatus = 'overdue';
-
                 const dateFormatted = taskDate.toLocaleDateString() + ' ' + taskDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 const targetContact = window.visibleContacts.find(c => c.id === task.contactId);
-                const contactInfo = targetContact ? `<div class="mt-2 text-xs bg-slate-950/40 border border-white/5 p-2 rounded-lg flex items-center justify-between"><span>Asociado a: <strong class="text-veloraAccent cursor-pointer hover:underline" onclick="window.openProfile('${targetContact.id}')">${targetContact.name}</strong></span><button onclick="window.openProfile('${targetContact.id}')" class="text-veloraAccent hover:underline font-black">EXP</button></div>` : '';
+                const contactInfo = targetContact ? `<div class="mt-2 text-[10px] bg-slate-955/40 p-1.5 rounded-lg">Asociado a: <strong class="text-veloraAccent cursor-pointer" onclick="window.openProfile('${targetContact.id}')">${targetContact.name}</strong></div>` : '';
 
-                // Temas de Prioridad para diseño premium (Monolith)
                 let cardBorder = 'border-veloraBorder';
-                let priorityLabel = '';
-                if (task.priority === 'Alta') {
-                    cardBorder = 'border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.1)]';
-                    priorityLabel = '<span class="text-[8px] font-black text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 uppercase tracking-widest">Prioridad Alta</span>';
-                } else if (task.priority === 'Media') {
-                    cardBorder = 'border-orange-400/40';
-                    priorityLabel = '<span class="text-[8px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20 uppercase tracking-widest">Prioridad Media</span>';
-                }
+                if (task.priority === 'Alta') cardBorder = 'border-red-500/40';
+                else if (task.priority === 'Media') cardBorder = 'border-orange-400/40';
+
+                const categoryObj = window.workspaceConfig.taskCategories.find(cat => cat.name === task.category);
+                const categoryEmoji = categoryObj ? categoryObj.emoji : '📂';
 
                 const taskCardHTML = `
-                    <div class="p-5 rounded-2xl bg-black/40 border ${cardBorder} hover:border-white/15 transition-all">
-                        <div class="flex justify-between items-start gap-4">
+                    <div class="p-4 rounded-xl bg-black/40 border ${cardBorder} hover:border-white/15 transition-all">
+                        <div class="flex justify-between items-start">
                             <div>
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="px-2 py-0.5 rounded text-[8px] font-black bg-veloraAccent/10 text-veloraAccent border border-veloraAccent/20 uppercase tracking-widest">${task.category || 'Tarea'}</span>
-                                    ${priorityLabel}
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="text-xs">${categoryEmoji}</span>
+                                    <span class="text-[9px] font-black uppercase text-gray-400 tracking-wider">${task.category || 'General'}</span>
                                 </div>
-                                <h4 class="text-sm font-black text-white uppercase tracking-wider">${task.title}</h4>
-                                <p class="text-xs text-gray-500 mt-1">${dateFormatted}</p>
+                                <h4 class="text-xs font-black text-white uppercase tracking-wider">${task.title}</h4>
+                                <p class="text-[9px] text-gray-500 mt-0.5">${dateFormatted}</p>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex gap-1">
                                 ${task.status === 'pending' ? `
-                                    <button onclick="markTaskComplete('${task.id}')" class="w-8 h-8 rounded-lg bg-emerald-500/10 text-veloraGreen hover:bg-emerald-500/20 border border-emerald-500/20 flex items-center justify-center transition" title="Completar"><i class="fas fa-check"></i></button>
-                                    <button onclick="editTask('${task.id}')" class="w-8 h-8 rounded-lg bg-blue-500/10 text-veloraAccent hover:bg-blue-500/20 border border-blue-500/20 flex items-center justify-center transition" title="Editar / Reagendar"><i class="fas fa-pen text-xs"></i></button>
+                                    <button onclick="markTaskComplete('${task.id}', event)" class="w-6 h-6 rounded-lg bg-emerald-500/10 text-veloraGreen hover:bg-emerald-500/20 border border-emerald-500/20 flex items-center justify-center transition cyber-btn"><i class="fas fa-check text-[10px]"></i></button>
+                                    <button onclick="editTask('${task.id}')" class="w-6 h-6 rounded-lg bg-blue-500/10 text-veloraAccent hover:bg-blue-500/20 border border-blue-500/20 flex items-center justify-center transition cyber-btn"><i class="fas fa-pen text-[9px]"></i></button>
                                 ` : ''}
-                                ${task.status === 'completed' ? `
-                                    <button onclick="reopenTask('${task.id}')" class="w-8 h-8 rounded-lg bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 border border-yellow-500/20 flex items-center justify-center transition" title="Reabrir Tarea"><i class="fas fa-undo-alt text-xs"></i></button>
-                                ` : ''}
-                                <button onclick="deleteTask('${task.id}')" class="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center transition" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+                                <button onclick="deleteTask('${task.id}')" class="w-6 h-6 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center transition cyber-btn"><i class="fas fa-trash-alt text-[9px]"></i></button>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-400 mt-3 leading-relaxed font-medium">${task.notes || 'Sin descripción.'}</p>
                         ${contactInfo}
                     </div>
                 `;
 
-                if (currentStatus === 'pending') {
-                    pendingList.innerHTML += taskCardHTML;
-                    pCount++;
-                } else if (currentStatus === 'completed') {
-                    completedList.innerHTML += taskCardHTML;
-                    cCount++;
+                if (task.status === 'completed') {
+                    completedGrid.innerHTML += `
+                        <div class="p-3 rounded-xl bg-slate-900/40 border border-veloraBorder flex justify-between items-center opacity-60">
+                            <div>
+                                <h5 class="text-xs font-bold text-gray-400 line-through">${task.title}</h5>
+                                <p class="text-[9px] text-gray-500">Completada</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="reopenTask('${task.id}')" class="w-6 h-6 rounded-lg bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 border border-yellow-500/20 flex items-center justify-center cyber-btn"><i class="fas fa-undo-alt text-[9px]"></i></button>
+                                <button onclick="deleteTask('${task.id}')" class="text-xs text-gray-500 hover:text-red-500 cyber-btn"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </div>
+                    `;
                 } else {
-                    overdueList.innerHTML += taskCardHTML;
-                    oCount++;
+                    const quad = task.quadrant || 'Q2';
+                    if (quad === 'Q1') { q1List.innerHTML += taskCardHTML; cQ1++; }
+                    else if (quad === 'Q2') { q2List.innerHTML += taskCardHTML; cQ2++; }
+                    else if (quad === 'Q3') { q3List.innerHTML += taskCardHTML; cQ3++; }
+                    else if (quad === 'Q4') { q4List.innerHTML += taskCardHTML; cQ4++; }
                 }
             });
 
-            // Actualizar insignias de conteo
-            document.getElementById('task-badge-pending').innerText = pCount;
-            document.getElementById('task-badge-completed').innerText = cCount;
-            document.getElementById('task-badge-overdue').innerText = oCount;
+            document.getElementById('task-badge-q1').innerText = cQ1;
+            document.getElementById('task-badge-q2').innerText = cQ2;
+            document.getElementById('task-badge-q3').innerText = cQ3;
+            document.getElementById('task-badge-q4').innerText = cQ4;
         };
 
         window.openTaskModal = (taskId = null) => {
             document.getElementById('task-form').reset();
             document.getElementById('form-task-id').value = '';
             
-            // Poblar dropdown de contactos en el selector
             const contactSelect = document.getElementById('task-form-contact');
             contactSelect.innerHTML = '<option value="none">Sin contacto asociado</option>';
             window.visibleContacts.forEach(c => {
@@ -1600,7 +2263,6 @@
             const mTitle = document.getElementById('task-modal-title');
 
             if (taskId) {
-                // Modo Edición / Reagendado (NUEVO)
                 const task = window.allTasks.find(t => t.id === taskId);
                 if (task) {
                     mTitle.innerHTML = '<i class="fas fa-calendar-alt text-yellow-500 mr-2"></i> Reagendar Tarea';
@@ -1608,7 +2270,8 @@
                     document.getElementById('task-form-title').value = task.title;
                     document.getElementById('task-form-date').value = task.dueDate;
                     document.getElementById('task-form-contact').value = task.contactId || 'none';
-                    document.getElementById('task-form-category').value = task.category || 'Llamada';
+                    document.getElementById('task-form-category').value = task.category || '';
+                    document.getElementById('task-form-quadrant').value = task.quadrant || 'Q2';
                     document.getElementById('task-form-priority').value = task.priority || 'Media';
                     document.getElementById('task-form-notes').value = task.notes || '';
                 }
@@ -1647,7 +2310,7 @@
             if (task) {
                 task.status = 'pending';
                 await window.saveTaskToDatabase(task);
-                window.showToast("Tarea Reabierta", "Recordatorio devuelto a pendientes.", "success");
+                window.showToast("Tarea Reabierta", "Regresada a la Matriz de Eisenhower.", "success");
             }
         };
 
@@ -1658,6 +2321,7 @@
             const date = document.getElementById('task-form-date').value;
             const contactId = document.getElementById('task-form-contact').value;
             const category = document.getElementById('task-form-category').value;
+            const quadrant = document.getElementById('task-form-quadrant').value;
             const priority = document.getElementById('task-form-priority').value;
             const notes = document.getElementById('task-form-notes').value.trim();
             const syncGoogle = document.getElementById('task-form-sync-google').checked;
@@ -1665,7 +2329,6 @@
             let taskObj;
 
             if (id) {
-                // Actualizar existente (NUEVO)
                 const existingTask = window.allTasks.find(t => t.id === id);
                 taskObj = {
                     ...existingTask,
@@ -1673,18 +2336,19 @@
                     dueDate: date,
                     contactId: contactId === 'none' ? null : contactId,
                     category,
+                    quadrant,
                     priority,
                     notes
                 };
             } else {
-                // Crear nueva tarea
                 const taskId = 't_' + Date.now();
                 taskObj = {
                     id: taskId,
-                    title: title,
+                    title,
                     dueDate: date,
                     contactId: contactId === 'none' ? null : contactId,
                     category,
+                    quadrant,
                     priority,
                     notes,
                     status: 'pending',
@@ -1694,22 +2358,21 @@
                 };
             }
 
-            // Intentar sincronizar con Google Calendar
             if (syncGoogle) {
                 if (!gapiInited || gapi.client.getToken() === null) {
-                    window.showToast("Google Calendar", "Debes autorizar primero en el botón superior.", "error");
+                    window.showToast("Google Calendar", "No has autenticado tu cuenta real. Pulsa el botón de Google en la barra superior.", "error");
                     return;
                 }
 
                 try {
-                    window.showToast("Sincronizando", "Creando evento en Google Calendar...", "info");
+                    window.showToast("Sincronizando", "Enviando evento al calendario real...", "info");
                     
                     const eventDate = new Date(date);
                     const endDate = new Date(eventDate.getTime() + 30 * 60 * 1000); 
 
                     const event = {
                         'summary': `[VELORA] ${title}`,
-                        'description': `${notes}\n\nCategoría: ${category}\nPrioridad: ${priority}`,
+                        'description': `${notes}\n\nCategoría: ${category}\nMatriz Eisenhower: ${quadrant}`,
                         'start': {
                             'dateTime': eventDate.toISOString(),
                             'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -1717,13 +2380,6 @@
                         'end': {
                             'dateTime': endDate.toISOString(),
                             'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
-                        },
-                        'reminders': {
-                            'useDefault': false,
-                            'overrides': [
-                                {'method': 'email', 'minutes': 24 * 60},
-                                {'method': 'popup', 'minutes': 15}
-                            ]
                         }
                     };
 
@@ -1739,33 +2395,298 @@
                         });
                     });
 
-                    window.showToast("Notificación Creada", "Cita añadida a Google Calendar exitosamente.", "success");
+                    window.showToast("Google Calendar", "Sincronizado con éxito en tu calendario real.", "success");
                 } catch (err) {
-                    console.error("GCal Sinc Error: ", err);
-                    window.showToast("Error Google Calendar", "No se pudo sincronizar la tarea, guardada localmente.", "error");
+                    window.showToast("Sincronización Fallida", "Se guardó de manera local. Comprueba tus permisos de Google.", "error");
                 }
             }
 
             await window.saveTaskToDatabase(taskObj);
-            window.showToast("Tarea Agendada", id ? "Recordatorio modificado." : "Recordatorio guardado.", "success");
+            
+            window.gainXP(20);
+
+            window.showToast("Éxito", id ? "Tarea modificada." : "Tarea guardada y +20 XP.", "success");
             window.closeTaskModal();
-            if (window.currentView === 'tasks') window.renderTasks();
-            if (window.currentView === 'dashboard') window.updateDashboard();
         };
 
-        window.markTaskComplete = async (taskId) => {
+        window.markTaskComplete = async (taskId, event) => {
             const task = window.visibleTasks.find(t => t.id === taskId);
             if (task) {
                 task.status = 'completed';
                 await window.saveTaskToDatabase(task);
-                window.showToast("Tarea Completada", "Buen trabajo agendando cierres.", "success");
+                
+                window.playSuccessSound();
+
+                if (event) {
+                    spawnParticles(event.clientX, event.clientY, '#10b981', 40);
+                }
+
+                window.gainXP(25);
+
+                window.showToast("¡Tarea Lograda!", "Felicidades, +25 XP ganados.", "success");
             }
         };
 
         window.deleteTask = async (taskId) => {
             window.showConfirm("Eliminar Tarea", "¿Estás seguro de cancelar y borrar este recordatorio?", async () => {
                 await window.deleteTaskFromDatabase(taskId);
-                window.showToast("Tarea Eliminada", "Recordatorio borrado con éxito.", "error");
+                window.showToast("Eliminada", "Tarea borrada.", "error");
+            });
+        };
+
+        // --------------------------------------------------------
+        // HÁBITOS & TEMPORIZADOR POMODORO
+        // --------------------------------------------------------
+        window.renderHabits = () => {
+            const habitsContainer = document.getElementById('habits-list-today');
+            habitsContainer.innerHTML = '';
+
+            const todayKey = new Date().toDateString();
+            const habits = window.allHabits.filter(h => h.ownerId === window.currentUser.uid);
+
+            if (habits.length === 0) {
+                habitsContainer.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-6">No has creado ningún hábito de consistencia. ¡Crea uno para empezar!</p>`;
+                document.getElementById('habits-today-percentage').innerText = "0%";
+                return;
+            }
+
+            let completedCount = 0;
+
+            habits.forEach(habit => {
+                const isCompletedToday = habit.history && habit.history[todayKey] === true;
+                if (isCompletedToday) completedCount++;
+
+                habitsContainer.innerHTML += `
+                    <div class="flex items-center justify-between p-4 bg-black/40 border border-veloraBorder rounded-2xl">
+                        <div class="flex items-center gap-4">
+                            <span class="text-2xl">${habit.emoji || '🌱'}</span>
+                            <div>
+                                <h4 class="text-xs font-black text-white uppercase tracking-wider">${habit.name}</h4>
+                                <p class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Consecutivos: ${habit.streak || 0} días</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="toggleHabit('${habit.id}', '${todayKey}', event)" class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition cyber-btn ${isCompletedToday ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-black/50 text-gray-400 border border-veloraBorder hover:text-white'}">
+                                ${isCompletedToday ? '<i class="fas fa-check mr-1.5"></i> Completado' : 'Marcar Listo'}
+                            </button>
+                            <button onclick="deleteHabit('${habit.id}')" class="text-xs text-gray-600 hover:text-red-400 p-2 cyber-btn"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const percentage = Math.round((completedCount / habits.length) * 100) || 0;
+            document.getElementById('habits-today-percentage').innerText = `${percentage}%`;
+        };
+
+        window.toggleHabit = async (habitId, todayKey, event) => {
+            const habit = window.allHabits.find(h => h.id === habitId);
+            if (habit) {
+                if (!habit.history) habit.history = {};
+                const currentStatus = habit.history[todayKey] || false;
+                habit.history[todayKey] = !currentStatus;
+
+                if (habit.history[todayKey] === true) {
+                    habit.streak = (habit.streak || 0) + 1;
+                    window.playSuccessSound();
+                    if (event) {
+                        spawnParticles(event.clientX, event.clientY, '#10b981', 35);
+                    }
+                    window.gainXP(15);
+                } else {
+                    habit.streak = Math.max(0, (habit.streak || 1) - 1);
+                }
+
+                await window.saveHabitToDatabase(habit);
+                window.showToast("Hábito Actualizado", "Consistencia guardada.", "success");
+            }
+        };
+
+        window.openAddHabitModal = () => {
+            document.getElementById('habit-form').reset();
+            const m = document.getElementById('habit-modal');
+            m.classList.remove('hidden');
+            setTimeout(() => {
+                m.classList.remove('opacity-0');
+                document.getElementById('habit-modal-box').classList.remove('scale-95');
+            }, 10);
+        };
+
+        window.closeAddHabitModal = () => {
+            const m = document.getElementById('habit-modal');
+            m.classList.add('opacity-0');
+            document.getElementById('habit-modal-box').classList.add('scale-95');
+            setTimeout(() => m.classList.add('hidden'), 300);
+        };
+
+        window.saveHabitForm = async (e) => {
+            e.preventDefault();
+            const emoji = document.getElementById('habit-form-emoji').value.trim();
+            const name = document.getElementById('habit-form-name').value.trim();
+
+            const hObj = {
+                id: 'h_' + Date.now(),
+                emoji,
+                name,
+                streak: 0,
+                history: {},
+                ownerId: window.currentUser.uid,
+                created: new Date().toISOString()
+            };
+
+            await window.saveHabitToDatabase(hObj);
+            window.gainXP(10);
+            window.showToast("Éxito", "Hábito creado correctamente y +10 XP.", "success");
+            window.closeAddHabitModal();
+        };
+
+        window.deleteHabit = (id) => {
+            window.showConfirm("Eliminar Hábito", "¿Quieres borrar este hábito?", async () => {
+                await window.deleteHabitFromDatabase(id);
+                window.showToast("Eliminado", "Hábito borrado.", "error");
+            });
+        };
+
+        // Pomodoro State Variables
+        let pomodoroTimer = null;
+        let pomodoroTimeLeft = 25 * 60; 
+        let pomodoroIsRunning = false;
+        let pomodoroMode = 'focus'; 
+
+        window.togglePomodoro = () => {
+            if (pomodoroIsRunning) {
+                clearInterval(pomodoroTimer);
+                pomodoroIsRunning = false;
+                document.getElementById('btn-pomodoro-start').innerText = 'Reanudar';
+                document.getElementById('btn-pomodoro-start').className = 'flex-1 py-3.5 bg-yellow-500 text-slate-950 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-yellow-600 transition cyber-btn';
+            } else {
+                pomodoroIsRunning = true;
+                document.getElementById('btn-pomodoro-start').innerText = 'Pausar';
+                document.getElementById('btn-pomodoro-start').className = 'flex-1 py-3.5 bg-slate-800 text-white border border-veloraBorder rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black/40 transition cyber-btn';
+                
+                pomodoroTimer = setInterval(() => {
+                    pomodoroTimeLeft--;
+                    updatePomodoroDisplay();
+
+                    if (pomodoroTimeLeft <= 0) {
+                        clearInterval(pomodoroTimer);
+                        pomodoroIsRunning = false;
+                        
+                        if (pomodoroMode === 'focus') {
+                            window.playLevelUpSound();
+                            window.gainXP(30);
+                            window.showToast("¡Enfoque Terminado!", "Toma un descanso y gana +30 XP.", "success");
+                            pomodoroMode = 'shortBreak';
+                            pomodoroTimeLeft = 5 * 60;
+                            document.getElementById('pomodoro-status-label').innerText = 'DESCANSO';
+                            document.getElementById('pomodoro-status-label').className = 'text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1';
+                        } else {
+                            window.playSuccessSound();
+                            window.showToast("Descanso Terminado", "Es hora de regresar al trabajo enfocado.", "success");
+                            pomodoroMode = 'focus';
+                            pomodoroTimeLeft = 25 * 60;
+                            document.getElementById('pomodoro-status-label').innerText = 'ENFOQUE';
+                            document.getElementById('pomodoro-status-label').className = 'text-[10px] font-black text-red-500 uppercase tracking-widest mt-1';
+                        }
+
+                        resetPomodoroUI();
+                    }
+                }, 1000);
+            }
+        };
+
+        window.resetPomodoro = () => {
+            clearInterval(pomodoroTimer);
+            pomodoroIsRunning = false;
+            pomodoroMode = 'focus';
+            pomodoroTimeLeft = 25 * 60;
+            document.getElementById('pomodoro-status-label').innerText = 'ENFOQUE';
+            document.getElementById('pomodoro-status-label').className = 'text-[10px] font-black text-red-500 uppercase tracking-widest mt-1';
+            resetPomodoroUI();
+        };
+
+        function resetPomodoroUI() {
+            document.getElementById('btn-pomodoro-start').innerText = 'Iniciar';
+            document.getElementById('btn-pomodoro-start').className = 'flex-1 py-3.5 bg-red-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-600 transition shadow-[0_0_15px_rgba(239,68,68,0.3)] cyber-btn';
+            updatePomodoroDisplay();
+        }
+
+        function updatePomodoroDisplay() {
+            const minutes = Math.floor(pomodoroTimeLeft / 60);
+            const seconds = pomodoroTimeLeft % 60;
+            document.getElementById('pomodoro-time').innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            const maxDuration = pomodoroMode === 'focus' ? 25 * 60 : 5 * 60;
+            const percentage = (pomodoroTimeLeft / maxDuration) * 502;
+            document.getElementById('pomodoro-progress').style.strokeDashoffset = 502 - percentage;
+        }
+
+        // --------------------------------------------------------
+        // PERSONALIZAR WORKSPACE (CATEGORÍAS Y ESTADOS DINÁMICOS)
+        // --------------------------------------------------------
+        window.renderCustomizer = () => {
+            const taskList = document.getElementById('custom-task-categories-list');
+            const intList = document.getElementById('custom-int-categories-list');
+
+            taskList.innerHTML = '';
+            intList.innerHTML = '';
+
+            window.workspaceConfig.taskCategories.forEach((cat, index) => {
+                taskList.innerHTML += `
+                    <div class="flex items-center justify-between p-3.5 bg-black/40 border border-veloraBorder rounded-2xl">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">${cat.emoji}</span>
+                            <span class="text-xs font-black text-white uppercase tracking-wider">${cat.name}</span>
+                        </div>
+                        <button onclick="deleteCustomCategory('task', ${index})" class="text-xs text-gray-500 hover:text-red-400 p-2 cyber-btn"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+            });
+
+            window.workspaceConfig.interactionStatuses.forEach((st, index) => {
+                intList.innerHTML += `
+                    <div class="flex items-center justify-between p-3.5 bg-black/40 border border-veloraBorder rounded-2xl">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">${st.emoji}</span>
+                            <span class="text-xs font-black text-white uppercase tracking-wider">${st.name}</span>
+                        </div>
+                        <button onclick="deleteCustomCategory('interaction', ${index})" class="text-xs text-gray-500 hover:text-red-400 p-2 cyber-btn"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+            });
+        };
+
+        window.handleAddCustomCategory = async (e, type) => {
+            e.preventDefault();
+            if (type === 'task') {
+                const emoji = document.getElementById('custom-task-emoji').value.trim();
+                const name = document.getElementById('custom-task-name').value.trim();
+                window.workspaceConfig.taskCategories.push({ emoji, name });
+                document.getElementById('custom-task-emoji').value = '';
+                document.getElementById('custom-task-name').value = '';
+            } else if (type === 'interaction') {
+                const emoji = document.getElementById('custom-int-emoji').value.trim();
+                const name = document.getElementById('custom-int-name').value.trim();
+                window.workspaceConfig.interactionStatuses.push({ emoji, name });
+                document.getElementById('custom-int-emoji').value = '';
+                document.getElementById('custom-int-name').value = '';
+            }
+
+            await window.saveWorkspaceConfig();
+            window.showToast("Configuración Actualizada", "Módulo guardado en la nube.", "success");
+            window.renderCustomizer();
+        };
+
+        window.deleteCustomCategory = async (type, index) => {
+            window.showConfirm("Eliminar Parámetro", "¿Seguro de borrar esta categoría? Afectará a los selects del sistema.", async () => {
+                if (type === 'task') {
+                    window.workspaceConfig.taskCategories.splice(index, 1);
+                } else if (type === 'interaction') {
+                    window.workspaceConfig.interactionStatuses.splice(index, 1);
+                }
+                await window.saveWorkspaceConfig();
+                window.showToast("Módulo Actualizado", "Configuración de categorías refrescada.", "error");
+                window.renderCustomizer();
             });
         };
 
@@ -1781,11 +2702,10 @@
             const updated = { ...window.currentUser, name: n, phone: p, position: b };
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', window.currentUser.uid), updated);
             
-            // Actualizar Local
             window.currentUser = updated;
             localStorage.setItem('velora_auth_session', JSON.stringify(updated));
             window.showToast("Perfil Actualizado", "Tus datos han sido guardados.", "success");
-            filterDataAndRender(); // Refresca UI
+            filterDataAndRender();
         };
 
         window.handleProfileImageUpload = (e) => {
@@ -1821,7 +2741,6 @@
             allThemes.forEach(t => body.classList.remove(t));
             body.classList.add(themeClass);
             
-            // Resaltar botón en settings
             document.querySelectorAll('.theme-btn').forEach(btn => {
                 btn.classList.remove('ring-4', 'ring-veloraAccent', 'border-transparent');
                 btn.classList.add('border-veloraBorder');
@@ -1860,7 +2779,11 @@
             e.preventDefault(); const id = document.getElementById('form-contact-id').value;
             const cObj = id ? window.visibleContacts.find(x => x.id === id) : { id: 'id_' + Date.now(), calls: [], ownerId: window.currentUser.uid, ownerName: window.currentUser.name };
             cObj.name = document.getElementById('form-name').value; cObj.type = document.getElementById('form-type').value; cObj.phone = document.getElementById('form-phone').value; cObj.email = document.getElementById('form-email').value; cObj.address = document.getElementById('form-address').value;
-            await window.saveContactToDatabase(cObj); window.showToast("Éxito", id ? "Ficha Actualizada" : "Ficha Creada", "success"); window.closeContactModal();
+            await window.saveContactToDatabase(cObj); 
+            
+            window.gainXP(20);
+
+            window.showToast("Éxito", id ? "Ficha Actualizada" : "Ficha Creada y +20 XP", "success"); window.closeContactModal();
         };
 
         window.editCurrentContact = () => { if(window.currentContactId) window.openContactModal(window.currentContactId); };
@@ -1875,7 +2798,7 @@
             
             window.allUsers.forEach(u => {
                 const uC = window.allContacts.filter(c => c.ownerId === u.uid);
-                const rB = u.role === 'admin' ? '<span class="text-purple-400 bg-purple-500/10 px-3 py-1.5 rounded-lg text-[9px] font-black border border-purple-500/30 uppercase tracking-widest">ADMIN</span>' : '<span class="text-veloraAccent bg-blue-500/10 px-3 py-1.5 rounded-lg text-[9px] font-black border border-blue-500/30 uppercase tracking-widest">AGENTE</span>';
+                const rB = u.role === 'admin' ? '<span class="text-purple-400 bg-purple-500/10 px-3 py-1.5 rounded-lg text-[9px] font-black border border-purple-500/30 uppercase tracking-widest">ADMIN</span>' : '<span class="text-veloraAccent bg-blue-500/10 px-3 py-1.5 rounded-lg text-[9px] font-black border border-blue-500/30 uppercase tracking-widest">WORKSPACE AGENT</span>';
                 tb.innerHTML += `
                     <tr class="hover:bg-white/5 transition-colors">
                         <td class="py-5 px-8">
@@ -1889,8 +2812,8 @@
                         <td class="py-5 px-8 text-center text-veloraGreen font-bold">${uC.filter(c => c.type === 'client').length}</td>
                         <td class="py-5 px-8 text-right">
                             <div class="flex justify-end gap-2">
-                                <button onclick="window.openUserModal('${u.uid}')" class="w-8 h-8 flex items-center justify-center bg-black/40 text-gray-400 hover:text-purple-400 rounded-lg border border-veloraBorder transition" title="Editar"><i class="fas fa-pen text-xs"></i></button>
-                                ${u.uid !== window.currentUser.uid ? `<button onclick="window.deleteUser('${u.uid}')" class="w-8 h-8 flex items-center justify-center bg-black/40 text-gray-400 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 rounded-lg border border-veloraBorder transition"><i class="fas fa-trash text-xs"></i></button>` : '<span class="text-[10px] text-purple-400 font-black px-2 flex items-center">TÚ</span>'}
+                                <button onclick="window.openUserModal('${u.uid}')" class="w-8 h-8 flex items-center justify-center bg-black/40 text-gray-400 hover:text-purple-400 rounded-lg border border-veloraBorder transition cyber-btn" title="Editar"><i class="fas fa-pen text-xs"></i></button>
+                                ${u.uid !== window.currentUser.uid ? `<button onclick="window.deleteUser('${u.uid}')" class="w-8 h-8 flex items-center justify-center bg-black/40 text-gray-400 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 rounded-lg border border-veloraBorder transition cyber-btn"><i class="fas fa-trash text-xs"></i></button>` : '<span class="text-[10px] text-purple-400 font-black px-2 flex items-center">TÚ</span>'}
                             </div>
                         </td>
                     </tr>
