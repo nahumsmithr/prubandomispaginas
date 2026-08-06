@@ -2,2963 +2,1081 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Velora | Premium CRM & Workspace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>La Papa Caliente | App ERP & POS</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- jsPDF & AutoTable -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
-    <!-- Chart.js -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Google Identity Services & GAPI para Google Calendar -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://apis.google.com/js/api.js" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> <!-- LIBRERIA PDF AÑADIDA -->
 
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        veloraDark: '#080c14',
-                        veloraCard: '#0f1622',
-                        veloraBorder: 'rgba(255,255,255,0.08)',
-                        veloraAccent: '#3b82f6',
-                        veloraGreen: '#10b981',
-                        veloraSidebar: '#05080f',
-                    },
-                    boxShadow: {
-                        'glow': '0 0 20px rgba(59, 130, 246, 0.25)',
-                        'glow-green': '0 0 20px rgba(16, 185, 129, 0.3)',
-                        'glow-purple': '0 0 20px rgba(168, 85, 247, 0.3)',
-                    }
-                }
+        window.tailwind = {
+            config: {
+                theme: { extend: { colors: { papa: { black: '#0a0a0a', dark: '#141414', yellow: '#FFB800', fire: '#FF3D00' } }, fontFamily: { sans: ['Montserrat', 'sans-serif'], ticket: ['Space Mono', 'monospace'] } } }
             }
-        }
+        };
     </script>
-    
+
     <style>
+        body { background-color: #050505; color: #ffffff; overflow: hidden; font-family: 'Montserrat', sans-serif; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #FF3D00; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        .glass-card { 
-            background-color: rgba(15, 22, 34, 0.85); 
-            border: 1px solid rgba(255, 255, 255, 0.06); 
-            backdrop-filter: blur(24px); 
-            -webkit-backdrop-filter: blur(24px);
-        }
-        
-        .glass-panel { 
-            background: rgba(15, 22, 34, 0.7); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            backdrop-filter: blur(20px); 
-        }
-        
-        .text-glow { text-shadow: 0 0 12px rgba(59, 130, 246, 0.6); }
-        .text-glow-green { text-shadow: 0 0 12px rgba(16, 185, 129, 0.6); }
-        
-        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(10px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
+        /* SAFE AREAS Y ACELERACION TACTIL iOS */
+        @supports (-webkit-touch-callout: none) { input, select, textarea { font-size: 16px !important; } }
+        .safe-padding-bottom { padding-bottom: max(env(safe-area-inset-bottom), 1rem); }
+        .safe-padding-top { padding-top: max(env(safe-area-inset-top), 0.5rem); }
+        button, a, input, select { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
-        /* --- SISTEMA DE FONDOS DINÁMICOS --- */
-        .theme-monolith { background: linear-gradient(to bottom right, #080c14, #04060a) !important; }
-        .theme-cyberpunk { background: linear-gradient(135deg, #05080f 0%, #1e0730 50%, #02040a 100%) !important; }
-        .theme-emerald { background: radial-gradient(circle at top right, #022c22, #020617, #000000) !important; }
-        .theme-crimson { background: radial-gradient(circle at top left, #300303, #020617, #000000) !important; }
-        .theme-nebula { background: radial-gradient(ellipse at center, #2e1065 0%, #080c14 60%, #000000 100%) !important; }
-        .theme-aurora {
-            background: linear-gradient(45deg, #05080f, #12102e, #022c22, #05080f) !important;
-            background-size: 400% 400% !important;
-            animation: gradientBG 15s ease infinite !important;
-        }
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+        .toast-custom { opacity: 0; transform: translateX(100%); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 99999; }
+        .toast-custom.show { opacity: 1; transform: translateX(0); }
+        .modal-overlay { opacity: 0; pointer-events: none; transition: all 0.3s ease; backdrop-filter: blur(8px); z-index: 500; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content { transform: scale(0.95) translateY(-20px); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-overlay.active .modal-content { transform: scale(1) translateY(0); opacity: 1; }
+        
+        .sidebar-btn.active { background-color: rgba(255, 61, 0, 0.15); color: #FF3D00; border-left: 4px solid #FF3D00; }
+        .kds-card.time-ok { border-top: 4px solid #22c55e; }
+        .kds-card.time-warn { border-top: 4px solid #eab308; }
+        .kds-card.time-danger { border-top: 4px solid #ef4444; animation: pulse-border 2s infinite; }
+        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        .cyber-btn {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        /* --- LOGIN STYLES --- */
+        #app-login-screen {
+            position: fixed; inset: 0; z-index: 999999;
+            background: linear-gradient(135deg, rgba(5, 5, 5, 0.9) 0%, rgba(15, 8, 5, 0.95) 100%), url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1920&auto=format&fit=crop') center/cover no-repeat;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease, transform 0.5s ease; overflow-y: auto; overflow-x: hidden; padding: 1.5rem; min-height: 100dvh;
         }
-        .cyber-btn:active {
-            transform: scale(0.95);
+        #app-login-screen.hidden-auth { opacity: 0; transform: scale(1.02); pointer-events: none; }
+        .login-glass-card { width: 100%; max-width: 380px; box-sizing: border-box; background: rgba(20, 20, 20, 0.5); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 61, 0, 0.2); border-radius: 2rem; padding: 2.5rem 2rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; gap: 1.5rem; animation: slideUpFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(40px); filter: blur(5px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+
+        .login-logo-container { position: relative; width: 110px; height: 110px; margin: 0 auto; }
+        .login-logo-img { position: relative; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.8); z-index: 10; background-color: #111; }
+        .login-title { color: #ffffff; font-size: 1.8rem; font-weight: 800; text-align: center; margin-top: -0.5rem; }
+        .login-input-group { position: relative; width: 100%; display: flex; align-items: center; }
+        .login-input-icon { position: absolute; left: 1.2rem; color: #666; font-size: 1.3rem; }
+        .login-input { width: 100%; box-sizing: border-box; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); color: white; padding: 1.1rem 1.1rem 1.1rem 3.2rem; border-radius: 1rem; font-size: 1rem; outline: none; transition: all 0.3s ease; }
+        .login-input:focus { border-color: #FF3D00; background: rgba(0, 0, 0, 0.7); }
+        .login-btn-submit { width: 100%; background: linear-gradient(135deg, #FF3D00 0%, #d83400 100%); color: white; font-weight: 700; text-transform: uppercase; padding: 1.1rem; border-radius: 1rem; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+
+        /* IMPRESION TERMICA */
+        #thermal-print-area { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            body.thermal-printing #thermal-print-area, body.thermal-printing #thermal-print-area * { visibility: visible; color: black !important; }
+            body.thermal-printing #thermal-print-area { display: block !important; position: absolute; left: 0; top: 0; width: 80mm; padding: 0 2mm; background: white !important; margin: 0; }
+            body.thermal-printing { background-color: white; }
+            @page { margin: 0; }
         }
     </style>
 </head>
-<body class="bg-veloraDark text-gray-100 font-sans h-screen flex overflow-hidden theme-monolith relative" id="app-body">
+<body class="antialiased selection:bg-papa-fire selection:text-white">
 
-    <canvas id="bg-space-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-40"></canvas>
+    <audio id="kds-alert" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
+    <div id="toast-container" class="fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
 
-    <!-- ========================================== -->
-    <!-- 1. GLOBAL LOADER                           -->
-    <!-- ========================================== -->
-    <div id="global-loader" class="fixed inset-0 z-[200] bg-veloraDark flex flex-col items-center justify-center transition-opacity duration-500">
-        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="animate-pulse mb-4 drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#3b82f6"/>
-            <path d="M2 17L12 22L22 17" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M2 12L12 17L22 12" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-        <div class="text-white font-black tracking-widest uppercase text-sm">VELORA WORKSPACE</div>
-        <div class="text-gray-500 text-xs mt-2">Cargando módulos de sincronización avanzada...</div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- 2. PANTALLA DE LOGIN / REGISTRO            -->
-    <!-- ========================================== -->
-    <div id="auth-screen" class="fixed inset-0 z-[100] bg-veloraDark flex flex-col items-center justify-center hidden">
-        <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-veloraAccent/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none"></div>
-
-        <div class="w-full max-w-md glass-panel p-10 rounded-[2rem] shadow-2xl relative z-10 mx-4 border border-white/10">
-            <div class="text-center mb-10 flex flex-col items-center">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="mb-4 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#3b82f6"/>
-                    <path d="M2 17L12 22L22 17" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
-                </svg>
-                <h1 class="text-3xl font-black text-white tracking-[0.2em] uppercase">VELORA</h1>
-                <p class="text-[10px] text-veloraAccent font-bold tracking-[0.3em] mt-2 uppercase" id="auth-subtitle">Workspace</p>
-            </div>
-
-            <form id="auth-form" class="space-y-6" onsubmit="handleAuth(event)">
-                <div id="register-fields" class="hidden space-y-6">
-                    <div>
-                        <div class="relative">
-                            <i class="fas fa-user absolute left-4 top-4 text-gray-500"></i>
-                            <input type="text" id="auth-name" class="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-veloraBorder rounded-2xl text-white text-sm focus:border-veloraAccent focus:bg-slate-900/80 outline-none transition font-medium" placeholder="Nombre Completo">
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="relative">
-                        <i class="fas fa-envelope absolute left-4 top-4 text-gray-500"></i>
-                        <input type="text" id="auth-email" class="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-veloraBorder rounded-2xl text-white text-sm focus:border-veloraAccent focus:bg-slate-900/80 outline-none transition font-medium" placeholder="Correo de Acceso" required>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="relative">
-                        <i class="fas fa-lock absolute left-4 top-4 text-gray-500"></i>
-                        <input type="password" id="auth-password" class="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-veloraBorder rounded-2xl text-white text-sm focus:border-veloraAccent focus:bg-slate-900/80 outline-none transition font-medium" placeholder="Clave de Acceso" required>
-                    </div>
-                </div>
-
-                <button type="submit" id="auth-btn" class="w-full py-4 mt-2 bg-white text-veloraDark rounded-2xl font-black tracking-widest uppercase text-xs hover:bg-gray-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)] cyber-btn">
-                    Ingresar al Workspace
-                </button>
-            </form>
-
-            <div class="mt-8 text-center">
-                <button type="button" onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-xs text-gray-400 hover:text-white font-medium transition">
-                    ¿No tienes cuenta? <span class="text-veloraAccent font-bold">Regístrate aquí</span>
-                </button>
+    <div id="app-login-screen">
+        <div class="login-glass-card">
+            <div class="login-logo-container"><img id="login-brand-logo" src="https://placehold.co/150x150/FF3D00/FFF?text=PC" class="login-logo-img" alt="Logo"></div>
+            <h1 class="login-title">La Papa Caliente<br><span class="text-sm text-papa-fire uppercase tracking-widest">App Administrativa</span></h1>
+            <div class="flex flex-col gap-4 w-full">
+                <div class="login-input-group"><input type="text" id="epic-user" class="login-input" placeholder="Usuario" autocomplete="off" autocapitalize="off"><i class="ph-bold ph-user login-input-icon"></i></div>
+                <div class="login-input-group"><input type="password" id="epic-pass" class="login-input" placeholder="Contraseña" autocomplete="off" onkeypress="if(event.key === 'Enter') window.handleEpicLogin()"><i class="ph-bold ph-lock-key login-input-icon"></i></div>
+                <button onclick="window.handleEpicLogin()" class="login-btn-submit">Ingresar <i class="ph-bold ph-sign-in"></i></button>
             </div>
         </div>
     </div>
 
-    <!-- SIDEBAR -->
-    <aside id="app-sidebar" class="w-[280px] bg-veloraSidebar flex flex-col flex-shrink-0 z-40 border-r border-veloraBorder hidden md:flex relative h-full">
-        <!-- Logo Area -->
-        <div class="p-8 border-b border-veloraBorder flex items-center justify-center gap-3 relative overflow-hidden bg-gradient-to-b from-slate-900/50 to-transparent">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-glow">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#3b82f6"/>
-                <path d="M2 17L12 22L22 17" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
-            </svg>
-            <span class="text-2xl font-black tracking-[0.15em] text-white mt-1">VELORA</span>
-        </div>
-
-        <!-- GAMIFICACIÓN: Tarjeta de Nivel RPG -->
-        <div class="mx-5 mt-6 p-4 rounded-2xl bg-gradient-to-br from-purple-900/40 to-slate-900/60 border border-purple-500/20 shadow-glow-purple">
-            <div class="flex justify-between items-center mb-1">
-                <span class="text-[10px] font-black tracking-widest text-purple-400 uppercase">SISTEMA CORTEX</span>
-                <span class="text-xs font-black text-white bg-purple-600 px-2 py-0.5 rounded-md" id="rpg-level-badge">LV 1</span>
-            </div>
-            <p class="text-[11px] font-bold text-gray-300">Rango: <span class="text-white font-black" id="rpg-rank-text">Operador Novato</span></p>
-            <div class="mt-3">
-                <div class="flex justify-between text-[9px] text-gray-400 font-bold mb-1">
-                    <span>XP TOTAL: <span id="rpg-xp-text">0</span>/100</span>
-                    <span id="rpg-streak-days">🔥 0 días</span>
-                </div>
-                <div class="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
-                    <div id="rpg-xp-bar" class="h-full bg-gradient-to-r from-purple-500 to-veloraAccent w-[0%] transition-all duration-500"></div>
-                </div>
-            </div>
-        </div>
+    <!-- MAIN APP DASHBOARD -->
+    <div id="adminDashboard" class="fixed inset-0 z-[300] bg-[#070707] hidden flex-col transition-all duration-300 opacity-0 pointer-events-none h-[100dvh]">
         
-        <nav class="flex-1 py-6 px-5 space-y-2 overflow-y-auto">
-            <p class="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 mb-3">Principal</p>
-            <button onclick="showView('dashboard')" id="nav-dashboard" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl text-white bg-slate-800/60 shadow-glow font-bold transition-all border border-veloraBorder cyber-btn">
-                <i class="fas fa-chart-pie w-5 text-center text-lg text-veloraAccent"></i> Dashboard
-            </button>
-            <button onclick="showView('leads')" id="nav-leads" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent cyber-btn">
-                <i class="fas fa-filter w-5 text-center text-lg text-orange-500"></i> Directorio/CRM <span class="ml-auto text-[10px] bg-slate-800 px-2 py-0.5 rounded-md" id="sidebar-leads-count">0</span>
-            </button>
-            <button onclick="showView('tasks')" id="nav-tasks" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent cyber-btn">
-                <i class="fas fa-calendar-check w-5 text-center text-lg text-yellow-500"></i> Eisenhower Matrix <span class="ml-auto text-[10px] bg-slate-800 px-2 py-0.5 rounded-md text-yellow-500 font-black" id="sidebar-tasks-count">0</span>
-            </button>
-            <button onclick="showView('habits')" id="nav-habits" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent cyber-btn">
-                <i class="fas fa-seedling w-5 text-center text-lg text-emerald-400"></i> Hábitos & Pomodoro
-            </button>
-            
-            <p class="text-[10px] font-bold text-purple-500/70 uppercase tracking-widest px-3 pt-6 mb-3">Avanzado</p>
-            <button onclick="showView('customizer')" id="nav-customizer" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent cyber-btn">
-                <i class="fas fa-sliders-h w-5 text-center text-lg text-purple-400"></i> Personalizar Workspace
-            </button>
-            
-            <div id="admin-nav-section" class="hidden pt-6">
-                <p class="text-[10px] font-bold text-purple-500/70 uppercase tracking-widest px-3 mb-3">Workspace Admin</p>
-                <button onclick="showView('admin')" id="nav-admin" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-purple-900/20 text-gray-400 hover:text-purple-300 font-bold transition-all border border-transparent cyber-btn">
-                    <i class="fas fa-shield-alt w-5 text-center text-lg text-purple-500"></i> Panel de Control
-                </button>
-            </div>
-
-            <div class="pt-6">
-                <p class="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 mb-3">Preferencias</p>
-                <button onclick="showView('settings')" id="nav-settings" class="w-full text-left px-4 py-3.5 flex items-center gap-4 rounded-xl hover:bg-slate-800/40 text-gray-400 hover:text-white font-bold transition-all border border-transparent cyber-btn">
-                    <i class="fas fa-cog w-5 text-center text-lg text-gray-400"></i> Configuración
-                </button>
-            </div>
-        </nav>
-        
-        <!-- Perfil inferior -->
-        <div class="p-6 border-t border-veloraBorder bg-black/20">
+        <!-- HEADER APP -->
+        <div class="min-h-[4rem] border-b border-white/10 flex items-center justify-between px-4 sm:px-6 bg-[#0f0f0f] shrink-0 no-print z-[350] relative shadow-md safe-padding-top">
             <div class="flex items-center gap-3">
-                <img id="sidebar-avatar" src="" alt="Avatar" class="w-12 h-12 rounded-xl object-cover border border-veloraBorder hidden bg-slate-800">
-                <div id="sidebar-avatar-fallback" class="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 border border-veloraBorder flex items-center justify-center text-sm font-black text-white shadow-inner">U</div>
-                
-                <div class="flex-1 overflow-hidden">
-                    <p class="text-sm font-bold text-white truncate" id="user-display-name">Usuario</p>
-                    <p class="text-[10px] text-veloraAccent font-black uppercase tracking-wider" id="user-display-role">Normal</p>
-                </div>
+                <button onclick="window.toggleAdminSidebar()" class="md:hidden text-white text-3xl hover:text-papa-fire transition p-2 -ml-2 z-[450]"><i class="ph ph-list pointer-events-none"></i></button>
+                <div class="w-8 h-8 rounded bg-papa-fire/20 border border-papa-fire flex items-center justify-center"><i class="ph-fill ph-storefront text-papa-fire"></i></div>
+                <span class="font-black text-sm uppercase text-white truncate hidden sm:block">App Central</span>
+                <span id="role-badge" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 text-[9px] px-2 py-0.5 rounded font-bold uppercase shrink-0">Admin</span>
+                <span id="hw-status-badge" class="bg-purple-500/10 text-purple-400 border border-purple-500/30 text-[9px] px-2 py-0.5 rounded font-bold uppercase shrink-0 hidden items-center gap-1"><i class="ph-bold ph-device-mobile"></i> Modo App</span>
             </div>
-            <button onclick="openContactModal()" class="w-full mt-6 py-3.5 bg-white text-veloraDark hover:bg-gray-200 rounded-xl font-black uppercase text-[11px] tracking-widest shadow-glow transition-all flex items-center justify-center gap-2 cyber-btn">
-                <i class="fas fa-plus"></i> Nuevo Contacto
-            </button>
+            <button onclick="window.logoutAdmin()" class="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-colors shrink-0 flex items-center gap-2"><i class="ph-bold ph-sign-out"></i> <span class="hidden sm:inline">Salir</span></button>
         </div>
-    </aside>
-
-    <!-- MOBILE NAV BTN -->
-    <button onclick="toggleMobileMenu()" class="md:hidden absolute top-4 left-4 z-50 p-2.5 bg-veloraCard rounded-lg border border-veloraBorder shadow text-gray-300 hover:text-white transition cyber-btn">
-        <i class="fas fa-bars text-lg"></i>
-    </button>
-
-    <!-- MAIN CONTENT AREA -->
-    <main class="flex-1 flex flex-col h-screen overflow-hidden relative w-full bg-transparent hidden z-10" id="app-main-view">
         
-        <!-- HEADER SUPERIOR -->
-        <header class="px-8 py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 z-10 pl-16 md:pl-8 bg-gradient-to-b from-veloraDark/80 to-transparent">
-            <div>
-                <h2 id="topbar-title" class="text-3xl font-black text-white tracking-tight">Executive Overview</h2>
-                <p id="topbar-subtitle" class="text-xs text-veloraAccent font-bold uppercase tracking-widest mt-1">Métricas en tiempo real</p>
-            </div>
-            
-            <div class="flex items-center gap-4 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+        <!-- SIDEBAR & CONTENT -->
+        <div class="flex-1 flex overflow-hidden relative w-full">
+            <div id="sidebar-overlay" onclick="window.toggleAdminSidebar()" class="fixed inset-0 bg-black/80 z-[200] hidden md:hidden backdrop-blur-sm transition-opacity"></div>
+
+            <aside class="fixed inset-y-0 left-0 md:relative transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-[250] md:z-10 w-64 bg-[#0a0a0a] border-r border-white/10 flex flex-col py-6 overflow-y-auto no-print shadow-2xl md:shadow-none safe-padding-bottom" id="erp-sidebar">
+                <div class="flex justify-between items-center px-4 mb-4 md:hidden">
+                    <h3 class="font-black text-white uppercase text-xs">Menú</h3>
+                    <button type="button" onclick="window.toggleAdminSidebar()" class="text-zinc-500 hover:text-white bg-zinc-900 p-2 rounded-full"><i class="ph-bold ph-x text-lg pointer-events-none"></i></button>
+                </div>
+
+                <div class="space-y-1 px-4 admin-only">
+                    <p class="text-[9px] font-black uppercase text-zinc-600 tracking-widest mb-3 ml-2">General</p>
+                    <button onclick="window.switchAdminPanel('dashboard')" id="btn-side-dashboard" class="sidebar-btn active w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs uppercase text-left transition-all"><i class="ph-bold ph-squares-four text-lg"></i> Resumen</button>
+                    <button onclick="window.switchAdminPanel('terminal')" id="btn-side-terminal" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs uppercase text-left transition-all text-papa-yellow"><i class="ph-bold ph-desktop text-lg"></i> Terminal POS</button>
+                    <button onclick="window.switchAdminPanel('reports')" id="btn-side-reports" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs uppercase text-left transition-all"><i class="ph-bold ph-chart-pie text-lg text-green-400"></i> Reportes Z (PDF)</button>
+                </div>
+                <div class="space-y-1 px-4 mt-8">
+                    <p class="text-[9px] font-black uppercase text-zinc-600 tracking-widest mb-3 ml-2">Operaciones</p>
+                    <button onclick="window.switchAdminPanel('kds')" id="btn-side-kds" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs uppercase text-left transition-all"><i class="ph-bold ph-cooking-pot text-lg"></i> Monitor KDS</button>
+                    <button onclick="window.switchAdminPanel('orders')" id="btn-side-orders" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs uppercase text-left transition-all"><i class="ph-bold ph-receipt text-lg"></i> Órdenes Activas</button>
+                    <button onclick="window.switchAdminPanel('pos')" id="btn-side-pos" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs uppercase text-left transition-all admin-only"><i class="ph-bold ph-cash-register text-lg"></i> Control de Caja</button>
+                </div>
+                <div class="space-y-1 px-4 mt-8 admin-only">
+                    <p class="text-[9px] font-black uppercase text-zinc-600 tracking-widest mb-3 ml-2">Inventario & Web</p>
+                    <button onclick="window.switchAdminPanel('inventory')" id="btn-side-inventory" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs uppercase text-left transition-all"><i class="ph-bold ph-hamburger text-lg"></i> Menú App</button>
+                    <button onclick="window.switchAdminPanel('ingredients')" id="btn-side-ingredients" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs uppercase text-left transition-all"><i class="ph-bold ph-scales text-lg"></i> Stock Insumos</button>
+                    <button onclick="window.switchAdminPanel('gallery')" id="btn-side-gallery" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs uppercase text-left transition-all"><i class="ph-bold ph-image text-lg"></i> Galería Web</button>
+                    <button onclick="window.switchAdminPanel('settings')" id="btn-side-settings" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs uppercase text-left transition-all"><i class="ph-bold ph-gear text-lg"></i> Ajustes / Hardware</button>
+                </div>
+            </aside>
+
+            <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 bg-[#050505] relative safe-padding-bottom w-full" id="print-area">
                 
-                <!-- SINTETIZADOR ZEN DRONE DE FOCUS -->
-                <button onclick="toggleAmbientDrone()" id="btn-zen-drone" class="px-4 py-2.5 bg-slate-900/60 border border-purple-500/20 text-purple-400 rounded-full flex items-center gap-2 text-[10px] font-black tracking-widest uppercase hover:text-white hover:bg-slate-800 transition shadow-sm backdrop-blur-md cyber-btn" title="Activa un sintetizador espacial de fondo para focus">
-                    <i class="fas fa-wave-square animate-pulse"></i> <span id="zen-drone-text">Zen Ambient: Off</span>
-                </button>
-
-                <!-- Sincronización Google Calendar -->
-                <button id="btn-google-auth" onclick="handleGoogleAuth()" class="px-4 py-2.5 bg-slate-900/60 border border-veloraBorder text-gray-300 rounded-full flex items-center gap-2 text-[10px] font-black tracking-widest uppercase hover:text-white hover:bg-slate-800 transition shadow-sm backdrop-blur-md cyber-btn">
-                    <i class="fab fa-google text-red-500"></i> <span id="google-auth-text">Google Cal Desconectado</span>
-                </button>
-
-                <!-- ESTADO DE CONEXIÓN FIREBASE -->
-                <div id="db-status-badge" class="px-4 py-2.5 bg-slate-900/60 border border-veloraBorder text-red-500 rounded-full flex items-center gap-2 text-[10px] font-black tracking-widest transition-all shadow-sm backdrop-blur-md">
-                    <span class="relative flex h-2.5 w-2.5">
-                        <span id="db-status-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span id="db-status-dot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                    </span>
-                    <span id="db-status-text">OFFLINE</span>
-                </div>
-
-                <!-- MENÚ DE HERRAMIENTAS GLOBALES -->
-                <div class="relative group hidden sm:block">
-                    <button class="px-5 py-2.5 glass-card text-white rounded-full hover:bg-white/10 flex items-center gap-2 transition text-xs font-bold tracking-widest uppercase cyber-btn">
-                        <i class="fas fa-bolt text-veloraAccent"></i> Acciones <i class="fas fa-chevron-down text-[10px] ml-1 opacity-50"></i>
-                    </button>
-                    <div class="absolute right-0 mt-2 w-64 glass-card rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden py-2">
-                        
-                        <label for="csv-upload" class="cursor-pointer w-full text-left px-5 py-3 hover:bg-white/5 flex items-center gap-3 text-sm font-medium text-gray-300 transition m-0 block">
-                            <div class="w-8 h-8 rounded-lg bg-veloraGreen/10 flex items-center justify-center text-veloraGreen"><i class="fas fa-file-import"></i></div> Importar Excel (CSV)
-                        </label>
-                        <input type="file" id="csv-upload" accept=".csv" onchange="importCSV(event)" class="hidden">
-                        
-                        <button onclick="exportCSV()" class="w-full text-left px-5 py-3 hover:bg-white/5 flex items-center gap-3 text-sm font-medium text-gray-300 transition">
-                            <div class="w-8 h-8 rounded-lg bg-veloraAccent/10 flex items-center justify-center text-veloraAccent"><i class="fas fa-file-export"></i></div> Exportar Datos (CSV)
-                        </button>
-
-                        <button onclick="openReportModal()" class="w-full text-left px-5 py-3 hover:bg-white/5 flex items-center gap-3 text-sm font-medium text-gray-300 transition">
-                            <div class="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500"><i class="fas fa-file-pdf"></i></div> Reporte General PDF
-                        </button>
-                        
-                        <div class="h-px w-full bg-veloraBorder my-2"></div>
-
-                        <button onclick="performLogout()" class="w-full text-left px-5 py-3 hover:bg-red-500/10 hover:text-red-400 flex items-center gap-3 text-sm font-medium text-gray-400 transition">
-                            <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500"><i class="fas fa-power-off"></i></div> Cerrar Sesión
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- CAJA DE CAPTURA RÁPIDA (MIND DUMP) -->
-        <div class="px-8 mb-4">
-            <div class="glass-card rounded-2xl p-1 px-4 flex items-center gap-4 border border-white/5 focus-within:border-veloraAccent/40 transition-colors shadow-glow">
-                <i class="fas fa-brain text-purple-400 animate-pulse"></i>
-                <input type="text" id="mind-dump-input" onkeydown="handleMindDump(event)" placeholder="¿Qué tienes en mente? Escríbelo y presiona Enter para crear una tarea rápida..." class="flex-1 bg-transparent py-3 text-sm text-gray-200 placeholder-gray-500 outline-none">
-                <span class="text-[9px] font-black text-gray-500 uppercase tracking-widest bg-black/40 px-2 py-1 rounded">Captura Rápida</span>
-            </div>
-        </div>
-
-        <!-- CONTENEDOR DE VISTAS -->
-        <div class="flex-1 overflow-y-auto p-4 sm:p-8 relative scroll-smooth" id="main-container">
-            
-            <!-- ================================== -->
-            <!-- VISTA 1: DASHBOARD                 -->
-            <!-- ================================== -->
-            <div id="view-dashboard" class="fade-in space-y-6">
-                <!-- Metrics Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="glass-card rounded-3xl p-6 relative overflow-hidden group">
-                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-veloraAccent/20 rounded-full blur-2xl group-hover:bg-veloraAccent/40 transition-colors"></div>
-                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Base Total</span>
-                        <h4 class="text-4xl font-black mt-2 text-white" id="stat-total">0</h4>
-                    </div>
-                    <div class="glass-card rounded-3xl p-6 relative overflow-hidden group">
-                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/20 rounded-full blur-2xl group-hover:bg-orange-500/40 transition-colors"></div>
-                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Leads Activos</span>
-                        <h4 class="text-4xl font-black mt-2 text-orange-400" id="stat-leads">0</h4>
-                    </div>
-                    <div class="glass-card rounded-3xl p-6 relative overflow-hidden group">
-                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-veloraGreen/20 rounded-full blur-2xl group-hover:bg-veloraGreen/40 transition-colors"></div>
-                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Clientes (Wins)</span>
-                        <h4 class="text-4xl font-black mt-2 text-veloraGreen text-glow-green" id="stat-clients">0</h4>
-                    </div>
-                    <div class="glass-card rounded-3xl p-6 relative overflow-hidden group">
-                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl group-hover:bg-purple-500/40 transition-colors"></div>
-                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Gestiones (Llamadas)</span>
-                        <h4 class="text-4xl font-black mt-2 text-purple-400" id="stat-calls">0</h4>
+                <!-- DASHBOARD -->
+                <div id="panel-admin-dashboard" class="admin-panel-tab space-y-6 pb-10">
+                    <h2 class="text-2xl font-black uppercase text-white tracking-tight">Dashboard General</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-zinc-900 border border-white/5 p-5 rounded-2xl shadow-lg relative overflow-hidden"><div class="absolute -right-4 -bottom-4 text-white/5 text-7xl"><i class="ph-fill ph-currency-dollar"></i></div><p class="text-[10px] font-bold text-zinc-400 uppercase relative z-10">Ventas de Hoy</p><p class="text-3xl font-black text-papa-yellow mt-1 relative z-10" id="dash-ventas-hoy">$0.00</p></div>
+                        <div class="bg-zinc-900 border border-white/5 p-5 rounded-2xl shadow-lg relative overflow-hidden"><div class="absolute -right-4 -bottom-4 text-white/5 text-7xl"><i class="ph-fill ph-shopping-bag"></i></div><p class="text-[10px] font-bold text-zinc-400 uppercase relative z-10">Órdenes Hoy</p><p class="text-3xl font-black text-white mt-1 relative z-10" id="dash-ordenes-hoy">0</p></div>
+                        <div class="bg-zinc-900 border border-white/5 p-5 rounded-2xl shadow-lg relative overflow-hidden"><div class="absolute -right-4 -bottom-4 text-white/5 text-7xl"><i class="ph-fill ph-trend-up"></i></div><p class="text-[10px] font-bold text-zinc-400 uppercase relative z-10">Ticket Promedio</p><p class="text-3xl font-black text-green-400 mt-1 relative z-10" id="dash-ticket-prom">$0.00</p></div>
+                        <div class="bg-zinc-900 border border-white/5 p-5 rounded-2xl shadow-lg relative overflow-hidden"><div class="absolute -right-4 -bottom-4 text-white/5 text-7xl"><i class="ph-fill ph-warning"></i></div><p class="text-[10px] font-bold text-zinc-400 uppercase relative z-10">Alertas Stock</p><p class="text-3xl font-black text-papa-fire mt-1 relative z-10" id="dash-alertas-stock">0</p></div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Dashboard central y Agenda de Hoy -->
-                    <div class="glass-card rounded-3xl p-6 lg:col-span-2 flex flex-col">
-                        <div class="flex justify-between items-end mb-8">
-                            <div>
-                                <h3 class="text-xl font-bold text-white tracking-wide">Rendimiento Operativo</h3>
-                                <p class="text-xs text-gray-500 mt-1" id="dash-chart-subtitle">Volumen de llamadas en los últimos 7 días</p>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Semanal</span>
-                                <span class="text-3xl font-black text-veloraAccent text-glow block mt-1" id="chart-total-count">0</span>
-                            </div>
+                <!-- TERMINAL POS -->
+                <div id="panel-admin-terminal" class="admin-panel-tab hidden flex-col md:flex-row gap-4 h-auto md:h-full pb-10 md:pb-0">
+                    <div class="w-full md:flex-1 flex flex-col h-auto md:h-full bg-black border border-white/10 rounded-2xl p-4 shadow-xl shrink-0 md:shrink min-h-[450px]">
+                        <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4 shrink-0">
+                            <h2 class="text-xl font-black uppercase text-white tracking-tight flex items-center gap-2"><i class="ph-bold ph-desktop text-papa-fire"></i> Sistema POS</h2>
+                            <span class="text-[10px] text-zinc-500 font-bold uppercase bg-zinc-900 px-2 py-1 rounded hidden sm:inline">Toque un producto para agregar</span>
                         </div>
-                        <div class="relative flex-1 min-h-[250px]">
-                            <canvas id="callsChart"></canvas>
-                        </div>
+                        <div class="w-full h-auto md:flex-1 overflow-y-visible md:overflow-y-auto no-scrollbar grid grid-cols-2 lg:grid-cols-3 gap-3 content-start pr-1" id="pos-menu-grid"></div>
                     </div>
                     
-                    <div class="glass-card rounded-3xl p-6 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-sm font-black text-white uppercase tracking-widest">Top Prospectos</h3>
-                                <button class="text-[10px] font-bold text-veloraAccent uppercase tracking-widest bg-veloraAccent/10 px-3 py-1.5 rounded-full hover:bg-veloraAccent/20 transition cyber-btn" onclick="showView('leads')">Ver Todos</button>
-                            </div>
-                            <div class="space-y-3" id="top-leads-list">
-                                <!-- Dinámico -->
+                    <div class="w-full md:w-[400px] bg-black border border-white/10 rounded-2xl flex flex-col h-auto md:h-full shrink-0 shadow-2xl relative min-h-[500px]">
+                        <div class="bg-gradient-to-r from-zinc-900 to-black p-4 border-b border-white/10 flex justify-between items-center shrink-0">
+                            <h3 class="font-black uppercase text-sm flex items-center gap-2"><i class="ph-bold ph-shopping-cart text-papa-fire text-lg"></i> Orden Actual</h3>
+                            <span class="bg-papa-fire text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg" id="pos-cart-badge">0 Items</span>
+                        </div>
+                        <div class="p-3 bg-zinc-950 border-b border-white/10 shrink-0 space-y-2">
+                            <div><label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Nombre / Cliente</label><input type="text" id="pos-client-name" placeholder="Ej: Juan Perez..." class="w-full bg-black border border-white/10 text-white px-3 py-2.5 rounded-lg text-xs font-bold outline-none focus:border-papa-fire transition"></div>
+                            <div class="flex gap-2">
+                                <div class="flex-1"><label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Modalidad</label><select id="pos-order-type" onchange="document.getElementById('pos-table-input').classList.toggle('hidden', this.value !== 'Mesa')" class="w-full bg-black border border-white/10 text-white px-3 py-2.5 rounded-lg text-xs font-bold outline-none focus:border-papa-fire"><option value="Local">Para Llevar (Local)</option><option value="Mesa">Comer en Mesa</option></select></div>
+                                <div class="w-1/3 hidden" id="pos-table-input"><label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Mesa</label><input type="text" id="pos-client-table" placeholder="#..." class="w-full bg-black border border-white/10 text-white px-3 py-2.5 rounded-lg text-xs font-bold outline-none focus:border-papa-fire text-center"></div>
                             </div>
                         </div>
-                        <div class="mt-6 pt-6 border-t border-veloraBorder">
-                            <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Tasa de Conversión</p>
-                            <div class="flex items-center gap-4">
-                                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
-                                    <div class="h-full bg-veloraGreen shadow-glow-green transition-all duration-1000" id="funnel-bar" style="width: 0%"></div>
-                                </div>
-                                <span class="font-black text-veloraGreen text-glow-green" id="funnel-ratio">0%</span>
+                        <div class="w-full min-h-[250px] max-h-[40vh] md:max-h-none md:flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar bg-[#0a0a0a]" id="pos-cart-items"><p class="text-xs text-zinc-500 text-center mt-10 font-medium">El carrito está vacío.</p></div>
+                        <div class="p-4 bg-zinc-900 border-t border-white/10 shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.5)] z-10 mt-auto">
+                            <div class="flex justify-between items-center mb-4 text-sm font-black uppercase"><span>Total a Cobrar:</span><span id="pos-total-price" class="text-3xl text-papa-yellow">$0.00</span></div>
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <button onclick="window.processTerminalOrder('Efectivo')" class="bg-[#107c41] hover:bg-green-600 text-white py-3.5 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg transition"><i class="ph-bold ph-money text-lg"></i> Pagar Efectivo</button>
+                                <button onclick="window.processTerminalOrder('Tarjeta/Transferencia')" class="bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg transition"><i class="ph-bold ph-credit-card text-lg"></i> Tarjeta / Transf.</button>
                             </div>
+                            <button onclick="window.adminCart = []; window.renderAdminCart();" class="w-full bg-red-600/10 border border-red-500/30 text-red-500 hover:bg-red-600 hover:text-white py-2.5 rounded-xl text-[10px] font-bold uppercase transition">Cancelar Orden</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 gap-6">
-                    <div class="glass-card rounded-3xl p-6">
-                        <div class="flex justify-between items-center border-b border-veloraBorder pb-4 mb-4">
+                <!-- REPORTES FINANCIEROS -->
+                <div id="panel-admin-reports" class="admin-panel-tab hidden flex-col w-full space-y-6 pb-10">
+                    <h2 class="text-2xl font-black uppercase text-white tracking-tight flex items-center gap-2"><i class="ph-bold ph-chart-bar text-green-400"></i> Reportes y Cierres Z</h2>
+                    <div class="bg-black border border-white/10 rounded-2xl p-6 shadow-xl shrink-0">
+                        <p class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Seleccione el rango de fechas:</p>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-2">Desde</label><input type="date" id="rep-start" class="w-full bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-xl text-xs outline-none focus:border-green-500 cursor-pointer" onclick="try{this.showPicker()}catch(e){}"></div>
+                            <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-2">Hasta</label><input type="date" id="rep-end" class="w-full bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-xl text-xs outline-none focus:border-green-500 cursor-pointer" onclick="try{this.showPicker()}catch(e){}"></div>
+                            <div class="md:col-span-2 flex flex-col sm:flex-row gap-3">
+                                <button onclick="window.generateReport()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-[10px] tracking-widest py-3 rounded-xl shadow-lg transition flex justify-center items-center gap-2"><i class="ph-bold ph-magnifying-glass text-lg"></i> Consultar</button>
+                                <button onclick="window.exportReportCSV()" class="flex-1 bg-[#107c41] hover:bg-green-600 text-white font-black uppercase text-[10px] tracking-widest py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2"><i class="ph-bold ph-file-csv text-lg"></i> Excel/CSV</button>
+                                <button onclick="window.exportReportPDF()" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-black uppercase text-[10px] tracking-widest py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2"><i class="ph-bold ph-file-pdf text-lg"></i> Guardar PDF</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-black border border-white/10 rounded-2xl p-6 shadow-2xl overflow-hidden flex flex-col hidden" id="report-results-container">
+                        <div id="report-print-area" class="flex-1 overflow-y-auto no-scrollbar bg-white text-black p-8 rounded-xl shadow-inner">
+                            <!-- Inyectado por JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONTROL CAJA Y POS SUPER AVANZADO -->
+                <div id="panel-admin-pos" class="admin-panel-tab hidden space-y-6 pb-10">
+                    <h2 class="text-2xl font-black uppercase text-white tracking-tight">Control de Caja y Operaciones</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        
+                        <div class="bg-black border border-white/10 p-6 rounded-2xl space-y-4 flex flex-col justify-between">
                             <div>
-                                <h3 class="font-black text-white text-md uppercase tracking-wider"><i class="fas fa-calendar-day text-yellow-500 mr-2"></i> Tu Agenda para Hoy</h3>
-                                <p class="text-xs text-gray-500 mt-1">Llamadas, correos y citas programadas para resolver el día de hoy</p>
+                                <h3 class="text-sm font-black uppercase text-white border-b border-white/10 pb-2 mb-4"><i class="ph-bold ph-lock-key text-papa-fire"></i> Gestión de Turno</h3>
+                                <div id="caja-status" class="text-xl font-bold text-zinc-400 mb-2">Turno Cerrado</div>
+                                <div class="text-[10px] text-zinc-500 font-bold uppercase hidden mb-4" id="caja-info-operador">Operador: <span id="caja-operador-name" class="text-white">---</span></div>
+                                <div class="text-[10px] text-zinc-500 font-bold uppercase hidden" id="caja-info-time">Abierto desde: <span id="caja-open-time" class="text-white">---</span></div>
                             </div>
-                            <button onclick="showView('tasks')" class="text-[10px] font-bold text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded-full hover:bg-yellow-500/20 transition uppercase tracking-widest cyber-btn">Ver Calendario Completo</button>
-                        </div>
-                        <div id="dashboard-today-tasks" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <!-- Dinámico -->
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass-card rounded-3xl overflow-hidden">
-                    <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5">
-                        <h3 class="font-bold text-white tracking-wide">Interacciones Recientes</h3>
-                        <span class="text-[10px] font-black bg-veloraAccent/20 text-veloraAccent px-3 py-1 rounded-full border border-veloraAccent/30"><i class="fas fa-circle text-[8px] animate-pulse mr-1"></i> LIVE</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse" id="recent-table">
-                            <thead>
-                                <tr class="text-[10px] text-gray-500 uppercase font-black tracking-widest border-b border-veloraBorder bg-black/20">
-                                    <th class="py-5 px-8">Identidad</th>
-                                    <th class="py-5 px-8">Clasificación</th>
-                                    <th class="py-5 px-8">Contacto</th>
-                                    <th class="py-5 px-8 hidden sm:table-cell">Responsable</th>
-                                    <th class="py-5 px-8">Último Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-veloraBorder">
-                                <!-- Dinámico -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ================================== -->
-            <!-- VISTA 2: DIRECTORIO (LEADS/CLIENTS)-->
-            <!-- ================================== -->
-            <div id="view-list" class="hidden fade-in h-full">
-                <div class="glass-card rounded-3xl overflow-hidden flex flex-col h-[calc(100vh-160px)]">
-                    <div class="px-8 py-6 border-b border-veloraBorder bg-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                        <div>
-                            <h3 id="list-title" class="text-2xl font-black text-white tracking-wide">Directorio</h3>
-                            <p id="list-count" class="text-[10px] text-veloraAccent font-black uppercase tracking-widest mt-1">0 registros encontrados</p>
-                        </div>
-                        
-                        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                            <!-- Filtros rápidos -->
-                            <div class="flex bg-black/40 p-1 rounded-xl border border-veloraBorder overflow-x-auto w-full sm:w-auto hide-scroll">
-                                <button onclick="quickFilter('all')" id="qf-all" class="qf-btn active px-4 py-2 rounded-lg text-xs font-bold text-white bg-white/10 transition whitespace-nowrap cyber-btn">Todos</button>
-                                <button onclick="quickFilter('interesado')" id="qf-int" class="qf-btn px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition whitespace-nowrap cyber-btn">Interesados</button>
-                                <button onclick="quickFilter('cerrada')" id="qf-cer" class="qf-btn px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition whitespace-nowrap cyber-btn">Cierres</button>
+                            
+                            <div id="caja-apertura-box">
+                                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-2">Fondo Inicial ($)</label>
+                                <input type="number" id="caja-monto" class="w-full bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-xl text-lg font-bold outline-none focus:border-green-500 transition text-center">
+                                <button onclick="window.abrirTurnoCaja()" class="w-full mt-3 bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-xl text-xs uppercase shadow-lg transition">Abrir Turno</button>
                             </div>
 
-                            <div class="relative w-full sm:w-64">
-                                <i class="fas fa-search absolute left-4 top-3.5 text-gray-500 text-sm"></i>
-                                <input type="text" id="search-input" onkeyup="searchDirectory()" placeholder="Buscar..." class="w-full pl-11 pr-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-sm text-white focus:border-veloraAccent outline-none transition font-medium">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="overflow-auto flex-1">
-                        <table class="w-full text-left border-collapse" id="directory-table">
-                            <thead class="sticky top-0 bg-veloraCard/95 backdrop-blur-md shadow z-10 border-b border-veloraBorder">
-                                <tr class="text-[10px] text-gray-500 uppercase tracking-widest font-black">
-                                    <th class="py-5 px-8">Nombre Completo</th>
-                                    <th class="py-5 px-8 hidden sm:table-cell">Email</th>
-                                    <th class="py-5 px-8">Teléfono</th>
-                                    <th class="py-5 px-8 hidden sm:table-cell">Agente</th>
-                                    <th class="py-5 px-8 text-right">Interacciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-veloraBorder font-medium">
-                                <!-- Dinámico -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ================================== -->
-            <!-- VISTA 3: EXPEDIENTE (DETALLE)      -->
-            <!-- ================================== -->
-            <div id="view-detail" class="hidden fade-in space-y-6">
-                <div class="flex justify-between items-center mb-2">
-                    <button onclick="goBack()" class="flex items-center gap-2 text-gray-400 hover:text-white transition font-bold text-xs uppercase tracking-widest bg-black/40 border border-veloraBorder px-4 py-2.5 rounded-full cyber-btn">
-                        <i class="fas fa-arrow-left"></i> Volver
-                    </button>
-                    <div class="flex gap-2">
-                        <button onclick="editCurrentContact()" class="w-10 h-10 flex items-center justify-center bg-black/40 text-gray-300 hover:text-white rounded-full border border-veloraBorder transition cyber-btn" title="Editar"><i class="fas fa-pen"></i></button>
-                        <button onclick="deleteCurrentContact()" class="w-10 h-10 flex items-center justify-center bg-black/40 text-gray-400 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/10 rounded-full border border-veloraBorder transition cyber-btn" title="Eliminar"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-                
-                <div class="glass-card rounded-3xl overflow-hidden">
-                    <div class="p-8 lg:p-12 flex flex-col md:flex-row items-center gap-8 relative border-b border-veloraBorder bg-white/5 overflow-hidden">
-                        <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-veloraAccent/20 rounded-full blur-[80px]"></div>
-                        
-                        <div class="w-32 h-32 rounded-3xl border border-white/20 bg-gradient-to-br from-slate-800 to-black flex items-center justify-center text-5xl font-black shadow-2xl relative z-10 text-white" id="detail-avatar"></div>
-                        <div class="flex-1 relative z-10 text-center md:text-left">
-                            <div class="flex flex-col md:flex-row items-center gap-4 mb-4">
-                                <h1 id="detail-name" class="text-4xl font-black text-white tracking-tight">Cargando...</h1>
-                                <span id="detail-badge" class="px-3 py-1.5 text-[10px] font-black rounded-lg uppercase tracking-widest border">LEAD</span>
-                            </div>
-                            <div class="flex flex-wrap justify-center md:justify-start gap-x-8 gap-y-4 text-gray-300 text-sm font-bold mt-2">
-                                <span class="flex items-center gap-2"><i class="fas fa-phone text-veloraAccent"></i> <span id="detail-phone">---</span></span>
-                                <span class="flex items-center gap-2"><i class="fas fa-envelope text-veloraAccent"></i> <span id="detail-email">---</span></span>
-                                <span class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-lg border border-veloraBorder"><i class="fas fa-user-shield text-purple-400"></i> Agente: <span id="detail-owner" class="text-white">---</span></span>
-                            </div>
-                        </div>
-                        <div class="flex gap-2 relative z-10">
-                            <button onclick="openTaskModalForContact()" class="px-5 py-4 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 rounded-2xl font-black uppercase tracking-widest text-xs transition cyber-btn">
-                                <i class="fas fa-calendar-plus mr-1"></i> Agendar Tarea
-                            </button>
-                            <button onclick="exportToPDF()" class="px-8 py-4 bg-white text-veloraDark rounded-2xl font-black uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:bg-gray-200 transition cyber-btn">
-                                <i class="fas fa-file-pdf mr-2"></i> Exportar Ficha
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-veloraBorder">
-                        <!-- Formulario -->
-                        <div class="p-8 lg:p-10 bg-black/20">
-                            <h3 class="text-sm font-black text-white mb-6 uppercase tracking-widest"><i class="fas fa-plus-circle text-veloraAccent mr-2"></i> Registrar Acción</h3>
-                            <form id="call-form" onsubmit="saveCall(event)" class="space-y-6">
-                                <div>
-                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Fecha y Hora</label>
-                                    <input type="datetime-local" id="call-date" class="w-full px-4 py-3 bg-black/50 border border-veloraBorder rounded-xl text-white text-sm focus:border-veloraAccent outline-none" required>
+                            <div id="caja-cierre-box" class="hidden">
+                                <div class="bg-zinc-900/50 border border-white/5 p-4 rounded-xl mb-4 text-center">
+                                    <p class="text-[10px] text-zinc-400 font-bold uppercase mb-1">Efectivo Esperado</p>
+                                    <p id="caja-total-calc" class="text-3xl font-black text-papa-yellow">$0.00</p>
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Resultado / Interacción</label>
-                                    <div class="relative">
-                                        <select id="call-status" class="w-full px-4 py-3 bg-black/50 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-veloraAccent outline-none" required>
-                                            <option value="" disabled selected>Seleccionar estado...</option>
-                                        </select>
-                                        <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
+                                <button onclick="window.cerrarTurnoCaja()" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl text-xs uppercase shadow-lg transition flex items-center justify-center gap-2"><i class="ph-bold ph-clipboard-text text-lg"></i> Cerrar Caja Z</button>
+                                <button onclick="window.POS.abrirCaja('Cajero Manual')" class="w-full mt-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 rounded-xl text-[10px] uppercase transition flex items-center justify-center gap-2"><i class="ph-bold ph-tray"></i> Abrir Gaveta</button>
+                            </div>
+                        </div>
+
+                        <!-- Calculadora y Division Cuenta omitidos visualmente para no saturar, pero el código es el mismo -->
+                        <div class="bg-black border border-white/10 p-6 rounded-2xl flex flex-col shadow-xl">
+                            <h3 class="text-sm font-black uppercase text-white border-b border-white/10 pb-2 mb-4"><i class="ph-bold ph-calculator text-blue-400"></i> Calculadora</h3>
+                            <input type="text" id="std-calc-display" class="w-full bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-xl text-2xl font-ticket text-right mb-4 outline-none" readonly placeholder="0">
+                            <div class="grid grid-cols-4 gap-2 flex-1 mb-4">
+                                <button onclick="window.stdCalc('7')" class="bg-zinc-800 text-white font-bold rounded-lg py-3 hover:bg-zinc-700 text-lg">7</button><button onclick="window.stdCalc('8')" class="bg-zinc-800 text-white font-bold rounded-lg py-3 hover:bg-zinc-700 text-lg">8</button><button onclick="window.stdCalc('9')" class="bg-zinc-800 text-white font-bold rounded-lg py-3 hover:bg-zinc-700 text-lg">9</button><button onclick="window.stdCalc('/')" class="bg-zinc-700 text-papa-yellow font-black rounded-lg py-3 hover:bg-zinc-600 text-lg">/</button>
+                                <button onclick="window.stdCalc('4')" class="bg-zinc-800 text-white font-bold rounded-lg py-3 hover:bg-zinc-700 text-lg">4</button><button onclick="window.stdCalc('5')" class="bg-zinc-800 text-white font-bold rounded-lg py-3 hover:bg-zinc-700 text-lg">5</button><button onclick="window.stdCalc('6')" class="bg-zinc-800 text-white font-bold rounded-lg py-3 hover:bg-zinc-700 text-lg">6</button><button onclick="window.stdCalc('*')" class="bg-zinc-700 text-papa-yellow font-black rounded-lg py-3 hover:bg-zinc-600 text-lg">*</button>
+                                <button onclick="window.stdCalc('1')" class="bg-zinc-800 text-white font-bold rounded-lg py-3 hover:bg-zinc-700 text-lg">1</button><button onclick="window.stdCalc('2')" class="bg-zinc-800 text-white font-bold rounded-lg py-3 hover:bg-zinc-700 text-lg">2</button><button onclick="window.stdCalc('3')" class="bg-zinc-800 text-white font-bold rounded-lg py-3 hover:bg-zinc-700 text-lg">3</button><button onclick="window.stdCalc('-')" class="bg-zinc-700 text-papa-yellow font-black rounded-lg py-3 hover:bg-zinc-600 text-lg">-</button>
+                                <button onclick="window.stdCalc('C')" class="bg-red-600/20 text-red-500 font-bold rounded-lg py-3 hover:bg-red-600 hover:text-white text-lg">C</button><button onclick="window.stdCalc('0')" class="bg-zinc-800 text-white font-bold rounded-lg py-3 hover:bg-zinc-700 text-lg">0</button><button onclick="window.stdCalc('=')" class="bg-zinc-600 text-white font-bold rounded-lg py-3 hover:bg-zinc-500 text-lg">=</button><button onclick="window.stdCalc('+')" class="bg-zinc-700 text-papa-yellow font-black rounded-lg py-3 hover:bg-zinc-600 text-lg">+</button>
+                            </div>
+                            <button onclick="window.cobrarDesdeCalculadora()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black uppercase py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-xs"><i class="ph-bold ph-plus-circle text-lg"></i> Usar en Caja</button>
+                        </div>
+
+                        <div class="flex flex-col gap-6 lg:col-span-1 xl:col-span-2">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-black border border-white/10 p-6 rounded-2xl h-full">
+                                <div class="border-b md:border-b-0 md:border-r border-white/10 pb-6 md:pb-0 md:pr-6 flex flex-col relative">
+                                    <h3 class="text-[10px] font-black uppercase text-zinc-500 mb-4 tracking-widest"><i class="ph-bold ph-users text-green-400"></i> Dividir Cuenta</h3>
+                                    <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Total ($)</label>
+                                    <input type="number" id="split-total" oninput="window.calcSplitBill()" class="w-full bg-zinc-900 border border-white/10 text-white px-3 py-2 rounded-lg text-sm font-bold outline-none mb-3">
+                                    <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Personas</label>
+                                    <input type="number" id="split-people" value="1" min="1" oninput="window.calcSplitBill()" class="w-full bg-zinc-900 border border-white/10 text-white px-3 py-2 rounded-lg text-sm font-bold outline-none mb-4 text-center">
+                                    <div class="mt-auto pt-2 text-center">
+                                        <p class="text-[8px] uppercase font-bold text-zinc-500">C/U Paga:</p>
+                                        <p id="split-result" class="text-2xl font-black text-green-400">$0.00</p>
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Detalles</label>
-                                    <textarea id="call-notes" rows="5" class="w-full px-4 py-3 bg-black/50 border border-veloraBorder rounded-xl text-white text-sm resize-none focus:border-veloraAccent outline-none" placeholder="Minuta de la conversación..." required></textarea>
+                                <div class="flex flex-col">
+                                    <h3 class="text-[10px] font-black uppercase text-zinc-500 mb-4 tracking-widest"><i class="ph-bold ph-coins text-papa-yellow"></i> Calc. Vuelto</h3>
+                                    <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Total</label>
+                                    <input type="number" id="vuelto-total" oninput="window.calcVuelto()" class="w-full bg-zinc-900 border border-white/10 text-white px-3 py-2 rounded-lg text-sm font-bold outline-none mb-3">
+                                    <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Paga con</label>
+                                    <input type="number" id="vuelto-pago" oninput="window.calcVuelto()" class="w-full bg-zinc-900 border border-white/10 text-white px-3 py-2 rounded-lg text-sm font-bold outline-none mb-4 focus:border-papa-fire">
+                                    <div class="mt-auto pt-2 text-center relative">
+                                        <p class="text-[8px] uppercase font-bold text-zinc-500 relative z-10">Cambio:</p>
+                                        <p id="vuelto-result" class="text-2xl font-black text-white relative z-10">$0.00</p>
+                                    </div>
                                 </div>
-                                <button type="submit" class="w-full py-4 bg-veloraAccent text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-glow hover:bg-blue-600 transition cyber-btn">
-                                    Guardar
-                                </button>
-                            </form>
-                        </div>
-
-                        <!-- Timeline -->
-                        <div class="p-8 lg:p-10 lg:col-span-2">
-                            <div class="flex justify-between items-center mb-8 pb-4 border-b border-veloraBorder">
-                                <h3 class="text-sm font-black text-white uppercase tracking-widest"><i class="fas fa-history text-gray-500 mr-2"></i> Timeline de Gestión</h3>
-                                <span class="text-[10px] bg-black/50 border border-veloraBorder text-veloraAccent px-3 py-1.5 rounded-lg font-black tracking-widest" id="history-count">0 Acciones</span>
-                            </div>
-                            <div class="relative px-2">
-                                <div class="absolute left-6 top-0 bottom-0 w-px bg-veloraBorder"></div>
-                                <ul id="calls-timeline" class="space-y-8 relative z-10">
-                                    <!-- Dinámico -->
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ================================== -->
-            <!-- VISTA 4: TAREAS (EISENHOWER MATRIX)-->
-            <!-- ================================== -->
-            <div id="view-tasks" class="hidden fade-in space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <div>
-                        <h3 class="text-xl font-black text-white uppercase tracking-wider">Priorización Metodológica: Matriz de Eisenhower</h3>
-                        <p class="text-xs text-gray-400 mt-1">Organiza tus tareas en cuadrantes para optimizar tus decisiones de productividad diaria.</p>
-                    </div>
-                    <button onclick="openTaskModal()" class="px-5 py-3 bg-yellow-500 hover:bg-yellow-600 text-veloraDark rounded-xl font-black uppercase text-xs tracking-widest transition shadow-lg flex items-center gap-2 cyber-btn">
-                        <i class="fas fa-calendar-plus"></i> Nueva Tarea
-                    </button>
-                </div>
-
-                <!-- Matriz de Eisenhower de 4 Cuadrantes -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="eisenhower-matrix-container">
-                    
-                    <!-- Cuadrante 1: Urgente e Importante -->
-                    <div class="glass-card rounded-3xl p-6 border-l-4 border-red-500 flex flex-col h-[350px]">
-                        <div class="flex justify-between items-center mb-4 border-b border-veloraBorder pb-3">
-                            <span class="text-xs font-black text-red-400 uppercase tracking-widest"><i class="fas fa-fire mr-1.5"></i> 1. Hacer de Inmediato (Urgente + Importante)</span>
-                            <span id="task-badge-q1" class="text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-full font-bold">0</span>
-                        </div>
-                        <div id="tasks-q1" class="space-y-3 flex-1 overflow-y-auto pr-2">
-                            <!-- Dinámico -->
-                        </div>
-                    </div>
-
-                    <!-- Cuadrante 2: No Urgente pero Importante -->
-                    <div class="glass-card rounded-3xl p-6 border-l-4 border-blue-500 flex flex-col h-[350px]">
-                        <div class="flex justify-between items-center mb-4 border-b border-veloraBorder pb-3">
-                            <span class="text-xs font-black text-blue-400 uppercase tracking-widest"><i class="fas fa-calendar-alt mr-1.5"></i> 2. Programar (No Urgente + Importante)</span>
-                            <span id="task-badge-q2" class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full font-bold">0</span>
-                        </div>
-                        <div id="tasks-q2" class="space-y-3 flex-1 overflow-y-auto pr-2">
-                            <!-- Dinámico -->
-                        </div>
-                    </div>
-
-                    <!-- Cuadrante 3: Urgente pero No Importante -->
-                    <div class="glass-card rounded-3xl p-6 border-l-4 border-orange-500 flex flex-col h-[350px]">
-                        <div class="flex justify-between items-center mb-4 border-b border-veloraBorder pb-3">
-                            <span class="text-xs font-black text-orange-400 uppercase tracking-widest"><i class="fas fa-user-friends mr-1.5"></i> 3. Delegar / Automatizar (Urgente + No Importante)</span>
-                            <span id="task-badge-q3" class="text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2.5 py-1 rounded-full font-bold">0</span>
-                        </div>
-                        <div id="tasks-q3" class="space-y-3 flex-1 overflow-y-auto pr-2">
-                            <!-- Dinámico -->
-                        </div>
-                    </div>
-
-                    <!-- Cuadrante 4: Ni Urgente Ni Importante -->
-                    <div class="glass-card rounded-3xl p-6 border-l-4 border-gray-500 flex flex-col h-[350px]">
-                        <div class="flex justify-between items-center mb-4 border-b border-veloraBorder pb-3">
-                            <span class="text-xs font-black text-gray-400 uppercase tracking-widest"><i class="fas fa-trash-alt mr-1.5"></i> 4. Eliminar / Archivar (No Urgente + No Importante)</span>
-                            <span id="task-badge-q4" class="text-[10px] bg-gray-500/10 text-gray-400 border border-gray-500/20 px-2.5 py-1 rounded-full font-bold">0</span>
-                        </div>
-                        <div id="tasks-q4" class="space-y-3 flex-1 overflow-y-auto pr-2">
-                            <!-- Dinámico -->
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- Historial de Tareas Completadas -->
-                <div class="glass-card rounded-3xl p-6">
-                    <h3 class="text-sm font-black text-white uppercase tracking-wider mb-4"><i class="fas fa-check-circle text-veloraGreen mr-2"></i> Tareas Completadas Recientemente</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="tasks-completed-grid">
-                        <!-- Dinámico -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- ================================== -->
-            <!-- VISTA 5: HÁBITOS & ENFOQUE POMODORO-->
-            <!-- ================================== -->
-            <div id="view-habits" class="hidden fade-in space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
-                    <!-- Pomodoro Timer Widget -->
-                    <div class="glass-card rounded-3xl p-8 flex flex-col items-center justify-between text-center relative overflow-hidden">
-                        <div class="absolute -left-12 -top-12 w-32 h-32 bg-red-500/10 rounded-full blur-2xl"></div>
-                        <div class="relative">
-                            <span class="text-[10px] font-black text-red-500 uppercase tracking-widest block mb-1">MÓDULO DE ENFOQUE PROFUNDO</span>
-                            <h3 class="text-lg font-black text-white uppercase tracking-wider">TEMPORIZADOR POMODORO</h3>
-                        </div>
-
-                        <!-- Timer Display -->
-                        <div class="my-8 relative flex items-center justify-center">
-                            <svg class="w-48 h-48 transform -rotate-90">
-                                <circle cx="96" cy="96" r="80" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent"/>
-                                <circle id="pomodoro-progress" cx="96" cy="96" r="80" stroke="#ef4444" stroke-width="8" fill="transparent" stroke-dasharray="502" stroke-dashoffset="0" class="transition-all duration-1000"/>
-                            </svg>
-                            <div class="absolute flex flex-col items-center">
-                                <span class="text-4xl font-black text-white tracking-widest" id="pomodoro-time">25:00</span>
-                                <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1" id="pomodoro-status-label">ENFOQUE</span>
                             </div>
                         </div>
 
-                        <!-- Timer Controls -->
-                        <div class="flex gap-4 w-full">
-                            <button id="btn-pomodoro-start" onclick="togglePomodoro()" class="flex-1 py-3.5 bg-red-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-600 transition shadow-[0_0_15px_rgba(239,68,68,0.3)] cyber-btn">
-                                Iniciar
-                            </button>
-                            <button onclick="resetPomodoro()" class="px-5 py-3.5 bg-black/40 border border-veloraBorder text-gray-400 rounded-2xl font-black uppercase text-xs hover:text-white hover:bg-black/60 transition cyber-btn">
-                                <i class="fas fa-undo"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Habit Tracker -->
-                    <div class="glass-card rounded-3xl p-8 lg:col-span-2 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-center mb-6 pb-4 border-b border-veloraBorder">
-                                <div>
-                                    <h3 class="text-lg font-black text-white uppercase tracking-wider">Control de Hábitos Diarios</h3>
-                                    <p class="text-xs text-gray-500 mt-1">Registra tu consistencia en objetivos personales y profesionales para hoy.</p>
+                        <div class="bg-black border border-white/10 p-6 rounded-2xl flex flex-col lg:col-span-3 xl:col-span-4 shadow-xl">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-white/10 pb-4 mb-4 gap-4">
+                                <h3 class="text-sm font-black uppercase text-white"><i class="ph-bold ph-list-dashes text-papa-fire"></i> Movimientos de Caja</h3>
+                                <div class="flex items-center gap-2 bg-zinc-900/50 p-2 rounded-xl border border-white/5 w-full md:w-auto">
+                                    <input type="text" id="manual-caja-desc" placeholder="Concepto..." class="bg-black border border-white/10 text-white px-3 py-2 rounded-lg text-[10px] outline-none w-full md:w-48">
+                                    <input type="number" id="manual-caja-amt" placeholder="$ Monto" class="bg-black border border-white/10 text-white px-3 py-2 rounded-lg text-[10px] outline-none w-24">
+                                    <button onclick="window.addManualCaja('out')" class="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white p-2 rounded-lg transition" title="Retirar Dinero"><i class="ph-bold ph-minus text-lg"></i></button>
+                                    <button onclick="window.addManualCaja('in')" class="bg-green-600/20 text-green-400 hover:bg-green-600 hover:text-white p-2 rounded-lg transition" title="Ingresar Dinero"><i class="ph-bold ph-plus text-lg"></i></button>
                                 </div>
-                                <button onclick="openAddHabitModal()" class="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 rounded-xl font-black text-[10px] uppercase tracking-widest transition cyber-btn">
-                                    Nuevo Hábito
-                                </button>
                             </div>
-
-                            <!-- Listado de Hábitos para Hoy -->
-                            <div class="space-y-4" id="habits-list-today">
-                                <!-- Dinámico -->
-                            </div>
-                        </div>
-
-                        <div class="mt-8 pt-6 border-t border-veloraBorder flex justify-between items-center text-xs text-gray-500">
-                            <span>Consistencia Promedio Hoy:</span>
-                            <span class="font-black text-emerald-400 text-glow-green" id="habits-today-percentage">0%</span>
+                            <div class="flex-1 overflow-y-auto no-scrollbar space-y-2 py-2 min-h-[200px]" id="caja-moves"></div>
                         </div>
                     </div>
-
                 </div>
-            </div>
 
-            <!-- ================================== -->
-            <!-- VISTA 6: PERSONALIZAR WORKSPACE    -->
-            <!-- ================================== -->
-            <div id="view-customizer" class="hidden fade-in space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    
-                    <!-- Configuración de Categorías de Tareas -->
-                    <div class="glass-card rounded-3xl p-8 space-y-6">
-                        <div>
-                            <h3 class="text-lg font-black text-white uppercase tracking-wider"><i class="fas fa-tags text-purple-400 mr-2"></i> Categorías de Tarea</h3>
-                            <p class="text-xs text-gray-500 mt-1">Crea tus propias etiquetas con colores y emojis personalizados.</p>
-                        </div>
-
-                        <!-- Formulario para agregar categoría de tarea -->
-                        <form onsubmit="handleAddCustomCategory(event, 'task')" class="flex gap-2">
-                            <input type="text" id="custom-task-emoji" placeholder="📂" class="w-12 text-center bg-black/40 border border-veloraBorder rounded-xl text-white outline-none focus:border-purple-500 text-lg" required>
-                            <input type="text" id="custom-task-name" placeholder="Nueva Categoría..." class="flex-1 px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm outline-none focus:border-purple-500 font-medium" required>
-                            <button type="submit" class="px-5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black uppercase text-xs tracking-widest transition cyber-btn"><i class="fas fa-plus"></i></button>
-                        </form>
-
-                        <div class="space-y-3" id="custom-task-categories-list">
-                            <!-- Cargado Dinámicamente -->
-                        </div>
+                <!-- KDS -->
+                <div id="panel-admin-kds" class="admin-panel-tab hidden w-full h-auto xl:h-full flex-col space-y-4 pb-10 xl:pb-0">
+                    <div class="flex justify-between items-center shrink-0">
+                        <h2 class="text-2xl font-black uppercase text-white tracking-tight"><i class="ph-bold ph-cooking-pot text-papa-fire"></i> KDS (Cocina)</h2>
                     </div>
-
-                    <!-- Configuración de Estados de Interacción / Bitácora -->
-                    <div class="glass-card rounded-3xl p-8 space-y-6">
-                        <div>
-                            <h3 class="text-lg font-black text-white uppercase tracking-wider"><i class="fas fa-heartbeat text-blue-400 mr-2"></i> Estados de Interacción</h3>
-                            <p class="text-xs text-gray-500 mt-1">Personaliza los estados aplicables a tu bitácora de seguimiento.</p>
-                        </div>
-
-                        <!-- Formulario para agregar estado de interacción -->
-                        <form onsubmit="handleAddCustomCategory(event, 'interaction')" class="flex gap-2">
-                            <input type="text" id="custom-int-emoji" placeholder="📞" class="w-12 text-center bg-black/40 border border-veloraBorder rounded-xl text-white outline-none focus:border-blue-500 text-lg" required>
-                            <input type="text" id="custom-int-name" placeholder="Ej: Demostración Realizada" class="flex-1 px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm outline-none focus:border-blue-500 font-medium" required>
-                            <button type="submit" class="px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase text-xs tracking-widest transition cyber-btn"><i class="fas fa-plus"></i></button>
-                        </form>
-
-                        <div class="space-y-3" id="custom-int-categories-list">
-                            <!-- Cargado Dinámicamente -->
-                        </div>
+                    <div class="flex-1 flex flex-col xl:flex-row gap-5 overflow-y-auto xl:overflow-x-auto xl:overflow-y-hidden min-h-0 pb-4">
+                        <div class="w-full xl:min-w-[300px] xl:w-1/4 shrink-0 bg-zinc-950 border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-lg min-h-[300px] xl:h-full"><div class="bg-black p-3 border-b border-white/10 font-black text-xs uppercase text-zinc-300 flex justify-between">Pendientes <span id="kds-cnt-pen" class="bg-zinc-800 px-2 rounded">0</span></div><div class="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar" id="kds-col-pen"></div></div>
+                        <div class="w-full xl:min-w-[300px] xl:w-1/4 shrink-0 bg-zinc-950 border border-blue-500/20 rounded-2xl flex flex-col overflow-hidden shadow-lg min-h-[300px] xl:h-full"><div class="bg-blue-950/30 p-3 border-b border-blue-500/20 font-black text-xs uppercase text-blue-400 flex justify-between">Preparando <span id="kds-cnt-prep" class="bg-blue-500/20 px-2 rounded">0</span></div><div class="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar" id="kds-col-prep"></div></div>
+                        <div class="w-full xl:min-w-[300px] xl:w-1/4 shrink-0 bg-zinc-950 border border-yellow-500/20 rounded-2xl flex flex-col overflow-hidden shadow-lg min-h-[300px] xl:h-full"><div class="bg-yellow-950/30 p-3 border-b border-yellow-500/20 font-black text-xs uppercase text-yellow-400 flex justify-between">Empacando <span id="kds-cnt-pack" class="bg-yellow-500/20 px-2 rounded">0</span></div><div class="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar" id="kds-col-pack"></div></div>
+                        <div class="w-full xl:min-w-[300px] xl:w-1/4 shrink-0 bg-zinc-950 border border-green-500/20 rounded-2xl flex flex-col overflow-hidden shadow-lg min-h-[300px] xl:h-full"><div class="bg-green-950/30 p-3 border-b border-green-500/20 font-black text-xs uppercase text-green-400 flex justify-between">Para Entregar <span id="kds-cnt-ready" class="bg-green-500/20 px-2 rounded">0</span></div><div class="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar" id="kds-col-ready"></div></div>
                     </div>
-
                 </div>
-            </div>
 
-            <!-- ================================== -->
-            <!-- VISTA 7: CONFIGURACIÓN (SETTINGS)  -->
-            <!-- ================================== -->
-            <div id="view-settings" class="hidden fade-in space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- ORDERS -->
+                <div id="panel-admin-orders" class="admin-panel-tab hidden flex-col h-full space-y-4 pb-10">
+                    <h2 class="text-2xl font-black uppercase text-white tracking-tight"><i class="ph-bold ph-list-numbers text-papa-yellow"></i> Historial de Órdenes</h2>
+                    <div class="bg-black border border-white/10 rounded-2xl p-4 flex-1 flex flex-col min-h-[500px] overflow-hidden shadow-xl">
+                        <div class="w-full overflow-x-auto flex-1 no-scrollbar">
+                            <table class="w-full min-w-[700px] text-left text-xs whitespace-nowrap">
+                                <thead class="text-zinc-500 uppercase border-b border-white/10"><tr><th class="pb-4 pl-3">ID</th><th class="pb-4">Fecha/Hora</th><th class="pb-4">Cliente</th><th class="pb-4">Total</th><th class="pb-4">Estado</th><th class="pb-4 pr-3 text-right">Acciones</th></tr></thead>
+                                <tbody id="orders-history-table" class="divide-y divide-white/5 font-bold text-white"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INVENTORY & MENU -->
+                <div id="panel-admin-inventory" class="admin-panel-tab hidden flex-col h-full space-y-4 pb-10">
+                    <div class="flex justify-between items-center shrink-0">
+                        <h2 class="text-2xl font-black uppercase text-white tracking-tight">Catálogo Web</h2>
+                        <button onclick="window.openEditModal()" class="bg-papa-fire text-white px-4 py-2 rounded-xl text-xs font-black uppercase shadow-lg">Nuevo Plato</button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto no-scrollbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="admin-catalog-grid"></div>
+                </div>
+
+                <!-- INGREDIENTS -->
+                <div id="panel-admin-ingredients" class="admin-panel-tab hidden space-y-6 pb-10">
+                    <div class="flex justify-between items-center shrink-0">
+                        <div>
+                            <h2 class="text-2xl font-black uppercase text-white tracking-tight"><i class="ph-bold ph-scales text-papa-yellow"></i> Stock de Insumos</h2>
+                        </div>
+                        <button onclick="window.openIngModal()" class="bg-papa-fire hover:bg-orange-600 text-white px-5 py-3 rounded-xl text-xs font-black uppercase shadow-lg transition flex items-center gap-2"><i class="ph-bold ph-plus"></i> Nuevo Insumo</button>
+                    </div>
                     
-                    <!-- Tarjeta de Perfil -->
-                    <div class="glass-card rounded-3xl p-8 flex flex-col items-center text-center border-t-2 border-veloraAccent">
-                        <div class="relative group cursor-pointer mb-6" onclick="document.getElementById('profile-upload').click()">
-                            <img id="settings-avatar" src="" class="w-32 h-32 rounded-full object-cover border-4 border-veloraDark shadow-xl hidden bg-slate-800">
-                            <div id="settings-avatar-fallback" class="w-32 h-32 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 border-4 border-veloraDark flex items-center justify-center text-4xl font-black text-white shadow-xl">U</div>
-                            
-                            <div class="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300">
-                                <i class="fas fa-camera text-white text-xl"></i>
+                    <div class="bg-black border border-white/10 rounded-2xl p-6 flex flex-col overflow-hidden w-full shadow-2xl">
+                        <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
+                            <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Valorización Total:</span>
+                            <span class="text-3xl font-black text-green-400" id="ing-total-valuation">$0.00</span>
+                        </div>
+                        <div class="overflow-x-auto no-scrollbar">
+                            <table class="w-full text-left text-xs whitespace-nowrap">
+                                <thead class="text-zinc-500 uppercase border-b border-white/10">
+                                    <tr>
+                                        <th class="pb-4 pl-2 font-black">Insumo</th>
+                                        <th class="pb-4 font-black">SKU / Cód.</th>
+                                        <th class="pb-4 font-black">Unidad</th>
+                                        <th class="pb-4 font-black">Costo ($)</th>
+                                        <th class="pb-4 font-black">Stock</th>
+                                        <th class="pb-4 font-black">Alerta Min.</th>
+                                        <th class="pb-4 font-black">Total</th>
+                                        <th class="pb-4 text-right pr-2 font-black">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ingredients-table" class="divide-y divide-white/5"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GALLERY -->
+                <div id="panel-admin-gallery" class="admin-panel-tab hidden space-y-6 pb-10 no-print">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center shrink-0 gap-4">
+                        <h2 class="text-2xl font-black uppercase text-white tracking-tight"><i class="ph-bold ph-image text-blue-400"></i> Galería Web Pública</h2>
+                        <label class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase shadow-lg transition cursor-pointer flex justify-center items-center gap-2">
+                            <i class="ph-bold ph-upload-simple"></i> Subir Foto Local
+                            <input type="file" accept="image/*" class="hidden" onchange="window.uploadGalleryImage(event)">
+                        </label>
+                    </div>
+                    <div id="admin-gallery-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                </div>
+
+                <!-- SETTINGS & HW -->
+                <div id="panel-admin-settings" class="admin-panel-tab hidden space-y-6 pb-10">
+                    <h2 class="text-2xl font-black uppercase text-white tracking-tight">Ajustes Web y Hardware</h2>
+                    <div class="bg-black border border-white/10 p-6 rounded-2xl grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        
+                        <div class="space-y-4">
+                            <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-2">Clave API Gemini IA</label><input type="password" id="set-api-key" class="w-full bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-xl text-xs outline-none focus:border-papa-fire" placeholder="AI Key..."></div>
+                            <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-2">WhatsApp Contacto</label><input type="text" id="set-phone" class="w-full bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-xl text-xs outline-none focus:border-papa-fire" placeholder="+1..."></div>
+                            <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-2">Precio Base Envío ($)</label><input type="number" step="0.01" id="set-base-price" class="w-full bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-xl text-xs outline-none focus:border-papa-fire" placeholder="6.00"></div>
+                            <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-2">Precio Extra Envío ($)</label><input type="number" step="0.01" id="set-extra-price" class="w-full bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-xl text-xs outline-none focus:border-papa-fire" placeholder="1.50"></div>
+                        </div>
+
+                        <div class="lg:col-span-2 space-y-4 lg:border-l border-white/10 lg:pl-8">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-sm font-black text-white uppercase"><i class="ph-bold ph-bank"></i> Cuentas Bancarias</h3>
+                                <button onclick="window.addBankAccount()" class="bg-papa-fire hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition">+ Agregar</button>
                             </div>
-                            <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="handleProfileImageUpload(event)">
+                            <div id="settings-banks-list" class="space-y-2 max-h-48 overflow-y-auto pr-2 no-scrollbar"></div>
+                        </div>
+
+                        <div class="lg:col-span-3 border-t border-white/10 pt-6 mt-2"><h3 class="text-sm font-black text-white uppercase mb-4"><i class="ph-bold ph-paint-brush"></i> Identidad Visual (Imágenes)</h3></div>
+                        
+                        <div class="space-y-4">
+                            <label class="block text-[10px] font-bold text-zinc-400 uppercase">Logo Principal</label>
+                            <div class="flex items-center gap-4">
+                                <img id="adm-preview-logo" src="https://placehold.co/100x100/FF3D00/FFF?text=PC" class="w-16 h-16 rounded-full object-cover border border-white/20">
+                                <label class="bg-zinc-800 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase cursor-pointer">Subir Logo <input type="file" accept="image/*" class="hidden" onchange="window.processImageUpload(event, (url) => { document.getElementById('adm-preview-logo').src = url; window.STATE.settings.logo = url; window.secureSave(); })"></label>
+                            </div>
                         </div>
                         
-                        <h3 class="text-2xl font-black text-white" id="settings-name-display">Usuario</h3>
-                        <p class="text-xs font-bold text-veloraAccent uppercase tracking-widest mt-1 mb-4" id="settings-role-display">Rol</p>
-                        <p class="text-sm text-gray-400 bg-black/40 px-4 py-2 rounded-lg border border-veloraBorder w-full" id="settings-email-display">correo@ejemplo.com</p>
-                    </div>
-
-                    <!-- Formulario Datos y Entorno -->
-                    <div class="glass-card rounded-3xl p-8 lg:col-span-2">
-                        <h3 class="text-sm font-black text-white uppercase tracking-widest mb-6 border-b border-veloraBorder pb-4">Información Personal</h3>
-                        <form onsubmit="saveProfileSettings(event)" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Nombre Mostrado</label>
-                                    <input type="text" id="setting-name" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-veloraAccent outline-none" required>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Número Telefónico</label>
-                                    <input type="tel" id="setting-phone" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-veloraAccent outline-none" placeholder="Opcional">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Cargo / Bio Breve</label>
-                                <input type="text" id="setting-bio" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-veloraAccent outline-none" placeholder="Ej. Senior Sales Executive">
-                            </div>
-                            <div class="pt-4 text-right">
-                                <button type="submit" class="px-8 py-3 bg-white text-veloraDark rounded-xl font-black uppercase text-xs tracking-widest shadow-glow hover:bg-gray-200 transition cyber-btn">
-                                    Guardar Cambios
-                                </button>
-                            </div>
-                        </form>
-
-                        <!-- INTEGRACIÓN DE GOOGLE CALENDAR CLIENT ID -->
-                        <h3 class="text-sm font-black text-white uppercase tracking-widest mt-8 mb-6 border-b border-veloraBorder pb-4"><i class="fab fa-google text-red-500 mr-2"></i> Integración Google Cloud</h3>
                         <div class="space-y-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Google OAuth Client ID</label>
-                                <div class="flex gap-3">
-                                    <input type="text" id="setting-google-client-id" class="flex-1 px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-xs focus:border-red-500 outline-none font-mono" placeholder="Pega tu Client ID de Google Cloud aquí...">
-                                    <button onclick="saveGoogleClientId()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black uppercase text-xs tracking-widest transition shadow-glow cyber-btn">Guardar ID</button>
-                                </div>
-                                <p class="text-[10px] text-gray-500 mt-2">Este identificador permite conectar tu cuenta de correo a Google Calendar para programar tareas directamente en la agenda real.</p>
+                            <label class="block text-[10px] font-bold text-zinc-400 uppercase">Fondo Portada (Hero)</label>
+                            <div class="flex items-center gap-4">
+                                <img id="adm-preview-cover" src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=200&auto=format&fit=crop" class="w-24 h-16 rounded-lg object-cover border border-white/20">
+                                <label class="bg-zinc-800 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase cursor-pointer">Subir Portada <input type="file" accept="image/*" class="hidden" onchange="window.processImageUpload(event, (url) => { document.getElementById('adm-preview-cover').src = url; window.STATE.settings.cover = url; window.secureSave(); })"></label>
                             </div>
                         </div>
 
-                        <h3 class="text-sm font-black text-white uppercase tracking-widest mt-12 mb-6 border-b border-veloraBorder pb-4">Entorno Visual (Workspace)</h3>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            <button onclick="applyTheme('theme-monolith')" class="theme-btn theme-monolith relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
-                                <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
-                                    <span class="text-white font-black tracking-widest text-[10px]">MONOLITH (DEFAULT)</span>
-                                </div>
-                            </button>
-                            <button onclick="applyTheme('theme-cyberpunk')" class="theme-btn theme-cyberpunk relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
-                                <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
-                                    <span class="text-white font-black tracking-widest text-[10px]">CYBER NEON</span>
-                                </div>
-                            </button>
-                            <button onclick="applyTheme('theme-emerald')" class="theme-btn theme-emerald relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
-                                <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
-                                    <span class="text-white font-black tracking-widest text-[10px]">EMERALD CORE</span>
-                                </div>
-                            </button>
-                            <button onclick="applyTheme('theme-crimson')" class="theme-btn theme-crimson relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
-                                <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
-                                    <span class="text-white font-black tracking-widest text-[10px]">CRIMSON</span>
-                                </div>
-                            </button>
-                            <button onclick="applyTheme('theme-nebula')" class="theme-btn theme-nebula relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
-                                <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
-                                    <span class="text-white font-black tracking-widest text-[10px]">COSMIC VOID</span>
-                                </div>
-                            </button>
-                            <button onclick="applyTheme('theme-aurora')" class="theme-btn theme-aurora relative rounded-xl h-24 border border-veloraBorder overflow-hidden group shadow-lg cyber-btn">
-                                <div class="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition flex items-center justify-center p-2 text-center">
-                                    <span class="text-white font-black tracking-widest text-[10px] animate-pulse">AURORA (LIVE)</span>
-                                </div>
-                            </button>
+                        <div class="lg:col-span-3 border-t border-white/10 pt-6 mt-2 mb-2"><h3 class="text-sm font-black text-white uppercase"><i class="ph-bold ph-map-pin"></i> Ubicación</h3></div>
+                        <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-2">Google Maps Embed URL</label><input type="text" id="set-map-embed" class="w-full bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-xl text-xs outline-none focus:border-papa-fire"></div>
+                        <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-2">Link Botón Mapa</label><input type="text" id="set-map-link" class="w-full bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-xl text-xs outline-none focus:border-papa-fire"></div>
+
+                        <div class="lg:col-span-3 border-t border-white/10 pt-6 mt-2 mb-2"><h3 class="text-sm font-black text-white uppercase"><i class="ph-bold ph-printer"></i> Hardware Bridge</h3></div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-900/50 p-4 rounded-xl border border-white/5 lg:col-span-3">
+                            <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-2">URL Bridge</label><input type="text" id="hw-bridge-url" class="w-full bg-black border border-white/10 px-4 py-3 rounded-xl text-xs text-white outline-none focus:border-papa-fire"></div>
+                            <div class="flex flex-col justify-end gap-2 pb-1"><label class="flex items-center gap-2 text-xs font-bold text-white"><input type="checkbox" id="hw-auto-drawer" class="w-4 h-4 accent-papa-fire"> Auto-Gaveta al cobrar efectivo</label></div>
+                        </div>
+
+                        <div class="lg:col-span-3 flex justify-end pt-6 border-t border-white/10">
+                            <button onclick="window.saveSettings(); window.saveHardwareConfig();" class="w-full sm:w-auto bg-papa-fire text-white font-black uppercase text-xs px-8 py-3.5 rounded-xl shadow-lg">Guardar Cambios</button>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- ================================== -->
-            <!-- VISTA 8: ADMIN PANEL               -->
-            <!-- ================================== -->
-            <div id="view-admin" class="hidden fade-in space-y-6">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div class="glass-card rounded-3xl p-6 border-t-2 border-purple-500">
-                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Usuarios Activos</span>
-                        <h4 class="text-4xl font-black mt-2 text-white" id="admin-stat-users">0</h4>
-                    </div>
-                    <div class="glass-card rounded-3xl p-6 border-t-2 border-veloraAccent">
-                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Leads Globales</span>
-                        <h4 class="text-4xl font-black mt-2 text-white" id="admin-stat-leads">0</h4>
-                    </div>
-                    <div class="glass-card rounded-3xl p-6 border-t-2 border-veloraGreen">
-                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Clientes Globales</span>
-                        <h4 class="text-4xl font-black mt-2 text-white" id="admin-stat-clients">0</h4>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL EDITOR PLATOS -->
+    <div id="editModal" class="modal-overlay fixed inset-0 z-[400] flex items-center justify-center p-4">
+        <div class="modal-content bg-[#111] border border-white/10 w-[calc(100%-1.5rem)] md:w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-black px-6 py-4 border-b border-white/10 flex justify-between items-center"><h2 class="font-black text-lg text-papa-fire uppercase">Editor de Plato</h2><button onclick="window.closeModal('editModal')"><i class="ph-bold ph-x text-xl"></i></button></div>
+            <div class="p-6 overflow-y-auto space-y-4 no-scrollbar flex-1 bg-[#0a0a0a]">
+                <input type="hidden" id="edit-id">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Nombre</label><input type="text" id="edit-title" class="w-full bg-black border border-white/10 px-4 py-3 rounded-xl text-xs text-white outline-none focus:border-papa-fire transition"></div>
+                    <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Etiqueta Promocional</label><select id="edit-tag" class="w-full bg-black border border-white/10 px-4 py-3 rounded-xl text-xs text-white outline-none focus:border-papa-fire transition"><option value="">Normal</option><option value="Más Vendidos">🔥 Más Vendido</option><option value="Promociones">💰 Promoción</option></select></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Precio</label><input type="number" step="0.01" id="edit-price" class="w-full bg-black border border-white/10 px-4 py-3 rounded-xl text-xs text-white outline-none focus:border-papa-fire transition"></div>
+                    <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Categoría General</label><input type="text" id="edit-cat" class="w-full bg-black border border-white/10 px-4 py-3 rounded-xl text-xs text-white outline-none focus:border-papa-fire transition"></div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <label class="bg-zinc-800 text-white px-4 py-2 rounded text-[10px] font-bold uppercase cursor-pointer">Subir Foto <input type="file" accept="image/*" class="hidden" onchange="window.processImageUpload(event, (url) => { const img = document.getElementById('edit-img-preview'); img.src = url; img.classList.remove('hidden'); img.dataset.src = url; })"></label>
+                    <img id="edit-img-preview" src="" data-src="" class="w-16 h-16 object-cover rounded-xl border border-white/10 hidden">
+                </div>
+                <div><label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Descripción</label><textarea id="edit-desc" class="w-full bg-black border border-white/10 px-4 py-3 rounded-xl text-xs text-white outline-none focus:border-papa-fire transition"></textarea></div>
+                <div class="border-t border-white/10 pt-4"><h3 class="text-xs font-bold text-zinc-400 mb-2">Receta (Descuento Auto. Inventario)</h3><div id="recipe-list" class="space-y-2 mb-2"></div><div class="flex flex-col sm:flex-row gap-2"><select id="recipe-ing-select" class="flex-1 bg-black border border-white/10 text-xs text-white p-2.5 rounded-lg outline-none"></select><input type="number" step="any" id="recipe-ing-qty" placeholder="Cant." class="w-full sm:w-20 bg-black border border-white/10 text-xs text-white p-2.5 rounded-lg outline-none"><button onclick="window.addRecipeRow()" class="bg-blue-600 px-4 py-2.5 rounded-lg text-xs text-white font-bold">Añadir</button></div></div>
+            </div>
+            <div class="bg-black p-4 border-t border-white/10 shrink-0"><button onclick="window.saveProduct()" class="w-full bg-papa-fire text-white py-3.5 rounded-xl font-black uppercase text-xs hover:bg-orange-600 transition">Guardar Cambios</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITOR INSUMOS -->
+    <div id="editIngModal" class="modal-overlay fixed inset-0 z-[400] flex items-center justify-center p-4">
+        <div class="modal-content bg-[#111] border border-white/10 w-[calc(100%-1.5rem)] md:w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col shadow-2xl max-h-[85vh]">
+            <div class="px-6 py-5 border-b border-white/10 flex justify-between items-center shrink-0 bg-black">
+                <h2 id="edit-ing-title-display" class="font-black text-xl uppercase tracking-tight flex items-center gap-3 text-papa-fire"><i class="ph-bold ph-package"></i> <span id="ing-modal-main-title">Ficha Insumo</span></h2>
+                <button onclick="window.closeModal('editIngModal')" class="text-zinc-500 hover:text-white transition-colors"><i class="ph-bold ph-x text-2xl"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-6 no-scrollbar flex-1 bg-[#0a0a0a]">
+                <input type="hidden" id="edit-ing-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="block font-bold text-sm text-zinc-400 mb-1.5">SKU / Cód <span class="text-papa-fire">*</span></label><input type="text" id="edit-ing-sku" class="w-full bg-black border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm outline-none"></div>
+                    <div><label class="block font-bold text-sm text-zinc-400 mb-1.5">Nombre <span class="text-papa-fire">*</span></label><input type="text" id="edit-ing-name" class="w-full bg-black border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm outline-none"></div>
+                    <div><label class="block font-bold text-sm text-zinc-400 mb-1.5">Costo ($) <span class="text-papa-fire">*</span></label><input type="number" step="0.01" id="edit-ing-cost" class="w-full bg-black border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm outline-none"></div>
+                    <div><label class="block font-bold text-sm text-zinc-400 mb-1.5">Stock Inicial</label><input type="number" step="any" id="edit-ing-stock" class="w-full bg-black border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm outline-none"></div>
+                    <div><label class="block font-bold text-sm text-red-500 mb-1.5">Alerta Mín. *</label><input type="number" step="any" id="edit-ing-min" class="w-full bg-black border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm outline-none"></div>
+                    <div>
+                        <label class="block font-bold text-sm text-zinc-400 mb-1.5">Unidad</label>
+                        <select id="edit-ing-unit" class="w-full bg-black border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm outline-none">
+                            <option value="uds">Unidades (uds)</option><option value="gr">Gramos (gr)</option><option value="kg">Kilogramos (kg)</option><option value="lbs">Libras (lbs)</option><option value="L">Litros (L)</option><option value="ml">Mililitros (ml)</option><option value="caja">Cajas / Paquetes</option>
+                        </select>
                     </div>
                 </div>
+            </div>
+            <div class="bg-black p-6 border-t border-white/10 shrink-0"><button onclick="window.saveIngredient()" class="w-full bg-papa-fire text-white py-3.5 rounded-xl font-black uppercase text-xs shadow-lg">Guardar Insumo</button></div>
+        </div>
+    </div>
 
-                <div class="glass-card rounded-3xl overflow-hidden">
-                    <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5">
-                        <h3 class="font-bold text-white tracking-wide"><i class="fas fa-shield-alt text-purple-500 mr-2"></i> Control de Accesos</h3>
-                        <button onclick="openUserModal()" class="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:bg-purple-700 transition cyber-btn">
-                            <i class="fas fa-plus mr-1"></i> Agente
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse" id="admin-users-table">
-                            <thead>
-                                <tr class="border-b border-veloraBorder text-gray-500 text-[10px] uppercase font-black tracking-widest bg-black/20">
-                                    <th class="py-5 px-8">Usuario / Credenciales</th>
-                                    <th class="py-5 px-8">Permisos</th>
-                                    <th class="py-5 px-8 text-center">Leads Asignados</th>
-                                    <th class="py-5 px-8 text-center">Clientes (Wins)</th>
-                                    <th class="py-5 px-8 text-right">Manejo</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-veloraBorder font-medium">
-                                <!-- Dinámico -->
-                            </tbody>
-                        </table>
-                    </div>
+    <!-- MODAL DE EDICIÓN DE ORDEN (KDS) -->
+    <div id="editOrderModal" class="modal-overlay fixed inset-0 z-[400] flex items-center justify-center p-4">
+        <div class="modal-content bg-[#111] border border-white/10 w-[calc(100%-1.5rem)] md:w-full max-w-lg rounded-3xl overflow-hidden flex flex-col shadow-2xl max-h-[85vh]">
+            <div class="bg-blue-900 px-6 py-4 border-b border-white/10 flex justify-between items-center shrink-0">
+                <div class="flex flex-col"><h2 id="edit-order-title" class="font-black text-lg uppercase text-white tracking-widest"><i class="ph-bold ph-pencil-simple"></i> Editar Orden</h2><span id="edit-order-total" class="text-[10px] text-papa-yellow font-bold mt-0.5">$0.00</span></div>
+                <button onclick="window.closeModal('editOrderModal')"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto space-y-3 no-scrollbar bg-[#0a0a0a] flex-1" id="edit-order-items"></div>
+            <div class="p-5 bg-zinc-950 border-t border-white/5 shrink-0 flex flex-col gap-3">
+                <label class="text-[10px] text-zinc-400 font-bold uppercase"><i class="ph-bold ph-plus-circle text-papa-fire"></i> Agregar extra</label>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <select id="edit-order-add-select" class="flex-1 bg-black border border-white/10 text-white px-4 py-3 rounded-xl text-xs outline-none focus:border-blue-500"></select>
+                    <button onclick="window.addNewProductToEditOrder()" class="bg-papa-fire text-white font-black px-6 py-3 rounded-xl text-xs uppercase shrink-0">Añadir</button>
                 </div>
             </div>
-        </div>
-    </main>
-
-    <!-- ========================================== -->
-    <!-- 4. MODALES REUTILIZABLES                   -->
-    <!-- ========================================== -->
-    
-    <!-- Modal: Crear/Editar Tarea -->
-    <div id="task-modal" class="hidden fixed inset-0 bg-veloraDark/95 backdrop-blur-sm z-[150] flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="glass-card rounded-3xl w-full max-w-lg mx-4 transform scale-95 transition-transform flex flex-col" id="task-modal-box">
-            <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5 rounded-t-3xl">
-                <h3 class="text-lg font-black text-white uppercase tracking-widest" id="task-modal-title"><i class="fas fa-calendar-check text-yellow-500 mr-2"></i> Agendar Tarea</h3>
-                <button onclick="closeTaskModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition cyber-btn"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-8">
-                <form id="task-form" onsubmit="saveTaskForm(event)" class="space-y-5">
-                    <input type="hidden" id="form-task-id">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Título de la Tarea / Seguimiento *</label>
-                        <input type="text" id="task-form-title" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-yellow-500 outline-none font-medium" placeholder="Ej. Terminar diseño de prototipo..." required>
-                    </div>
-                    <div class="grid grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Fecha y Hora Límite *</label>
-                            <input type="datetime-local" id="task-form-date" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-yellow-500 outline-none" required>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Asociar Contacto (Opcional)</label>
-                            <div class="relative">
-                                <select id="task-form-contact" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-yellow-500 outline-none font-bold">
-                                    <option value="none">Sin contacto</option>
-                                </select>
-                                <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Categoría *</label>
-                            <div class="relative">
-                                <select id="task-form-category" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-yellow-500 outline-none font-bold" required>
-                                </select>
-                                <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Cuadrante Eisenhower *</label>
-                            <div class="relative">
-                                <select id="task-form-quadrant" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-yellow-500 outline-none font-bold" required>
-                                    <option value="Q1">🔥 Q1: Hacer (Urgente + Importante)</option>
-                                    <option value="Q2">📅 Q2: Programar (No Urgente + Importante)</option>
-                                    <option value="Q3">🤝 Q3: Delegar (Urgente + No Importante)</option>
-                                    <option value="Q4">🗑️ Q4: Eliminar (No Urgente + No Importante)</option>
-                                </select>
-                                <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Prioridad *</label>
-                        <div class="relative">
-                            <select id="task-form-priority" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-yellow-500 outline-none font-bold" required>
-                                <option value="Alta">🔴 Alta (Crítica)</option>
-                                <option value="Media">🟡 Media (Normal)</option>
-                                <option value="Baja">🔵 Baja (Informativa)</option>
-                            </select>
-                            <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Notas de Instrucción</label>
-                        <textarea id="task-form-notes" rows="3" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm resize-none focus:border-yellow-500 outline-none font-medium" placeholder="Escribe el objetivo de la tarea..."></textarea>
-                    </div>
-                    <div class="flex items-center gap-3 bg-slate-900/40 p-4 rounded-xl border border-veloraBorder">
-                        <input type="checkbox" id="task-form-sync-google" class="w-4 h-4 text-veloraAccent bg-black border-veloraBorder rounded focus:ring-veloraAccent">
-                        <label for="task-form-sync-google" class="text-xs font-black text-gray-300 uppercase tracking-wider cursor-pointer">Sincronizar con Google Calendar 📅</label>
-                    </div>
-                </form>
-            </div>
-            <div class="px-8 py-5 border-t border-veloraBorder bg-black/20 rounded-b-3xl flex justify-end gap-3">
-                <button type="button" onclick="closeTaskModal()" class="px-6 py-3 bg-transparent border border-veloraBorder text-gray-400 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-white/5 transition cyber-btn">Cancelar</button>
-                <button type="submit" form="task-form" class="px-8 py-3 bg-yellow-500 hover:bg-yellow-600 text-veloraDark font-black text-xs uppercase tracking-widest rounded-xl shadow-lg transition cyber-btn">Agendar</button>
-            </div>
+            <div class="bg-black border-t border-white/10 px-6 py-4 shrink-0"><button onclick="window.closeModal('editOrderModal')" class="w-full bg-blue-600 text-white font-black uppercase text-xs py-3.5 rounded-xl">Guardar Cambios</button></div>
         </div>
     </div>
 
-    <!-- Modal: Agregar Hábito -->
-    <div id="habit-modal" class="hidden fixed inset-0 bg-veloraDark/95 backdrop-blur-sm z-[150] flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="glass-card rounded-3xl w-full max-w-md mx-4 transform scale-95 transition-transform flex flex-col" id="habit-modal-box">
-            <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5 rounded-t-3xl">
-                <h3 class="text-lg font-black text-white uppercase tracking-widest"><i class="fas fa-seedling text-emerald-400 mr-2"></i> Crear Hábito</h3>
-                <button onclick="closeAddHabitModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition cyber-btn"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-8">
-                <form id="habit-form" onsubmit="saveHabitForm(event)" class="space-y-5">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Emoji *</label>
-                        <input type="text" id="habit-form-emoji" placeholder="🏃‍♂️" class="w-16 text-center py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-lg focus:border-emerald-500 outline-none" required>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Nombre del Hábito *</label>
-                        <input type="text" id="habit-form-name" placeholder="Ej. Beber 2L de agua" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-emerald-500 outline-none" required>
-                    </div>
-                </form>
-            </div>
-            <div class="px-8 py-5 border-t border-veloraBorder bg-black/20 rounded-b-3xl flex justify-end gap-3">
-                <button type="button" onclick="closeAddHabitModal()" class="px-6 py-3 bg-transparent border border-veloraBorder text-gray-400 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-white/5 transition cyber-btn">Cancelar</button>
-                <button type="submit" form="habit-form" class="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-lg transition cyber-btn">Crear</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Crear/Editar Ficha de Contacto -->
-    <div id="contact-modal" class="hidden fixed inset-0 bg-veloraDark/90 backdrop-blur-sm z-[150] flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="glass-card rounded-3xl w-full max-w-xl mx-4 transform scale-95 transition-transform flex flex-col" id="contact-modal-box">
-            <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5 rounded-t-3xl">
-                <h3 class="text-lg font-black text-white uppercase tracking-widest" id="modal-title"><i class="fas fa-cube text-veloraAccent mr-2"></i> Ficha</h3>
-                <button onclick="closeContactModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition cyber-btn"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-8">
-                <form id="contact-form" onsubmit="saveContactForm(event)" class="space-y-5">
-                    <input type="hidden" id="form-contact-id">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Nombre Completo *</label>
-                        <input type="text" id="form-name" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-veloraAccent outline-none" required>
-                    </div>
-                    <div class="grid grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Clasificación *</label>
-                            <div class="relative">
-                                <select id="form-type" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-veloraAccent outline-none" required>
-                                    <option value="lead">Prospecto (LEAD)</option>
-                                    <option value="client">Cliente (CLIENT)</option>
-                                </select>
-                                <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Teléfono *</label>
-                            <input type="tel" id="form-phone" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-veloraAccent outline-none" required>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Correo (Opcional)</label>
-                        <input type="email" id="form-email" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-veloraAccent outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Notas Empresa (Opcional)</label>
-                        <textarea id="form-address" rows="2" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm resize-none focus:border-veloraAccent outline-none"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="px-8 py-5 border-t border-veloraBorder bg-black/20 rounded-b-3xl flex justify-end gap-3">
-                <button type="button" onclick="closeContactModal()" class="px-6 py-3 bg-transparent border border-veloraBorder text-gray-400 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-white/5 transition cyber-btn">Cancelar</button>
-                <button type="submit" form="contact-form" class="px-8 py-3 bg-white text-veloraDark font-black text-xs uppercase tracking-widest rounded-xl shadow-glow hover:bg-gray-200 transition cyber-btn">Guardar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Generar Reporte PDF General -->
-    <div id="report-modal" class="hidden fixed inset-0 bg-veloraDark/90 backdrop-blur-sm z-[150] flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="glass-card rounded-2xl w-full max-w-md mx-4 transform scale-95 transition-transform flex flex-col" id="report-modal-box">
-            <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5 rounded-t-3xl">
-                <h3 class="text-lg font-black text-white uppercase tracking-widest"><i class="fas fa-file-pdf text-orange-500 mr-2"></i> Reporte PDF</h3>
-                <button onclick="closeReportModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition cyber-btn"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-8">
-                <form id="report-form" onsubmit="generateGeneralReport(event)" class="space-y-6">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Frecuencia</label>
-                        <div class="relative">
-                            <select id="report-period" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-orange-500 outline-none" required>
-                                <option value="daily">Diario (Interacciones Hoy)</option>
-                                <option value="weekly">Semanal (Últimos 7 días)</option>
-                                <option value="monthly">Mensual (Últimos 30 días)</option>
-                            </select>
-                            <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Filtro Inteligente</label>
-                        <div class="relative">
-                            <select id="report-filter" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-orange-500 outline-none" required>
-                                <option value="all">Todo el Portafolio</option>
-                                <option value="lead">Solo Prospectos (Leads)</option>
-                                <option value="client">Solo Cartera (Clientes)</option>
-                            </select>
-                            <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
-                        </div>
-                    </div>
-                    
-                    <div id="report-agent-container" class="hidden">
-                        <label class="block text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-2"><i class="fas fa-shield-alt mr-1"></i> Análisis por Agente</label>
-                        <div class="relative">
-                            <select id="report-agent" class="w-full px-4 py-3 bg-purple-900/10 border border-purple-500/30 rounded-xl text-white text-sm appearance-none focus:border-purple-500 outline-none">
-                                <option value="all">Toda la empresa (Global)</option>
-                            </select>
-                            <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-purple-400 pointer-events-none"></i>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="px-8 py-5 border-t border-veloraBorder bg-black/20 rounded-b-3xl">
-                <button type="submit" form="report-form" class="w-full py-4 bg-orange-500 hover:bg-orange-600 transition text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-[0_0_15px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2 cyber-btn">
-                    <i class="fas fa-download"></i> Descargar Documento
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Administrar Usuarios (Admin Panel) -->
-    <div id="user-modal" class="hidden fixed inset-0 bg-veloraDark/90 backdrop-blur-sm z-[150] flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="glass-card rounded-3xl w-full max-w-md mx-4 transform scale-95 transition-transform flex flex-col" id="user-modal-box">
-            <div class="px-8 py-6 border-b border-veloraBorder flex justify-between items-center bg-white/5 rounded-t-3xl">
-                <h3 class="text-lg font-black text-white uppercase tracking-widest" id="user-modal-title"><i class="fas fa-user-shield text-purple-500 mr-2"></i> Cuenta</h3>
-                <button onclick="closeUserModal()" class="w-8 h-8 rounded-full bg-black/50 text-gray-400 hover:text-white border border-veloraBorder flex items-center justify-center transition cyber-btn"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-8">
-                <form id="user-form" onsubmit="saveUserForm(event)" class="space-y-5">
-                    <input type="hidden" id="edit-user-uid">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Nombre Real</label>
-                        <input type="text" id="new-user-name" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-purple-500 outline-none" required>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Usuario/Email *</label>
-                        <input type="text" id="new-user-email" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-purple-500 outline-none" required>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Contraseña *</label>
-                        <input type="text" id="new-user-pass" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm focus:border-purple-500 outline-none" required>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Nivel de Acceso *</label>
-                        <div class="relative">
-                            <select id="new-user-role" class="w-full px-4 py-3 bg-black/40 border border-veloraBorder rounded-xl text-white text-sm appearance-none focus:border-purple-500 outline-none" required>
-                                <option value="normal">Agente Normal (Asignaciones)</option>
-                                <option value="admin">Administrador (Mando Global)</option>
-                            </select>
-                            <i class="fas fa-chevron-down text-xs absolute right-4 top-4 text-gray-500 pointer-events-none"></i>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="px-8 py-5 border-t border-veloraBorder bg-black/20 rounded-b-3xl">
-                <button type="submit" form="user-form" id="user-submit-btn" class="w-full py-3 bg-purple-600 hover:bg-purple-700 transition text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-[0_0_15px_rgba(168,85,247,0.3)] cyber-btn">Guardar Cambios</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: ¡LEVEL UP! (Celebración Gamificada) -->
-    <div id="level-up-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-[300] flex items-center justify-center opacity-0 transition-opacity duration-500">
-        <div class="glass-card rounded-[2.5rem] w-full max-w-sm mx-4 p-8 text-center border-2 border-purple-500 shadow-glow-purple transform scale-90 transition-transform duration-500" id="level-up-box">
-            <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-purple-600 to-veloraAccent mx-auto mb-6 flex items-center justify-center border-4 border-white/20 shadow-glow animate-bounce">
-                <i class="fas fa-trophy text-4xl text-white"></i>
-            </div>
-            <span class="text-[10px] font-black tracking-widest text-purple-400 uppercase">EVOLUCIÓN COMPLETA</span>
-            <h3 class="text-3xl font-black text-white mt-1 uppercase">¡Sube de Nivel!</h3>
-            <p class="text-xs text-gray-400 mt-2 mb-6">Has acumulado suficiente XP para ascender al siguiente rango operativo en Velora.</p>
-            <div class="p-4 rounded-2xl bg-black/40 border border-purple-500/20 mb-6 flex justify-around items-center">
-                <div>
-                    <span class="text-[10px] font-bold text-gray-500 uppercase block">Nivel Anterior</span>
-                    <span class="text-lg font-black text-gray-400" id="lvl-up-prev">LV -</span>
+    <!-- VISTA PREVIA TICKETS & ACCIONES -->
+    <div id="ticketPreviewModal" class="modal-overlay fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/80">
+        <div class="modal-content bg-white w-[calc(100%-1.5rem)] md:w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="p-4 overflow-y-auto no-scrollbar flex-1 bg-white relative"><div id="ticketPreviewContent" class="text-black text-sm"></div></div>
+            <div class="bg-zinc-100 border-t border-gray-300 p-4 shrink-0 flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <button onclick="window.printCurrentPreview()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-printer"></i> Imprimir</button>
+                    <button onclick="window.POS.abrirCaja('Impresión de Venta')" class="flex-1 bg-[#107c41] text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-tray"></i> Gaveta</button>
                 </div>
-                <i class="fas fa-chevron-right text-purple-400"></i>
-                <div>
-                    <span class="text-[10px] font-bold text-purple-400 uppercase block">Nuevo Nivel</span>
-                    <span class="text-2xl font-black text-purple-300 text-glow-green" id="lvl-up-next">LV -</span>
-                </div>
-            </div>
-            <button onclick="closeLevelUpModal()" class="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-xs tracking-widest uppercase shadow-lg transition cyber-btn">Aceptar Recompensa</button>
-        </div>
-    </div>
-
-    <!-- UI: Toasts y Confirmaciones -->
-    <div id="toast" class="fixed bottom-6 right-6 transform transition-all duration-300 translate-y-24 opacity-0 glass-card text-white px-6 py-5 rounded-2xl shadow-2xl flex items-center gap-4 z-[300]">
-        <div id="toast-icon" class="text-veloraGreen text-2xl"><i class="fas fa-check-circle"></i></div>
-        <div class="flex flex-col">
-            <span id="toast-title" class="font-black text-sm uppercase tracking-widest">Éxito</span>
-            <span id="toast-message" class="text-xs text-gray-400 mt-1">Hecho.</span>
-        </div>
-    </div>
-
-    <div id="confirm-modal" class="hidden fixed inset-0 bg-veloraDark/90 backdrop-blur-sm z-[250] flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="glass-card rounded-3xl w-full max-w-sm mx-4 transform scale-95 transition-transform p-8 text-center" id="confirm-modal-box">
-            <div class="w-16 h-16 rounded-full bg-red-500/10 text-red-500 mx-auto mb-6 flex items-center justify-center border border-red-500/20">
-                <i class="fas fa-exclamation-triangle text-2xl animate-pulse"></i>
-            </div>
-            <h3 class="text-lg font-black text-white mb-2 uppercase tracking-widest" id="confirm-title">¿Seguro?</h3>
-            <p class="text-xs text-gray-400 mb-8" id="confirm-msg">Esta acción se sincronizará y no se puede deshacer.</p>
-            <div class="flex gap-4">
-                <button onclick="closeModal()" class="flex-1 py-3 bg-transparent text-gray-400 rounded-xl font-black text-[10px] uppercase tracking-widest border border-veloraBorder hover:bg-white/5 transition cyber-btn">Cancelar</button>
-                <button id="confirm-btn" class="flex-1 py-3 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-700 transition shadow-lg cyber-btn">Confirmar</button>
+                <button onclick="window.shareCurrentPreview()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-share-network"></i> Enviar / Compartir</button>
+                <button onclick="window.closeModal('ticketPreviewModal')" class="w-full bg-zinc-300 text-zinc-800 py-2.5 rounded-xl font-bold uppercase text-[10px]">Cerrar</button>
             </div>
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- 5. JAVASCRIPT: FIREBASE & LÓGICA CORE      -->
-    <!-- ========================================== -->
+    <!-- ÁREA OCULTA PARA IMPRESIÓN TÉRMICA WEB -->
+    <div id="thermal-print-area"></div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, query, onSnapshot, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-        const userFirebaseConfig = {
-            apiKey: "AIzaSyD2fytCdF9re-36Op7Nhx4KXmwqZVM8F5E",
-            authDomain: "callreport-8a323.firebaseapp.com",
-            databaseURL: "https://callreport-8a323-default-rtdb.firebaseio.com",
-            projectId: "callreport-8a323",
-            storageBucket: "callreport-8a323.firebasestorage.app",
-            messagingSenderId: "520764678129",
-            appId: "1:520764678129:web:59ce1c31c1b8280f29ae50",
-            measurementId: "G-D5Y2GV53D8"
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmNIL7yk48zqe6Hdk__eG48qwuj3SPdtE",
+            authDomain: "lapapacaliente.firebaseapp.com",
+            databaseURL: "https://lapapacaliente-default-rtdb.firebaseio.com",
+            projectId: "lapapacaliente",
+            storageBucket: "lapapacaliente.firebasestorage.app",
+            messagingSenderId: "259622247837",
+            appId: "1:259622247837:web:ad1b49c5f35aef988ee374"
         };
-        const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config ? JSON.parse(__firebase_config) : userFirebaseConfig;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'velora-tracker-master';
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // Variables de Estado Global
-        window.allContacts = []; 
-        window.allUsers = []; 
-        window.visibleContacts = []; 
-        window.allTasks = [];
-        window.visibleTasks = [];
-        window.allHabits = [];
-        window.currentUser = null;
-        window.currentContactId = null; 
-        window.currentView = 'dashboard'; 
-        window.currentListType = 'lead'; 
-        window.callsChartInstance = null;
-        let authStateResolved = false;
-
-        // Categorías Personalizadas Predeterminadas
-        window.workspaceConfig = {
-            googleClientId: localStorage.getItem('velora_google_client_id') || '',
-            taskCategories: [
-                { emoji: "📞", name: "Llamada de Venta" },
-                { emoji: "✉️", name: "Enviar Correo" },
-                { emoji: "🖥️", name: "Demostración" },
-                { emoji: "📄", name: "Enviar Contrato" },
-                { emoji: "🤝", name: "Reunión Presencial" },
-                { emoji: "🚀", name: "Despliegue" }
-            ],
-            interactionStatuses: [
-                { emoji: "🔥", name: "Contestó - Interesado" },
-                { emoji: "❌", name: "Contestó - No Interesado" },
-                { emoji: "⏳", name: "Buzón de voz" },
-                { emoji: "📅", name: "Cita Agendada" },
-                { emoji: "⭐", name: "Venta Cerrada" }
-            ]
-        };
-
-        // --------------------------------------------------------
-        // MOTOR DE AUDIO SINCRÓNICO INTEGRADO
-        // --------------------------------------------------------
-        let audioCtx = null;
-        let ambientOscillator = null;
-        let ambientGainNode = null;
-
-        function initAudioContext() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        }
-
-        window.playSynthSound = (frequency, type, duration, volume) => {
-            try {
-                initAudioContext();
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                
-                osc.type = type;
-                osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-                
-                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-                
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                
-                osc.start();
-                osc.stop(audioCtx.currentTime + duration);
-            } catch (e) {}
-        };
-
-        window.playClickSound = () => {
-            window.playSynthSound(1200, 'sine', 0.08, 0.15);
-        };
-
-        window.playSuccessSound = () => {
-            try {
-                initAudioContext();
-                const notes = [523.25, 659.25, 783.99, 1046.50];
-                notes.forEach((freq, idx) => {
-                    setTimeout(() => {
-                        window.playSynthSound(freq, 'triangle', 0.35, 0.12);
-                    }, idx * 75);
-                });
-            } catch(e) {}
-        };
-
-        window.playLevelUpSound = () => {
-            try {
-                initAudioContext();
-                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50, 1318.51];
-                notes.forEach((freq, idx) => {
-                    setTimeout(() => {
-                        window.playSynthSound(freq, 'sine', 0.5, 0.15);
-                    }, idx * 60);
-                });
-            } catch(e) {}
-        };
-
-        window.toggleAmbientDrone = () => {
-            try {
-                initAudioContext();
-                const btn = document.getElementById('btn-zen-drone');
-                const text = document.getElementById('zen-drone-text');
-
-                if (ambientOscillator) {
-                    ambientOscillator.stop();
-                    ambientOscillator = null;
-                    text.innerText = "Zen Ambient: Off";
-                    btn.classList.replace('text-purple-300', 'text-purple-400');
-                    btn.classList.remove('ring-2', 'ring-purple-500/50');
-                } else {
-                    if (audioCtx.state === 'suspended') {
-                        audioCtx.resume();
-                    }
-                    ambientOscillator = audioCtx.createOscillator();
-                    ambientGainNode = audioCtx.createGain();
-
-                    ambientOscillator.type = 'sine';
-                    ambientOscillator.frequency.setValueAtTime(110, audioCtx.currentTime);
-
-                    const lowpass = audioCtx.createBiquadFilter();
-                    lowpass.type = 'lowpass';
-                    lowpass.frequency.setValueAtTime(250, audioCtx.currentTime);
-
-                    ambientGainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-
-                    ambientOscillator.connect(lowpass);
-                    lowpass.connect(ambientGainNode);
-                    ambientGainNode.connect(audioCtx.destination);
-
-                    ambientOscillator.start();
-                    text.innerText = "Zen Ambient: On";
-                    btn.classList.replace('text-purple-400', 'text-purple-300');
-                    btn.classList.add('ring-2', 'ring-purple-500/50');
-                    window.showToast("Zen Drone Activo", "Sintetizador de concentración encendido.", "success");
-                }
-            } catch(e) {}
-        };
-
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.cyber-btn') || e.target.closest('button')) {
-                window.playClickSound();
-            }
-        });
-
-        // --------------------------------------------------------
-        // SISTEMA DE GAMIFICACIÓN / RPG CORE
-        // --------------------------------------------------------
-        window.rpgState = {
-            xp: 0,
-            level: 1,
-            streak: 0,
-            lastActivityDate: null
-        };
-
-        function loadRPGState() {
-            const saved = localStorage.getItem('velora_rpg_state');
-            if (saved) {
-                window.rpgState = JSON.parse(saved);
-            }
-            updateRPGUI();
-        }
-
-        function saveRPGState() {
-            localStorage.setItem('velora_rpg_state', JSON.stringify(window.rpgState));
-            updateRPGUI();
-        }
-
-        window.gainXP = (amount) => {
-            window.rpgState.xp += amount;
-            if (window.rpgState.xp >= 100) {
-                window.rpgState.xp = window.rpgState.xp % 100;
-                window.rpgState.level += 1;
-                triggerLevelUpCelebration();
-            }
-            saveRPGState();
-        };
-
-        function triggerLevelUpCelebration() {
-            window.playLevelUpSound();
-            document.getElementById('lvl-up-prev').innerText = `LV ${window.rpgState.level - 1}`;
-            document.getElementById('lvl-up-next').innerText = `LV ${window.rpgState.level}`;
-            
-            const modal = document.getElementById('level-up-modal');
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                document.getElementById('level-up-box').classList.remove('scale-90');
-            }, 50);
-
-            spawnParticles(window.innerWidth / 2, window.innerHeight / 2, '#a855f7', 80);
-        }
-
-        window.closeLevelUpModal = () => {
-            const modal = document.getElementById('level-up-modal');
-            modal.classList.add('opacity-0');
-            document.getElementById('level-up-box').classList.add('scale-90');
-            setTimeout(() => modal.classList.add('hidden'), 500);
-        };
-
-        function updateRPGUI() {
-            document.getElementById('rpg-level-badge').innerText = `LV ${window.rpgState.level}`;
-            document.getElementById('rpg-xp-text').innerText = window.rpgState.xp;
-            document.getElementById('rpg-xp-bar').style.width = `${window.rpgState.xp}%`;
-            document.getElementById('rpg-streak-days').innerText = `🔥 ${window.rpgState.streak} días`;
-
-            const ranks = [
-                "Operador Novato", "Planificador Junior", "Estratega Pragmático", 
-                "Maestro de Enfoque", "Arquitecto del Tiempo", "Titán del Pipeline", 
-                "Córtex Supremo"
-            ];
-            const rankIndex = Math.min(Math.floor((window.rpgState.level - 1) / 3), ranks.length - 1);
-            document.getElementById('rpg-rank-text').innerText = ranks[rankIndex];
-        }
-
-        function checkDailyStreak() {
-            const todayStr = new Date().toDateString();
-            if (window.rpgState.lastActivityDate !== todayStr) {
-                if (window.rpgState.lastActivityDate) {
-                    const yesterday = new Date();
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    if (window.rpgState.lastActivityDate === yesterday.toDateString()) {
-                        window.rpgState.streak += 1;
-                    } else {
-                        window.rpgState.streak = 1;
-                    }
-                } else {
-                    window.rpgState.streak = 1;
-                }
-                window.rpgState.lastActivityDate = todayStr;
-                saveRPGState();
-            }
-        }
-
-        // --------------------------------------------------------
-        // SISTEMA DE CAPTURA RÁPIDA (MIND DUMP)
-        // --------------------------------------------------------
-        window.handleMindDump = async (e) => {
-            if (e.key === 'Enter') {
-                const text = e.target.value.trim();
-                if (!text) return;
-
-                window.playSynthSound(800, 'triangle', 0.15, 0.2);
-
-                const taskId = 't_' + Date.now();
-                const nowLocal = new Date();
-                nowLocal.setMinutes(nowLocal.getMinutes() - nowLocal.getTimezoneOffset());
-
-                const taskObj = {
-                    id: taskId,
-                    title: text,
-                    dueDate: nowLocal.toISOString().slice(0, 16),
-                    contactId: null,
-                    category: "General",
-                    quadrant: "Q1",
-                    priority: "Media",
-                    notes: "Creada con Captura Rápida (Mind Dump)",
-                    status: "pending",
-                    ownerId: window.currentUser ? window.currentUser.uid : 'system',
-                    ownerName: window.currentUser ? window.currentUser.name : 'Sistema',
-                    created: new Date().toISOString()
-                };
-
-                await window.saveTaskToDatabase(taskObj);
-                e.target.value = '';
-                
-                const inputRect = e.target.getBoundingClientRect();
-                spawnParticles(inputRect.left + 50, inputRect.top + 20, '#3b82f6', 20);
-
-                window.gainXP(15);
-                window.showToast("Capturado exitosamente", "Se agendó como tarea prioritaria.", "success");
-            }
-        };
-
-        // --------------------------------------------------------
-        // MOTOR DE PARTÍCULAS INTERACTIVAS
-        // --------------------------------------------------------
-        const spaceCanvas = document.getElementById('bg-space-canvas');
-        const sCtx = spaceCanvas.getContext('2d');
-        let particles = [];
-
-        function resizeCanvas() {
-            spaceCanvas.width = window.innerWidth;
-            spaceCanvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        const stars = [];
-        for (let i = 0; i < 60; i++) {
-            stars.push({
-                x: Math.random() * spaceCanvas.width,
-                y: Math.random() * spaceCanvas.height,
-                radius: Math.random() * 1.5,
-                alpha: Math.random(),
-                speed: 0.15 + Math.random() * 0.2
-            });
-        }
-
-        window.spawnParticles = (x, y, color, count) => {
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x: x,
-                    y: y,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: (Math.random() - 0.5) * 8 - 2,
-                    radius: 2 + Math.random() * 4,
-                    color: color,
-                    alpha: 1,
-                    decay: 0.015 + Math.random() * 0.02
-                });
-            }
-        };
-
-        function animateBg() {
-            sCtx.clearRect(0, 0, spaceCanvas.width, spaceCanvas.height);
-
-            stars.forEach(star => {
-                star.y -= star.speed;
-                if (star.y < 0) star.y = spaceCanvas.height;
-                sCtx.beginPath();
-                sCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-                sCtx.fillStyle = `rgba(168, 85, 247, ${star.alpha})`;
-                sCtx.fill();
-            });
-
-            particles.forEach((p, idx) => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += 0.05;
-                p.alpha -= p.decay;
-
-                if (p.alpha <= 0) {
-                    particles.splice(idx, 1);
-                } else {
-                    sCtx.beginPath();
-                    sCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    sCtx.fillStyle = p.color;
-                    sCtx.globalAlpha = p.alpha;
-                    sCtx.fill();
-                    sCtx.globalAlpha = 1.0;
-                }
-            });
-
-            requestAnimationFrame(animateBg);
-        }
-        animateBg();
-
-
-        // UI Helpers
-        window.showToast = (title, msg, type='success') => {
-            document.getElementById('toast-title').innerText = title; 
-            document.getElementById('toast-message').innerText = msg;
-            const icon = document.getElementById('toast-icon');
-            if(type === 'success') { icon.className = 'text-veloraGreen text-2xl'; icon.innerHTML = '<i class="fas fa-check-circle"></i>'; } 
-            else if(type === 'error') { icon.className = 'text-red-500 text-2xl'; icon.innerHTML = '<i class="fas fa-exclamation-circle"></i>'; }
-            const t = document.getElementById('toast'); 
-            t.classList.remove('translate-y-24', 'opacity-0'); 
-            setTimeout(() => t.classList.add('translate-y-24', 'opacity-0'), 3500);
-        };
-
-        let confirmCb = null;
-        window.showConfirm = (title, msg, cb) => {
-            document.getElementById('confirm-title').innerText = title; 
-            document.getElementById('confirm-msg').innerText = msg; 
-            confirmCb = cb;
-            const m = document.getElementById('confirm-modal'); m.classList.remove('hidden'); 
-            setTimeout(() => { m.classList.remove('opacity-0'); document.getElementById('confirm-modal-box').classList.remove('scale-95'); }, 10);
-        };
-        window.closeModal = () => {
-            const m = document.getElementById('confirm-modal'); m.classList.add('opacity-0'); document.getElementById('confirm-modal-box').classList.add('scale-95'); 
-            setTimeout(() => { m.classList.add('hidden'); confirmCb = null; }, 300);
-        };
-        document.getElementById('confirm-btn').addEventListener('click', () => { if(confirmCb) confirmCb(); window.closeModal(); });
-
-        window.updateConnectionStatus = (isOnline) => {
-            const b = document.getElementById('db-status-badge'), t = document.getElementById('db-status-text'), d = document.getElementById('db-status-dot'), p = document.getElementById('db-status-ping');
-            if(isOnline && navigator.onLine) { 
-                b.className = "px-4 py-2.5 bg-slate-900/60 border border-emerald-500/30 text-veloraGreen rounded-full flex items-center gap-2 text-[10px] font-black tracking-widest transition-all shadow-glow-green backdrop-blur-md"; 
-                t.innerText = "ONLINE"; d.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"; p.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"; 
-            } else { 
-                b.className = "px-4 py-2.5 bg-slate-900/60 border border-red-500/30 text-red-500 rounded-full flex items-center gap-2 text-[10px] font-black tracking-widest transition-all shadow-lg backdrop-blur-md"; 
-                t.innerText = "OFFLINE"; d.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"; p.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"; 
-            }
-        };
-        window.addEventListener('online', () => window.updateConnectionStatus(true)); 
-        window.addEventListener('offline', () => window.updateConnectionStatus(false));
-
-        window.saveContactToDatabase = async (c) => {
-            if (!auth.currentUser) return;
-            if(!c.ownerId) { c.ownerId = window.currentUser.uid; c.ownerName = window.currentUser.name; }
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contacts', c.id), c);
-        };
-        window.deleteContactFromDatabase = async (id) => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contacts', id));
-
-        window.saveTaskToDatabase = async (t) => {
-            if (!auth.currentUser) return;
-            if (!t.ownerId) { t.ownerId = window.currentUser.uid; t.ownerName = window.currentUser.name; }
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', t.id), t);
-        };
-        window.deleteTaskFromDatabase = async (id) => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id));
-
-        window.saveHabitToDatabase = async (h) => {
-            if (!auth.currentUser) return;
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'habits', h.id), h);
-        };
-        window.deleteHabitFromDatabase = async (id) => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'habits', id));
-
-        window.saveWorkspaceConfig = async () => {
-            if (!auth.currentUser) return;
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'workspace_config', 'settings'), window.workspaceConfig);
-        };
-
-        let authMode = 'login';
-        window.toggleAuthMode = () => {
-            authMode = authMode === 'login' ? 'register' : 'login';
-            document.getElementById('register-fields').classList.toggle('hidden', authMode === 'login');
-            document.getElementById('auth-btn').innerText = authMode === 'login' ? 'Ingresar al Workspace' : 'Crear Workspace';
-            document.getElementById('auth-subtitle').innerText = authMode === 'login' ? 'Workspace' : 'Registro';
-            document.getElementById('auth-toggle-btn').innerHTML = authMode === 'login' ? '¿No tienes cuenta? <span class="text-veloraAccent font-bold">Regístrate aquí</span>' : '¿Ya tienes cuenta? <span class="text-veloraAccent font-bold">Inicia Sesión</span>';
-        };
-
-        window.handleAuth = async (e) => {
-            e.preventDefault(); 
-            const email = document.getElementById('auth-email').value.trim(); const pass = document.getElementById('auth-password').value.trim();
-            if(authMode === 'login') {
-                const u = window.allUsers.find(x => x.email.toLowerCase() === email.toLowerCase() && x.password === pass);
-                if(u) processLogin(u); else window.showToast("Error", "Credenciales incorrectas", "error");
-            } else {
-                const name = document.getElementById('auth-name').value.trim(); 
-                if(!name || email.length < 3) return window.showToast("Error", "Datos no válidos", "error");
-                if(window.allUsers.find(x => x.email.toLowerCase() === email.toLowerCase())) return window.showToast("Error", "Usuario ya existe", "error");
-                const newU = { uid: 'u_' + Date.now(), name, email, password: pass, role: 'normal' };
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', newU.uid), newU);
-                processLogin(newU); window.showToast("Acceso Autorizado", "Bienvenido a Velora Workspace", "success");
-            }
-        };
-
-        function updateAvatars(u) {
-            const sidebarFallback = document.getElementById('sidebar-avatar-fallback');
-            const sidebarImg = document.getElementById('sidebar-avatar');
-            const sImg = document.getElementById('settings-avatar');
-            const sFallback = document.getElementById('settings-avatar-fallback');
-
-            if(u.avatarBase64) {
-                if (sidebarImg) { sidebarImg.src = u.avatarBase64; sidebarImg.classList.remove('hidden'); }
-                if (sidebarFallback) sidebarFallback.classList.add('hidden');
-                if (sImg) { sImg.src = u.avatarBase64; sImg.classList.remove('hidden'); }
-                if (sFallback) sFallback.classList.add('hidden');
-            } else {
-                const ini = (u.name || u.email).charAt(0).toUpperCase();
-                if (sidebarImg) sidebarImg.classList.add('hidden');
-                if (sidebarFallback) { sidebarFallback.classList.remove('hidden'); sidebarFallback.innerText = ini; }
-                if (sImg) sImg.classList.add('hidden');
-                if (sFallback) { sFallback.classList.remove('hidden'); sFallback.innerText = ini; }
-            }
-        }
-
-        function processLogin(u) {
-            window.currentUser = u; localStorage.setItem('velora_auth_session', JSON.stringify(u));
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('app-sidebar').classList.remove('hidden'); document.getElementById('app-main-view').classList.remove('hidden');
-            document.getElementById('user-display-name').innerText = u.name; 
-            document.getElementById('user-display-role').innerText = u.role === 'admin' ? 'SYSTEM ADMIN' : (u.position || 'WORKSPACE AGENT');
-            
-            updateAvatars(u);
-            loadRPGState();
-            checkDailyStreak();
-            
-            if(u.role === 'admin') {
-                document.getElementById('admin-nav-section').classList.remove('hidden');
-            } else {
-                document.getElementById('admin-nav-section').classList.add('hidden');
-            }
-            filterDataAndRender();
-        }
-
-        window.performLogout = () => {
-            window.currentUser = null; localStorage.removeItem('velora_auth_session');
-            document.getElementById('auth-form').reset(); document.getElementById('auth-screen').classList.remove('hidden');
-            document.getElementById('app-sidebar').classList.add('hidden'); document.getElementById('app-main-view').classList.add('hidden');
-        };
-
-        function filterDataAndRender() {
-            if(!window.currentUser) return;
-            window.visibleContacts = window.currentUser.role === 'admin' ? window.allContacts : window.allContacts.filter(c => c.ownerId === window.currentUser.uid);
-            window.visibleTasks = window.currentUser.role === 'admin' ? window.allTasks : window.allTasks.filter(t => t.ownerId === window.currentUser.uid);
-
-            // Cargar datos en Configuración
-            document.getElementById('settings-name-display').innerText = window.currentUser.name;
-            document.getElementById('settings-role-display').innerText = window.currentUser.role === 'admin' ? 'ADMINISTRADOR' : 'AGENTE';
-            document.getElementById('settings-email-display').innerText = window.currentUser.email;
-            document.getElementById('setting-name').value = window.currentUser.name;
-            document.getElementById('setting-phone').value = window.currentUser.phone || '';
-            document.getElementById('setting-bio').value = window.currentUser.position || '';
-            document.getElementById('setting-google-client-id').value = window.workspaceConfig.googleClientId || '';
-
-            populateCustomSelects();
-
-            if(window.currentView === 'dashboard') window.updateDashboard(); 
-            else if(window.currentView === 'leads' || window.currentView === 'clients') window.renderDirectory(window.currentListType); 
-            else if(window.currentView === 'tasks') window.renderTasks();
-            else if(window.currentView === 'habits') window.renderHabits();
-            else if(window.currentView === 'customizer') window.renderCustomizer();
-            else if(window.currentView === 'admin' && window.currentUser.role === 'admin') window.renderAdmin();
-            else if(window.currentView === 'detail' && window.currentContactId) window.openProfile(window.currentContactId);
-            
-            document.getElementById('sidebar-leads-count').innerText = window.visibleContacts.filter(c=>c.type==='lead').length;
-            document.getElementById('sidebar-tasks-count').innerText = window.visibleTasks.filter(t=>t.status==='pending').length;
-        }
-
-        function populateCustomSelects() {
-            const catSelect = document.getElementById('task-form-category');
-            if (catSelect) {
-                catSelect.innerHTML = '';
-                window.workspaceConfig.taskCategories.forEach(cat => {
-                    catSelect.innerHTML += `<option value="${cat.name}">${cat.emoji} ${cat.name}</option>`;
-                });
-            }
-
-            const callSelect = document.getElementById('call-status');
-            if (callSelect) {
-                callSelect.innerHTML = '<option value="" disabled selected>Seleccionar estado...</option>';
-                window.workspaceConfig.interactionStatuses.forEach(st => {
-                    callSelect.innerHTML += `<option value="${st.name}">${st.emoji} ${st.name}</option>`;
-                });
-            }
-        }
-
-        setTimeout(() => {
-            if (!authStateResolved) {
-                authStateResolved = true;
-                const loader = document.getElementById('global-loader');
-                if(loader) { loader.classList.add('opacity-0'); setTimeout(() => loader.classList.add('hidden'), 500); }
-                const ses = localStorage.getItem('velora_auth_session');
-                if(ses) { try { processLogin(JSON.parse(ses)); } catch(e) { document.getElementById('auth-screen').classList.remove('hidden'); } } 
-                else document.getElementById('auth-screen').classList.remove('hidden');
-                window.updateConnectionStatus(false);
-            }
-        }, 1500); 
-
-        const init = async () => {
-            try { 
-                if(typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); 
-                else await signInAnonymously(auth); 
-            } catch(e) { 
-                window.updateConnectionStatus(false); 
-                if(!authStateResolved) { authStateResolved = true; document.getElementById('global-loader').classList.add('opacity-0'); setTimeout(() => document.getElementById('global-loader').classList.add('hidden'), 500); document.getElementById('auth-screen').classList.remove('hidden'); }
-            }
-        }; init();
-
-        onAuthStateChanged(auth, async (user) => {
-            if(user) {
-                try {
-                    const admDoc = doc(db, 'artifacts', appId, 'public', 'data', 'app_users', 'admin_nahum');
-                    const s = await getDoc(admDoc); 
-                    if(!s.exists()) await setDoc(admDoc, { uid: 'admin_nahum', name: 'Nahum', email: 'nahumsmithr', password: '28011512', role: 'admin' });
-                } catch(err) {}
-
-                onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'workspace_config', 'settings'), snap => {
-                    if (snap.exists()) {
-                        window.workspaceConfig = snap.data();
-                        // Actualizar localmente por si acaso
-                        if(window.workspaceConfig.googleClientId) {
-                            localStorage.setItem('velora_google_client_id', window.workspaceConfig.googleClientId);
-                        }
-                    }
-                    filterDataAndRender();
-                });
-                
-                onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'app_users')), snap => {
-                    window.allUsers = []; snap.forEach(d => window.allUsers.push(d.data()));
-                    if(window.currentUser) {
-                        const updatedSelf = window.allUsers.find(u => u.uid === window.currentUser.uid);
-                        if(updatedSelf) { window.currentUser = updatedSelf; localStorage.setItem('velora_auth_session', JSON.stringify(updatedSelf)); updateAvatars(updatedSelf); }
-                        if(window.currentView === 'admin') window.renderAdmin();
-                    }
-                });
-
-                onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'tasks')), snap => {
-                    window.allTasks = [];
-                    snap.forEach(d => window.allTasks.push(d.data()));
-                    filterDataAndRender();
-                });
-
-                onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'habits')), snap => {
-                    window.allHabits = [];
-                    snap.forEach(d => window.allHabits.push(d.data()));
-                    filterDataAndRender();
-                });
-
-                onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'contacts')), snap => {
-                    window.allContacts = []; snap.forEach(d => window.allContacts.push(d.data()));
-                    if(!authStateResolved) {
-                        authStateResolved = true; document.getElementById('global-loader').classList.add('opacity-0'); setTimeout(() => document.getElementById('global-loader').classList.add('hidden'), 500);
-                        const ses = localStorage.getItem('velora_auth_session');
-                        if(ses) processLogin(JSON.parse(ses)); else document.getElementById('auth-screen').classList.remove('hidden');
-                    } else filterDataAndRender();
-                    window.updateConnectionStatus(true);
-                }, (error) => {
-                    window.updateConnectionStatus(false);
-                    if(!authStateResolved) { authStateResolved = true; document.getElementById('global-loader').classList.add('opacity-0'); setTimeout(() => document.getElementById('global-loader').classList.add('hidden'), 500); document.getElementById('auth-screen').classList.remove('hidden'); }
-                });
-            } else {
-                window.updateConnectionStatus(false);
-                if(!authStateResolved) { authStateResolved = true; document.getElementById('global-loader').classList.add('opacity-0'); setTimeout(() => document.getElementById('global-loader').classList.add('hidden'), 500); document.getElementById('auth-screen').classList.remove('hidden'); }
-            }
-        });
-
-        // --------------------------------------------------------
-        // NAVEGACIÓN Y VISTAS UI
-        // --------------------------------------------------------
-        window.toggleMobileMenu = () => document.getElementById('app-sidebar').classList.toggle('hidden');
         
-        window.showView = (viewName) => {
-            if(!window.currentUser) return;
-            ['dashboard','list','detail','admin','settings','tasks', 'habits', 'customizer'].forEach(x => {
-                const el = document.getElementById(`view-${x}`);
-                if (el) el.classList.add('hidden');
-            });
-            
-            ['nav-dashboard','nav-leads','nav-tasks','nav-habits','nav-customizer','nav-admin','nav-settings'].forEach(x => { 
-                const btn = document.getElementById(x); 
-                if(btn) { btn.classList.remove('bg-slate-800/60','text-white','shadow-glow', 'border-veloraBorder'); btn.classList.add('text-gray-400', 'border-transparent'); } 
-            });
-
-            if(window.innerWidth < 768) document.getElementById('app-sidebar').classList.add('hidden');
-            const topTitle = document.getElementById('topbar-title');
-            const topSub = document.getElementById('topbar-subtitle');
-
-            if(viewName === 'dashboard') { 
-                document.getElementById('view-dashboard').classList.remove('hidden'); 
-                topTitle.innerText = "Executive Overview"; topSub.innerText = "Métricas en tiempo real";
-                document.getElementById('nav-dashboard').classList.add('bg-slate-800/60','text-white', 'shadow-glow', 'border-veloraBorder'); 
-                window.updateDashboard(); 
-            } else if(viewName === 'leads') { 
-                document.getElementById('view-list').classList.remove('hidden'); 
-                topTitle.innerText = "Directorio y Pipeline"; topSub.innerText = "Gestión de Contactos y Base de Datos";
-                document.getElementById('list-title').innerText = "Directorio Unificado"; 
-                document.getElementById('nav-leads').classList.add('bg-slate-800/60','text-white', 'shadow-glow', 'border-veloraBorder'); 
-                window.currentListType = 'lead'; window.currentFilter = 'all'; window.updateQuickFilters(); document.getElementById('search-input').value = ''; window.renderDirectory('lead'); 
-            } else if(viewName === 'tasks') {
-                document.getElementById('view-tasks').classList.remove('hidden'); 
-                topTitle.innerText = "Priorización Estratégica"; topSub.innerText = "Cuadrantes de Eisenhower para tareas del día";
-                document.getElementById('nav-tasks').classList.add('bg-slate-800/60','text-white', 'shadow-glow', 'border-veloraBorder');
-                window.renderTasks();
-            } else if(viewName === 'habits') {
-                document.getElementById('view-habits').classList.remove('hidden'); 
-                topTitle.innerText = "Crecimiento Diario"; topSub.innerText = "Seguimiento de hábitos y foco profundo Pomodoro";
-                document.getElementById('nav-habits').classList.add('bg-slate-800/60','text-white', 'shadow-glow', 'border-veloraBorder');
-                window.renderHabits();
-            } else if(viewName === 'customizer') {
-                document.getElementById('view-customizer').classList.remove('hidden'); 
-                topTitle.innerText = "Personalización de Workspace"; topSub.innerText = "Configura tus propias categorías, prioridades y estados";
-                document.getElementById('nav-customizer').classList.add('bg-slate-800/60','text-white', 'shadow-glow', 'border-veloraBorder');
-                window.renderCustomizer();
-            } else if(viewName === 'admin' && window.currentUser.role === 'admin') { 
-                document.getElementById('view-admin').classList.remove('hidden'); 
-                topTitle.innerText = "Centro de Comando"; topSub.innerText = "Gestión de Accesos y Permisos";
-                document.getElementById('nav-admin').classList.add('bg-purple-900/40','text-purple-300', 'border-purple-500/30'); 
-                window.renderAdmin(); 
-            } else if(viewName === 'settings') {
-                document.getElementById('view-settings').classList.remove('hidden'); 
-                topTitle.innerText = "Preferencias del Entorno"; topSub.innerText = "Ajustes de Perfil y Estética";
-                document.getElementById('nav-settings').classList.add('bg-slate-800/60','text-white', 'shadow-glow', 'border-veloraBorder'); 
-            }
-            window.currentView = viewName;
+        window.STATE = {
+            menu: [], ingredients: [], orders: [], gallery: [],
+            caja: { isOpen: false, startAmt: 0, total: 0, moves: [], usuario: null, turnoId: null, startTime: null },
+            settings: { logo: '', cover: '', phone: '', apiKey: '', mapEmbed: '', mapLink: '', banks: [], customBasePrice: 6.00, customExtraPrice: 1.50, nos1: '', nos2: '', nos3: '' },
+            hardware: { bridgeUrl: 'http://localhost:3000', autoOpenDrawer: true },
+            currentUser: null, tempRecipe: []
         };
-        window.goBack = () => window.showView('leads');
+        
+        window.adminCart = []; window.currentEditOrderId = null; window.currentPreviewOrderId = null;
+        let app, db, isSaving = false; let isInitialLoad = true; let knownOrderIds = new Set();
 
-        // --------------------------------------------------------
-        // DASHBOARD
-        // --------------------------------------------------------
-        window.updateDashboard = () => {
-            const data = window.visibleContacts;
-            const leadsCount = data.filter(c => c.type === 'lead').length; const clientsCount = data.filter(c => c.type === 'client').length;
-            let totalCalls = 0; data.forEach(c => totalCalls += (c.calls ? c.calls.length : 0));
-            
-            document.getElementById('stat-total').innerText = data.length; document.getElementById('stat-leads').innerText = leadsCount; document.getElementById('stat-clients').innerText = clientsCount; document.getElementById('stat-calls').innerText = totalCalls;
-            const ratio = data.length > 0 ? Math.round((clientsCount / data.length) * 100) : 0;
-            document.getElementById('funnel-ratio').innerText = `${ratio}% Win Rate`;
-            document.getElementById('funnel-bar').style.width = `${ratio}%`;
-
-            const tbody = document.querySelector('#recent-table tbody'); tbody.innerHTML = '';
-            const recent = [...data].sort((a,b) => { const dA = a.calls&&a.calls.length>0 ? new Date(a.calls[a.calls.length-1].date).getTime() : 0; const dB = b.calls&&b.calls.length>0 ? new Date(b.calls[b.calls.length-1].date).getTime() : 0; return dB - dA; }).slice(0, 5);
-
-            if(recent.length === 0) tbody.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-gray-500 bg-white/5">Sin datos recientes.</td></tr>`;
-            else recent.forEach(c => {
-                const stat = (c.calls && c.calls.length > 0) ? c.calls[c.calls.length-1].status : 'No gestionado';
-                const bc = c.type === 'lead' ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'bg-emerald-500/10 text-veloraGreen border-emerald-500/30';
-                tbody.innerHTML += `<tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="window.openProfile('${c.id}')"><td class="py-5 px-8"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-xl bg-black/50 flex items-center justify-center text-sm font-black text-white border border-white/10">${c.name.substring(0,2).toUpperCase()}</div><span class="font-bold text-white">${c.name}</span></div></td><td class="py-5 px-8"><span class="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border ${bc}">${c.type}</span></td><td class="py-5 px-8 text-sm text-gray-400">${c.phone}</td><td class="py-5 px-8 text-xs text-purple-400 hidden sm:table-cell font-bold">${c.ownerName || 'Sis'}</td><td class="py-5 px-8 text-xs text-gray-300 font-bold uppercase tracking-wider">${stat}</td></tr>`;
-            });
-
-            const topL = document.getElementById('top-leads-list'); topL.innerHTML = '';
-            const leadsArr = data.filter(c => c.type === 'lead').slice(0,3);
-            if(leadsArr.length === 0) topL.innerHTML = `<div class="text-xs text-gray-500 text-center py-6 font-semibold">Sin prospectos</div>`;
-            else leadsArr.forEach(l => { topL.innerHTML += `<div class="flex items-center justify-between p-4 rounded-2xl bg-black/30 border border-veloraBorder cursor-pointer hover:border-veloraAccent transition group" onclick="window.openProfile('${l.id}')"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-xl bg-white/5 text-veloraAccent flex items-center justify-center text-sm font-black border border-white/5 group-hover:bg-veloraAccent/20">${l.name.substring(0,2).toUpperCase()}</div><div><p class="text-xs font-black text-white uppercase tracking-wider">${l.name}</p><p class="text-[10px] text-gray-500 mt-1 font-bold tracking-widest">${l.phone}</p></div></div><i class="fas fa-chevron-right text-[10px] text-veloraAccent opacity-0 group-hover:opacity-100 transition-opacity"></i></div>`; });
-
-            // Agenda de Hoy en Dashboard
-            const todayContainer = document.getElementById('dashboard-today-tasks');
-            todayContainer.innerHTML = '';
-            const todayStr = new Date().toDateString();
-            const todayTasks = window.visibleTasks.filter(t => t.status === 'pending' && new Date(t.dueDate).toDateString() === todayStr);
-
-            if (todayTasks.length === 0) {
-                todayContainer.className = "flex items-center justify-center py-8 bg-white/5 rounded-2xl border border-dashed border-veloraBorder col-span-3 text-center";
-                todayContainer.innerHTML = `
-                    <div>
-                        <i class="fas fa-calendar-check text-2xl text-emerald-400 mb-2"></i>
-                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">¡Al día! No tienes tareas prioritarias agendadas para hoy.</p>
-                    </div>`;
-            } else {
-                todayContainer.className = "grid grid-cols-1 md:grid-cols-3 gap-4 col-span-3";
-                todayTasks.slice(0, 3).forEach(task => {
-                    const taskDate = new Date(task.dueDate);
-                    const targetContact = window.visibleContacts.find(c => c.id === task.contactId);
-                    
-                    let pStyle = 'border-veloraBorder';
-                    if (task.priority === 'Alta') pStyle = 'border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.1)]';
-                    else if (task.priority === 'Media') pStyle = 'border-orange-400/40';
-
-                    todayContainer.innerHTML += `
-                        <div class="p-5 rounded-2xl bg-black/40 border ${pStyle} flex flex-col justify-between">
-                            <div>
-                                <div class="flex justify-between items-start mb-2">
-                                    <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">${task.category || 'Tarea'}</span>
-                                    <span class="text-[9px] text-gray-500 font-bold">${taskDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                </div>
-                                <h4 class="text-xs font-black text-white uppercase tracking-wider line-clamp-1">${task.title}</h4>
-                                <p class="text-[10px] text-gray-400 mt-2 line-clamp-2">${task.notes || 'Sin descripción.'}</p>
-                            </div>
-                            <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
-                                ${targetContact ? `<span class="text-[9px] text-veloraAccent font-bold truncate max-w-[120px] hover:underline cursor-pointer" onclick="window.openProfile('${targetContact.id}')">${targetContact.name}</span>` : '<span class="text-[9px] text-gray-600 font-bold">General</span>'}
-                                <button onclick="markTaskComplete('${task.id}', event)" class="text-[9px] font-black text-veloraGreen hover:underline uppercase tracking-widest cyber-btn"><i class="fas fa-check mr-1"></i> Listo</button>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-
-            const ctx = document.getElementById('callsChart').getContext('2d'); if(window.callsChartInstance) window.callsChartInstance.destroy();
-            const lbl = [], dts = [0,0,0,0,0,0,0]; const td = new Date(); td.setHours(0,0,0,0);
-            for(let i=6; i>=0; i--) { const d = new Date(td); d.setDate(d.getDate()-i); lbl.push(d.toLocaleDateString(undefined,{weekday:'short',day:'numeric'})); }
-            data.forEach(c => { if(c.calls) c.calls.forEach(call => { const cd = new Date(call.date); cd.setHours(0,0,0,0); const dif = Math.ceil(Math.abs(td - cd) / (1000*60*60*24)); if(dif < 7 && cd <= td) { const ix = 6 - dif; if(ix >= 0 && ix < 7) dts[ix]++; } }); });
-            document.getElementById('chart-total-count').innerText = dts.reduce((a,b) => a+b, 0);
-            
-            const gr = ctx.createLinearGradient(0,0,0,250); gr.addColorStop(0, 'rgba(59, 130, 246, 0.5)'); gr.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            window.callsChartInstance = new Chart(ctx, { type: 'line', data: { labels: lbl, datasets: [{ data: dts, borderColor: '#3b82f6', backgroundColor: gr, fill: true, tension: 0.4, pointBackgroundColor: '#fff', pointBorderColor: '#3b82f6', pointBorderWidth: 2, pointRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: {color: '#64748b'} }, x: { grid: { display: false }, ticks: {color: '#64748b', font: {size: 10, weight: 'bold'}} } } } });
+        window.sanitize = (str) => {
+            if(typeof str !== 'string') return '';
+            const div = document.createElement('div'); div.appendChild(document.createTextNode(str)); return div.innerHTML;
         };
 
-        // --------------------------------------------------------
-        // DIRECTORIO CON FILTROS
-        // --------------------------------------------------------
-        window.currentFilter = 'all';
-        window.quickFilter = (f) => {
-            window.currentFilter = f;
-            window.updateQuickFilters();
-            window.renderDirectory(window.currentListType);
-        };
-        window.updateQuickFilters = () => {
-            ['qf-all','qf-int','qf-cer'].forEach(id => {
-                const el = document.getElementById(id);
-                el.className = 'px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-gray-400 hover:text-white cyber-btn';
-            });
-            if(window.currentFilter === 'all') document.getElementById('qf-all').classList.add('bg-white/10', 'text-white');
-            if(window.currentFilter === 'interesado') document.getElementById('qf-int').classList.add('bg-blue-500/20', 'text-blue-400');
-            if(window.currentFilter === 'cerrada') document.getElementById('qf-cer').classList.add('bg-emerald-500/20', 'text-veloraGreen');
-        };
-
-        window.renderDirectory = (type) => {
-            const term = document.getElementById('search-input').value.toLowerCase();
-            const tbody = document.querySelector('#directory-table tbody'); tbody.innerHTML = '';
-            
-            let filtered = window.visibleContacts.filter(c => c.type === type);
-            if(term) filtered = filtered.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
-            
-            if(window.currentFilter !== 'all') {
-                filtered = filtered.filter(c => {
-                    if(!c.calls || c.calls.length === 0) return false;
-                    const lastStatus = c.calls[c.calls.length-1].status.toLowerCase();
-                    return lastStatus.includes(window.currentFilter);
-                });
-            }
-            
-            document.getElementById('list-count').innerText = `${filtered.length} REGISTROS`;
-            if(!filtered.length) return tbody.innerHTML = `<tr><td colspan="5" class="py-16 text-center text-gray-500 bg-black/20"><i class="fas fa-search text-3xl mb-3"></i><p class="text-xs uppercase tracking-widest font-bold">Sin resultados</p></td></tr>`;
-
-            filtered.forEach(c => {
-                const ini = c.name.substring(0,2).toUpperCase(); const cc = c.calls ? c.calls.length : 0;
-                tbody.innerHTML += `<tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="window.openProfile('${c.id}')"><td class="py-5 px-8"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-xl bg-black/50 border border-white/10 text-white flex items-center justify-center text-sm font-black">${ini}</div><span class="font-bold text-white">${c.name}</span></div></td><td class="py-5 px-8 text-sm text-gray-400 hidden sm:table-cell">${c.email||'---'}</td><td class="py-5 px-8 text-sm text-gray-300 font-bold">${c.phone}</td><td class="py-5 px-8 text-xs text-purple-400 hidden sm:table-cell font-bold"><i class="fas fa-user-shield text-[10px] mr-1"></i> ${c.ownerName || 'Sistema'}</td><td class="py-5 px-8 text-right"><div class="inline-flex px-3 py-1.5 rounded-lg bg-black/50 border border-veloraBorder text-[10px] font-black tracking-widest uppercase text-gray-400"><i class="fas fa-history mr-1.5 text-veloraAccent"></i>${cc} AC</div></td></tr>`;
-            });
-        };
-        window.searchDirectory = () => window.renderDirectory(window.currentListType);
-
-        // --------------------------------------------------------
-        // EXPEDIENTE (DETALLE)
-        // --------------------------------------------------------
-        window.openProfile = (id) => {
-            const c = window.visibleContacts.find(x => x.id === id); if(!c) return;
-            window.currentContactId = id; window.currentListType = c.type;
-            ['dashboard','list','admin','settings','tasks', 'habits', 'customizer'].forEach(x => {
-                const el = document.getElementById(`view-${x}`);
-                if (el) el.classList.add('hidden');
-            });
-            document.getElementById('view-detail').classList.remove('hidden');
-            
-            document.getElementById('detail-name').innerText = c.name; document.getElementById('detail-phone').innerText = c.phone; document.getElementById('detail-email').innerText = c.email || 'No proporcionado'; document.getElementById('detail-owner').innerText = c.ownerName || 'No asignado'; document.getElementById('detail-avatar').innerText = c.name.substring(0,2).toUpperCase();
-            const badge = document.getElementById('detail-badge'); badge.innerText = c.type; badge.className = c.type === 'lead' ? 'px-3 py-1.5 text-[10px] font-black rounded-lg uppercase tracking-widest border bg-orange-500/10 text-orange-400 border-orange-500/30' : 'px-3 py-1.5 text-[10px] font-black rounded-lg uppercase tracking-widest border bg-emerald-500/10 text-veloraGreen border-emerald-500/30';
-            window.renderTimeline(); 
-            const nowLocal = new Date(); nowLocal.setMinutes(nowLocal.getMinutes() - nowLocal.getTimezoneOffset());
-            document.getElementById('call-date').value = nowLocal.toISOString().slice(0,16); document.getElementById('call-status').value = ''; document.getElementById('call-notes').value = '';
-        };
-
-        window.renderTimeline = () => {
-            const c = window.visibleContacts.find(x => x.id === window.currentContactId); const t = document.getElementById('calls-timeline'); t.innerHTML = '';
-            document.getElementById('history-count').innerText = `${c.calls ? c.calls.length : 0} Acciones`;
-            if(!c.calls || c.calls.length === 0) return t.innerHTML = `<div class="ml-12 py-10 text-center text-gray-500 bg-black/20 rounded-3xl border border-dashed border-veloraBorder"><p class="text-xs uppercase tracking-widest font-bold">Historial Vacío</p></div>`;
-            [...c.calls].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(call => {
-                const dt = new Date(call.date); const isT = new Date().toDateString() === dt.toDateString();
-                let iC = 'fa-history', cC = 'text-gray-400', bC = 'bg-black/50 border-veloraBorder'; const stL = call.status.toLowerCase();
-                
-                const foundStatus = window.workspaceConfig.interactionStatuses.find(st => st.name === call.status);
-                const emoji = foundStatus ? foundStatus.emoji : '📝';
-
-                if(stL.includes('interesado') && !stL.includes('no')) { iC = 'fa-check'; cC = 'text-blue-400'; bC = 'bg-blue-500/10 border-blue-500/30'; } 
-                else if(stL.includes('cerrada')) { iC = 'fa-trophy'; cC = 'text-emerald-400'; bC = 'bg-emerald-500/10 border-emerald-500/30'; } 
-                else if(stL.includes('no interesado')) { iC = 'fa-times'; cC = 'text-red-400'; bC = 'bg-red-500/10 border-red-500/30'; }
-
-                t.innerHTML += `<li class="relative pl-12 fade-in"><div class="absolute left-0 top-1 w-12 h-12 bg-veloraDark border rounded-2xl flex items-center justify-center z-10 shadow-lg ${bC} ${cC} text-lg">${emoji}</div><div class="bg-black/20 p-6 rounded-3xl border border-veloraBorder hover:border-white/10 transition"><div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4"><div class="text-[10px] font-black text-gray-500 uppercase tracking-widest"><i class="far fa-calendar-alt mr-1"></i> ${isT ? 'Hoy' : dt.toLocaleDateString()} <span class="mx-1 opacity-50">|</span> ${dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><span class="text-[10px] font-black uppercase tracking-widest border border-white/5 rounded-lg px-3 py-1.5 ${cC} ${bC}">${call.status}</span></div><p class="text-gray-300 text-sm leading-relaxed">${call.notes}</p></div></li>`;
-            });
-        };
-
-        window.saveCall = async (e) => {
-            e.preventDefault(); const c = window.visibleContacts.find(x => x.id === window.currentContactId); if(!c) return;
-            if(!c.calls) c.calls = []; const stat = document.getElementById('call-status').value;
-            c.calls.push({ id: 'c_' + Date.now(), date: document.getElementById('call-date').value, status: stat, notes: document.getElementById('call-notes').value });
-            
-            window.gainXP(20);
-
-            if(stat === 'Venta Cerrada' && c.type === 'lead') {
-                window.showConfirm("¡VENTA LOGRADA!", "Has cerrado la venta. ¿Promover a la Cartera de Clientes Automáticamente?", async () => { 
-                    c.type = 'client'; 
-                    await window.saveContactToDatabase(c); 
-                    window.playSuccessSound();
-                    window.gainXP(50);
-                    window.showToast("Excelente", "Promovido a Cliente y +50 XP.", "success"); 
-                    window.openProfile(c.id); 
-                });
-            } else { 
-                await window.saveContactToDatabase(c); 
-                window.playSuccessSound();
-                window.showToast("Guardado", "Gestión guardada exitosamente y +20 XP.", "success"); 
-                window.openProfile(c.id); 
-            }
-        };
-
-        // --------------------------------------------------------
-        // GESTOR DE TAREAS & REAL GOOGLE CALENDAR SYNC
-        // --------------------------------------------------------
-        let gapiInited = false;
-        let gisinited = false;
-        let tokenClient;
-
-        const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
-
-        window.gapiLoadCallback = () => {
-            gapi.load('client', async () => {
-                await gapi.client.init({
-                    discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
-                });
-                gapiInited = true;
-                checkGoogleAuthStatus();
-                checkPersistedGoogleToken();
-            });
-        };
-
-        window.gisLoadCallback = () => {
-            gisinited = true;
-            checkGoogleAuthStatus();
-        };
-
-        function checkGoogleAuthStatus() {
-            const btnText = document.getElementById('google-auth-text');
-            const token = gapi.client.getToken();
-            if (token) {
-                btnText.innerText = "Google Cal Conectado";
-                document.getElementById('btn-google-auth').classList.replace('text-gray-300', 'text-emerald-400');
-                document.getElementById('btn-google-auth').classList.add('shadow-glow-green');
-            } else {
-                btnText.innerText = "Google Cal Desconectado";
-                document.getElementById('btn-google-auth').classList.replace('text-emerald-400', 'text-gray-300');
-                document.getElementById('btn-google-auth').classList.remove('shadow-glow-green');
-            }
-        }
-
-        // Restaurar token si existe y no ha expirado
-        function checkPersistedGoogleToken() {
+        async function initCloudSystem() {
             try {
-                const tokenStr = localStorage.getItem('gcal_token');
-                const expires = localStorage.getItem('gcal_token_expires');
-                if (tokenStr && expires && Date.now() < Number(expires)) {
-                    gapi.client.setToken(JSON.parse(tokenStr));
-                    checkGoogleAuthStatus();
-                }
-            } catch (e) {
-                console.error("No se pudo restaurar la sesión de Google Calendar", e);
-            }
+                app = initializeApp(firebaseConfig); db = getDatabase(app);
+                onValue(ref(db, 'lapapacaliente/erp_state'), (snapshot) => {
+                    if (snapshot.exists() && !isSaving) {
+                        const cloudData = snapshot.val();
+                        
+                        // --- SISTEMA DE ALERTA DE SONIDO (KDS) ---
+                        const cloudOrders = cloudData.orders || [];
+                        if (!isInitialLoad && window.STATE.currentUser) {
+                            let hasNewOrders = false;
+                            cloudOrders.forEach(o => {
+                                if (!knownOrderIds.has(o.id) && o.status === 'Pendiente') {
+                                    hasNewOrders = true;
+                                }
+                            });
+                            if (hasNewOrders) {
+                                window.playNewOrderSound();
+                                window.showToast("🔔 ¡NUEVA ORDEN RECIBIDA!", "success");
+                            }
+                        }
+                        cloudOrders.forEach(o => knownOrderIds.add(o.id));
+                        isInitialLoad = false;
+                        
+                        window.STATE = { ...window.STATE, ...cloudData };
+                        if (!window.STATE.menu) window.STATE.menu = [];
+                        if (!window.STATE.ingredients) window.STATE.ingredients = [];
+                        if (!window.STATE.orders) window.STATE.orders = [];
+                        if (!window.STATE.gallery) window.STATE.gallery = [];
+                        if (!window.STATE.caja) window.STATE.caja = { isOpen: false, startAmt: 0, total: 0, moves: [], usuario: null, turnoId: null, startTime: null };
+                        if (!window.STATE.caja.moves) window.STATE.caja.moves = [];
+                        if (!window.STATE.settings) window.STATE.settings = { logo: '', cover: '', phone: '', apiKey: '', mapEmbed: '', mapLink: '', banks: [], customBasePrice: 6.00, customExtraPrice: 1.50 };
+                        if (!window.STATE.settings.banks) window.STATE.settings.banks = [];
+                        if (!window.STATE.hardware) window.STATE.hardware = { bridgeUrl: 'http://localhost:3000', autoOpenDrawer: true };
+                        
+                        const loginLogoEl = document.getElementById('login-brand-logo');
+                        if (loginLogoEl && window.STATE.settings.logo) loginLogoEl.src = window.STATE.settings.logo;
+                        window.renderAdminViews();
+                    } else if(!snapshot.exists()) { window.secureSave(); }
+                }, (error) => {});
+            } catch(e) {}
         }
 
-        // Conectar Google Calendar Real con el Client ID del panel de configuración
-        window.handleGoogleAuth = () => {
-            const clientId = window.workspaceConfig.googleClientId;
-            if (!clientId || clientId.trim() === '') {
-                window.showToast("Configuración Requerida", "Por favor, ingresa tu Google Client ID en Preferencias/Configuración.", "error");
-                window.showView('settings');
-                return;
-            }
-
-            if (!gapiInited || !gisinited) {
-                window.showToast("Google API", "La API de Google se está iniciando, espera un segundo.", "error");
-                return;
-            }
-
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: clientId,
-                scope: SCOPES,
-                callback: async (resp) => {
-                    if (resp.error !== undefined) {
-                        throw (resp);
-                    }
-                    // Guardar y persistir el token de forma local
-                    const token = gapi.client.getToken();
-                    localStorage.setItem('gcal_token', JSON.stringify(token));
-                    localStorage.setItem('gcal_token_expires', (Date.now() + (resp.expires_in * 1000)).toString());
-                    
-                    window.showToast("Google Calendar", "Sincronización de Agenda Autorizada.", "success");
-                    checkGoogleAuthStatus();
-                },
-            });
-
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({prompt: 'consent'});
-            } else {
-                tokenClient.requestAccessToken({prompt: ''});
+        window.secureSave = async () => {
+            if(db) {
+                isSaving = true;
+                try {
+                    window.STATE.menu = window.STATE.menu || []; window.STATE.ingredients = window.STATE.ingredients || []; window.STATE.orders = window.STATE.orders || []; window.STATE.settings.banks = window.STATE.settings.banks || [];
+                    await set(ref(db, 'lapapacaliente/erp_state'), window.STATE);
+                } 
+                catch(e) {} finally { setTimeout(() => isSaving = false, 500); }
             }
         };
 
-        // Guardar el Client ID de Google de manera colectiva en Firebase y LocalStorage
-        window.saveGoogleClientId = async () => {
-            const inputVal = document.getElementById('setting-google-client-id').value.trim();
-            window.workspaceConfig.googleClientId = inputVal;
-            localStorage.setItem('velora_google_client_id', inputVal);
-            await window.workspaceConfig.googleClientId;
-            await window.saveWorkspaceConfig();
-            window.showToast("Guardado", "Google Client ID actualizado en la configuración.", "success");
-        };
-
-        window.renderTasks = () => {
-            const q1List = document.getElementById('tasks-q1');
-            const q2List = document.getElementById('tasks-q2');
-            const q3List = document.getElementById('tasks-q3');
-            const q4List = document.getElementById('tasks-q4');
-            const completedGrid = document.getElementById('tasks-completed-grid');
-
-            q1List.innerHTML = ''; q2List.innerHTML = ''; q3List.innerHTML = ''; q4List.innerHTML = ''; completedGrid.innerHTML = '';
-
-            let cQ1 = 0, cQ2 = 0, cQ3 = 0, cQ4 = 0;
-
-            window.visibleTasks.forEach(task => {
-                const taskDate = new Date(task.dueDate);
-                const dateFormatted = taskDate.toLocaleDateString() + ' ' + taskDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                const targetContact = window.visibleContacts.find(c => c.id === task.contactId);
-                const contactInfo = targetContact ? `<div class="mt-2 text-[10px] bg-slate-955/40 p-1.5 rounded-lg">Asociado a: <strong class="text-veloraAccent cursor-pointer" onclick="window.openProfile('${targetContact.id}')">${targetContact.name}</strong></div>` : '';
-
-                let cardBorder = 'border-veloraBorder';
-                if (task.priority === 'Alta') cardBorder = 'border-red-500/40';
-                else if (task.priority === 'Media') cardBorder = 'border-orange-400/40';
-
-                const categoryObj = window.workspaceConfig.taskCategories.find(cat => cat.name === task.category);
-                const categoryEmoji = categoryObj ? categoryObj.emoji : '📂';
-
-                const taskCardHTML = `
-                    <div class="p-4 rounded-xl bg-black/40 border ${cardBorder} hover:border-white/15 transition-all">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="flex items-center gap-1.5 mb-1">
-                                    <span class="text-xs">${categoryEmoji}</span>
-                                    <span class="text-[9px] font-black uppercase text-gray-400 tracking-wider">${task.category || 'General'}</span>
-                                </div>
-                                <h4 class="text-xs font-black text-white uppercase tracking-wider">${task.title}</h4>
-                                <p class="text-[9px] text-gray-500 mt-0.5">${dateFormatted}</p>
-                            </div>
-                            <div class="flex gap-1">
-                                ${task.status === 'pending' ? `
-                                    <button onclick="markTaskComplete('${task.id}', event)" class="w-6 h-6 rounded-lg bg-emerald-500/10 text-veloraGreen hover:bg-emerald-500/20 border border-emerald-500/20 flex items-center justify-center transition cyber-btn"><i class="fas fa-check text-[10px]"></i></button>
-                                    <button onclick="editTask('${task.id}')" class="w-6 h-6 rounded-lg bg-blue-500/10 text-veloraAccent hover:bg-blue-500/20 border border-blue-500/20 flex items-center justify-center transition cyber-btn"><i class="fas fa-pen text-[9px]"></i></button>
-                                ` : ''}
-                                <button onclick="deleteTask('${task.id}')" class="w-6 h-6 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center transition cyber-btn"><i class="fas fa-trash-alt text-[9px]"></i></button>
-                            </div>
-                        </div>
-                        ${contactInfo}
-                    </div>
-                `;
-
-                if (task.status === 'completed') {
-                    completedGrid.innerHTML += `
-                        <div class="p-3 rounded-xl bg-slate-900/40 border border-veloraBorder flex justify-between items-center opacity-60">
-                            <div>
-                                <h5 class="text-xs font-bold text-gray-400 line-through">${task.title}</h5>
-                                <p class="text-[9px] text-gray-500">Completada</p>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="reopenTask('${task.id}')" class="w-6 h-6 rounded-lg bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 border border-yellow-500/20 flex items-center justify-center cyber-btn"><i class="fas fa-undo-alt text-[9px]"></i></button>
-                                <button onclick="deleteTask('${task.id}')" class="text-xs text-gray-500 hover:text-red-500 cyber-btn"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    const quad = task.quadrant || 'Q2';
-                    if (quad === 'Q1') { q1List.innerHTML += taskCardHTML; cQ1++; }
-                    else if (quad === 'Q2') { q2List.innerHTML += taskCardHTML; cQ2++; }
-                    else if (quad === 'Q3') { q3List.innerHTML += taskCardHTML; cQ3++; }
-                    else if (quad === 'Q4') { q4List.innerHTML += taskCardHTML; cQ4++; }
-                }
-            });
-
-            document.getElementById('task-badge-q1').innerText = cQ1;
-            document.getElementById('task-badge-q2').innerText = cQ2;
-            document.getElementById('task-badge-q3').innerText = cQ3;
-            document.getElementById('task-badge-q4').innerText = cQ4;
-        };
-
-        window.openTaskModal = (taskId = null) => {
-            document.getElementById('task-form').reset();
-            document.getElementById('form-task-id').value = '';
-            
-            const contactSelect = document.getElementById('task-form-contact');
-            contactSelect.innerHTML = '<option value="none">Sin contacto asociado</option>';
-            window.visibleContacts.forEach(c => {
-                contactSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-            });
-
-            const nowLocal = new Date();
-            nowLocal.setMinutes(nowLocal.getMinutes() - nowLocal.getTimezoneOffset());
-            document.getElementById('task-form-date').value = nowLocal.toISOString().slice(0,16);
-
-            const mTitle = document.getElementById('task-modal-title');
-
-            if (taskId) {
-                const task = window.allTasks.find(t => t.id === taskId);
-                if (task) {
-                    mTitle.innerHTML = '<i class="fas fa-calendar-alt text-yellow-500 mr-2"></i> Reagendar Tarea';
-                    document.getElementById('form-task-id').value = task.id;
-                    document.getElementById('task-form-title').value = task.title;
-                    document.getElementById('task-form-date').value = task.dueDate;
-                    document.getElementById('task-form-contact').value = task.contactId || 'none';
-                    document.getElementById('task-form-category').value = task.category || '';
-                    document.getElementById('task-form-quadrant').value = task.quadrant || 'Q2';
-                    document.getElementById('task-form-priority').value = task.priority || 'Media';
-                    document.getElementById('task-form-notes').value = task.notes || '';
-                }
-            } else {
-                mTitle.innerHTML = '<i class="fas fa-calendar-check text-yellow-500 mr-2"></i> Agendar Tarea';
-            }
-
-            const m = document.getElementById('task-modal');
-            m.classList.remove('hidden');
-            setTimeout(() => {
-                m.classList.remove('opacity-0');
-                document.getElementById('task-modal-box').classList.remove('scale-95');
-            }, 10);
-        };
-
-        window.openTaskModalForContact = () => {
-            window.openTaskModal();
-            if(window.currentContactId) {
-                document.getElementById('task-form-contact').value = window.currentContactId;
-            }
-        };
-
-        window.closeTaskModal = () => {
-            const m = document.getElementById('task-modal');
-            m.classList.add('opacity-0');
-            document.getElementById('task-modal-box').classList.add('scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
-        };
-
-        window.editTask = (taskId) => {
-            window.openTaskModal(taskId);
-        };
-
-        window.reopenTask = async (taskId) => {
-            const task = window.visibleTasks.find(t => t.id === taskId);
-            if (task) {
-                task.status = 'pending';
-                await window.saveTaskToDatabase(task);
-                window.showToast("Tarea Reabierta", "Regresada a la Matriz de Eisenhower.", "success");
-            }
-        };
-
-        window.saveTaskForm = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('form-task-id').value;
-            const title = document.getElementById('task-form-title').value.trim();
-            const date = document.getElementById('task-form-date').value;
-            const contactId = document.getElementById('task-form-contact').value;
-            const category = document.getElementById('task-form-category').value;
-            const quadrant = document.getElementById('task-form-quadrant').value;
-            const priority = document.getElementById('task-form-priority').value;
-            const notes = document.getElementById('task-form-notes').value.trim();
-            const syncGoogle = document.getElementById('task-form-sync-google').checked;
-
-            let taskObj;
-
-            if (id) {
-                const existingTask = window.allTasks.find(t => t.id === id);
-                taskObj = {
-                    ...existingTask,
-                    title,
-                    dueDate: date,
-                    contactId: contactId === 'none' ? null : contactId,
-                    category,
-                    quadrant,
-                    priority,
-                    notes
-                };
-            } else {
-                const taskId = 't_' + Date.now();
-                taskObj = {
-                    id: taskId,
-                    title,
-                    dueDate: date,
-                    contactId: contactId === 'none' ? null : contactId,
-                    category,
-                    quadrant,
-                    priority,
-                    notes,
-                    status: 'pending',
-                    ownerId: window.currentUser.uid,
-                    ownerName: window.currentUser.name,
-                    created: new Date().toISOString()
-                };
-            }
-
-            if (syncGoogle) {
-                if (!gapiInited || gapi.client.getToken() === null) {
-                    window.showToast("Google Calendar", "No has autenticado tu cuenta real. Pulsa el botón de Google en la barra superior.", "error");
+        window.POS = {
+            isApp: navigator.userAgent.includes("WebIntoApp") || window.location.href.includes("android_asset"),
+            init: () => { if (window.POS.isApp || /Android/i.test(navigator.userAgent)) document.getElementById('hw-status-badge').classList.replace('hidden', 'flex'); },
+            imprimir: async (datosHtml, orderId) => {
+                if (window.AndroidPOS && typeof window.AndroidPOS.print === 'function') {
+                    window.AndroidPOS.print(JSON.stringify({id: orderId, html: datosHtml}));
+                    window.showToast("Ticket enviado a la impresora de la App");
                     return;
                 }
+                
+                try {
+                    const hwBridgeUrl = window.STATE.hardware.bridgeUrl || 'http://localhost:3000';
+                    const res = await fetch(`${hwBridgeUrl}/api/printer/print`, {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ html: datosHtml, id: orderId })
+                    });
+                    if(res.ok) { window.showToast("Impresión Local Enviada"); return; }
+                } catch(e) { console.log("Sin bridge local. Usando Web Print."); }
+
+                const isAndroid = /Android/i.test(navigator.userAgent);
+                if (window.POS.isApp || isAndroid) {
+                    try {
+                        // ANTI-CRASH: Usamos un click virtual seguro y agregamos fallback a PlayStore si RawBT no está instalado.
+                        const rawbtUrl = "intent://rawbt:" + encodeURIComponent(datosHtml) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
+                        const a = document.createElement('a');
+                        a.href = rawbtUrl;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.showToast("Enviado a impresora móvil"); 
+                        return;
+                    } catch (err) {
+                        window.showToast("Acción bloqueada por la APK", "error");
+                        return;
+                    }
+                }
 
                 try {
-                    window.showToast("Sincronizando", "Enviando evento al calendario real...", "info");
-                    
-                    const eventDate = new Date(date);
-                    const endDate = new Date(eventDate.getTime() + 30 * 60 * 1000); 
-
-                    const event = {
-                        'summary': `[VELORA] ${title}`,
-                        'description': `${notes}\n\nCategoría: ${category}\nMatriz Eisenhower: ${quadrant}`,
-                        'start': {
-                            'dateTime': eventDate.toISOString(),
-                            'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
-                        },
-                        'end': {
-                            'dateTime': endDate.toISOString(),
-                            'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
-                        }
-                    };
-
-                    const request = gapi.client.calendar.events.insert({
-                        'calendarId': 'primary',
-                        'resource': event
-                    });
-
-                    await new Promise((resolve, reject) => {
-                        request.execute(resp => {
-                            if (resp.error) reject(resp.error);
-                            else resolve(resp);
-                        });
-                    });
-
-                    window.showToast("Google Calendar", "Sincronizado con éxito en tu calendario real.", "success");
+                    window.showToast("Usando impresión web estándar");
+                    document.getElementById('thermal-print-area').innerHTML = datosHtml;
+                    document.body.classList.add('thermal-printing');
+                    setTimeout(() => {
+                        try { window.print(); } catch(e) { window.showToast("Tu sistema no soporta impresión", "error"); }
+                        document.body.classList.remove('thermal-printing');
+                    }, 300);
                 } catch (err) {
-                    window.showToast("Sincronización Fallida", "Se guardó de manera local. Comprueba tus permisos de Google.", "error");
+                    window.showToast("Error crítico al imprimir", "error");
+                    document.body.classList.remove('thermal-printing');
                 }
-            }
-
-            await window.saveTaskToDatabase(taskObj);
+            },
             
-            window.gainXP(20);
+            abrirCaja: async (reason = "Manual") => {
+                if (window.AndroidPOS && typeof window.AndroidPOS.openDrawer === 'function') { window.AndroidPOS.openDrawer(); return; }
+                try {
+                    const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 1500);
+                    const res = await fetch(`${window.STATE.hardware.bridgeUrl || 'http://localhost:3000'}/api/drawer/open`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user: window.STATE.currentUser, reason }), signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    if(res.ok) return window.showToast("Gaveta Abierta (PC)");
+                } catch(e) {}
 
-            window.showToast("Éxito", id ? "Tarea modificada." : "Tarea guardada y +20 XP.", "success");
-            window.closeTaskModal();
-        };
-
-        window.markTaskComplete = async (taskId, event) => {
-            const task = window.visibleTasks.find(t => t.id === taskId);
-            if (task) {
-                task.status = 'completed';
-                await window.saveTaskToDatabase(task);
-                
-                window.playSuccessSound();
-
-                if (event) {
-                    spawnParticles(event.clientX, event.clientY, '#10b981', 40);
-                }
-
-                window.gainXP(25);
-
-                window.showToast("¡Tarea Lograda!", "Felicidades, +25 XP ganados.", "success");
-            }
-        };
-
-        window.deleteTask = async (taskId) => {
-            window.showConfirm("Eliminar Tarea", "¿Estás seguro de cancelar y borrar este recordatorio?", async () => {
-                await window.deleteTaskFromDatabase(taskId);
-                window.showToast("Eliminada", "Tarea borrada.", "error");
-            });
-        };
-
-        // --------------------------------------------------------
-        // HÁBITOS & TEMPORIZADOR POMODORO
-        // --------------------------------------------------------
-        window.renderHabits = () => {
-            const habitsContainer = document.getElementById('habits-list-today');
-            habitsContainer.innerHTML = '';
-
-            const todayKey = new Date().toDateString();
-            const habits = window.allHabits.filter(h => h.ownerId === window.currentUser.uid);
-
-            if (habits.length === 0) {
-                habitsContainer.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-6">No has creado ningún hábito de consistencia. ¡Crea uno para empezar!</p>`;
-                document.getElementById('habits-today-percentage').innerText = "0%";
-                return;
-            }
-
-            let completedCount = 0;
-
-            habits.forEach(habit => {
-                const isCompletedToday = habit.history && habit.history[todayKey] === true;
-                if (isCompletedToday) completedCount++;
-
-                habitsContainer.innerHTML += `
-                    <div class="flex items-center justify-between p-4 bg-black/40 border border-veloraBorder rounded-2xl">
-                        <div class="flex items-center gap-4">
-                            <span class="text-2xl">${habit.emoji || '🌱'}</span>
-                            <div>
-                                <h4 class="text-xs font-black text-white uppercase tracking-wider">${habit.name}</h4>
-                                <p class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Consecutivos: ${habit.streak || 0} días</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="toggleHabit('${habit.id}', '${todayKey}', event)" class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition cyber-btn ${isCompletedToday ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-black/50 text-gray-400 border border-veloraBorder hover:text-white'}">
-                                ${isCompletedToday ? '<i class="fas fa-check mr-1.5"></i> Completado' : 'Marcar Listo'}
-                            </button>
-                            <button onclick="deleteHabit('${habit.id}')" class="text-xs text-gray-600 hover:text-red-400 p-2 cyber-btn"><i class="fas fa-trash-alt"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            const percentage = Math.round((completedCount / habits.length) * 100) || 0;
-            document.getElementById('habits-today-percentage').innerText = `${percentage}%`;
-        };
-
-        window.toggleHabit = async (habitId, todayKey, event) => {
-            const habit = window.allHabits.find(h => h.id === habitId);
-            if (habit) {
-                if (!habit.history) habit.history = {};
-                const currentStatus = habit.history[todayKey] || false;
-                habit.history[todayKey] = !currentStatus;
-
-                if (habit.history[todayKey] === true) {
-                    habit.streak = (habit.streak || 0) + 1;
-                    window.playSuccessSound();
-                    if (event) {
-                        spawnParticles(event.clientX, event.clientY, '#10b981', 35);
+                const isAndroid = /Android/i.test(navigator.userAgent);
+                if (window.POS.isApp || isAndroid) {
+                    try {
+                        const comandoGaveta = "\x1B\x70\x00\x19\xFA"; // Comando universal ESC/POS
+                        const rawbtUrl = "intent://rawbt:" + encodeURIComponent(comandoGaveta) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
+                        const a = document.createElement('a');
+                        a.href = rawbtUrl;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        return window.showToast("Orden enviada a caja registradora");
+                    } catch (err) {
+                        window.showToast("App bloqueó apertura de caja", "error");
                     }
-                    window.gainXP(15);
-                } else {
-                    habit.streak = Math.max(0, (habit.streak || 1) - 1);
                 }
-
-                await window.saveHabitToDatabase(habit);
-                window.showToast("Hábito Actualizado", "Consistencia guardada.", "success");
+            },
+            
+            compartir: async (title, text) => {
+                if (window.AndroidPOS && typeof window.AndroidPOS.share === 'function') { window.AndroidPOS.share(text); return; }
+                if (navigator.share) { try { await navigator.share({ title, text }); } catch (err) {} } else { window.showToast("No soportado en este equipo", "error"); }
             }
         };
 
-        window.openAddHabitModal = () => {
-            document.getElementById('habit-form').reset();
-            const m = document.getElementById('habit-modal');
-            m.classList.remove('hidden');
-            setTimeout(() => {
-                m.classList.remove('opacity-0');
-                document.getElementById('habit-modal-box').classList.remove('scale-95');
-            }, 10);
+        window.POSBridge = { ping: async () => { try { const res = await fetch(`${window.STATE.hardware.bridgeUrl}/api/hardware`); if(res.ok) window.showToast('Hardware OK'); } catch(e) { window.showToast('Hardware Falló', 'error'); } } };
+
+        window.playNewOrderSound = () => { 
+            try { 
+                const actx = new (window.AudioContext || window.webkitAudioContext)(); 
+                const playBeep = (time) => { 
+                    const osc = actx.createOscillator(); const gain = actx.createGain(); 
+                    osc.connect(gain); gain.connect(actx.destination); 
+                    osc.type = 'triangle'; osc.frequency.value = 800; 
+                    gain.gain.setValueAtTime(0.3, actx.currentTime + time); 
+                    gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + time + 0.3); 
+                    osc.start(actx.currentTime + time); osc.stop(actx.currentTime + time + 0.3); 
+                }; 
+                playBeep(0); playBeep(0.4); 
+            } catch(e) {} 
         };
 
-        window.closeAddHabitModal = () => {
-            const m = document.getElementById('habit-modal');
-            m.classList.add('opacity-0');
-            document.getElementById('habit-modal-box').classList.add('scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
+        window.showToast = (msg, type = 'success') => { const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = `bg-zinc-900 border ${type === 'success' ? 'border-green-500/30' : 'border-red-500/30'} rounded-xl p-3 flex items-center gap-2 toast-custom`; t.innerHTML = `<span class="font-bold text-xs text-white">${msg}</span>`; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3000); };
+        window.openModal = (id) => document.getElementById(id).classList.add('active'); window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+        window.toggleAdminSidebar = () => { document.getElementById('erp-sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebar-overlay').classList.toggle('hidden'); };
+
+        window.processImageUpload = (event, callback) => {
+            const file = event.target.files[0]; if(!file) return; const reader = new FileReader();
+            reader.onload = (e) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); let scaleSize = 600 / img.width; if(scaleSize > 1) scaleSize = 1; canvas.width = img.width * scaleSize; canvas.height = img.height * scaleSize; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); callback(canvas.toDataURL('image/jpeg', 0.6)); }; img.src = e.target.result; }; reader.readAsDataURL(file);
         };
 
-        window.saveHabitForm = async (e) => {
-            e.preventDefault();
-            const emoji = document.getElementById('habit-form-emoji').value.trim();
-            const name = document.getElementById('habit-form-name').value.trim();
+        window.handleEpicLogin = () => {
+            const u = window.sanitize(document.getElementById('epic-user').value.trim().toLowerCase()); const p = window.sanitize(document.getElementById('epic-pass').value.trim());
+            if (u === 'papitacaliente' && p === '8494648650') { window.STATE.currentUser = 'admin'; } else if (u === 'cocinapapitacaliente' && p === '11223344') { window.STATE.currentUser = 'cocina'; } else { return window.showToast('Credenciales Inválidas', 'error'); }
+            
+            // AUDITORIA: Desbloquear motor de audio en teléfonos (iOS/Android) al interactuar para permitir sonido de nueva orden.
+            try { const actx = new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch(e) {}
 
-            const hObj = {
-                id: 'h_' + Date.now(),
-                emoji,
-                name,
-                streak: 0,
-                history: {},
-                ownerId: window.currentUser.uid,
-                created: new Date().toISOString()
-            };
-
-            await window.saveHabitToDatabase(hObj);
-            window.gainXP(10);
-            window.showToast("Éxito", "Hábito creado correctamente y +10 XP.", "success");
-            window.closeAddHabitModal();
+            document.getElementById('app-login-screen').classList.add('hidden-auth'); const dash = document.getElementById('adminDashboard'); dash.classList.remove('hidden', 'opacity-0', 'pointer-events-none'); dash.classList.add('flex', 'opacity-100', 'pointer-events-auto');
+            document.getElementById('role-badge').innerText = window.STATE.currentUser; document.querySelectorAll('.admin-only').forEach(el => { el.style.display = window.STATE.currentUser === 'admin' ? 'block' : 'none'; });
+            window.switchAdminPanel(window.STATE.currentUser === 'admin' ? 'dashboard' : 'kds'); window.renderAdminViews(); window.POS.init();
         };
 
-        window.deleteHabit = (id) => {
-            window.showConfirm("Eliminar Hábito", "¿Quieres borrar este hábito?", async () => {
-                await window.deleteHabitFromDatabase(id);
-                window.showToast("Eliminado", "Hábito borrado.", "error");
-            });
+        window.logoutAdmin = () => { window.STATE.currentUser = null; document.getElementById('adminDashboard').classList.add('hidden', 'opacity-0', 'pointer-events-none'); document.getElementById('adminDashboard').classList.remove('flex', 'opacity-100', 'pointer-events-auto'); document.getElementById('epic-user').value = ''; document.getElementById('epic-pass').value = ''; document.getElementById('app-login-screen').classList.remove('hidden-auth'); };
+
+        window.switchAdminPanel = (tab) => {
+            document.querySelectorAll('.admin-panel-tab').forEach(e => e.classList.add('hidden')); document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active', 'border-l'));
+            const p = document.getElementById(`panel-admin-${tab}`); p.classList.remove('hidden'); if(tab === 'terminal') p.classList.add('flex');
+            const btn = document.getElementById(`btn-side-${tab}`); if(btn) btn.classList.add('active');
+            if(window.innerWidth < 768) { document.getElementById('erp-sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.add('hidden'); }
+            if(tab === 'terminal') window.renderAdminTerminal(); if(tab === 'orders') window.renderOrdersHistory(); if(tab === 'ingredients') window.renderIngredients(); if(tab === 'inventory') window.renderAdminCatalog(); if(tab === 'gallery') window.renderGalleryAdmin(); if(tab === 'pos') window.renderCaja(); if(tab === 'settings') window.renderBankAccounts();
         };
 
-        // Pomodoro State Variables
-        let pomodoroTimer = null;
-        let pomodoroTimeLeft = 25 * 60; 
-        let pomodoroIsRunning = false;
-        let pomodoroMode = 'focus'; 
+        window.renderAdminViews = () => {
+            if(!window.STATE.currentUser) return; window.renderKDS();
+            if(window.STATE.currentUser === 'admin') {
+                window.renderDashboardMetrics(); window.renderCaja(); window.renderBankAccounts();
+                if(document.getElementById('set-phone')) document.getElementById('set-phone').value = window.STATE.settings.phone || '';
+                if(document.getElementById('set-api-key')) document.getElementById('set-api-key').value = window.STATE.settings.apiKey || '';
+                if(document.getElementById('set-map-embed')) document.getElementById('set-map-embed').value = window.STATE.settings.mapEmbed || '';
+                if(document.getElementById('set-map-link')) document.getElementById('set-map-link').value = window.STATE.settings.mapLink || '';
+                if(document.getElementById('set-base-price')) document.getElementById('set-base-price').value = window.STATE.settings.customBasePrice || 6.00;
+                if(document.getElementById('set-extra-price')) document.getElementById('set-extra-price').value = window.STATE.settings.customExtraPrice || 1.50;
+                if(document.getElementById('adm-preview-logo') && window.STATE.settings.logo) document.getElementById('adm-preview-logo').src = window.STATE.settings.logo;
+                if(document.getElementById('adm-preview-cover') && window.STATE.settings.cover) document.getElementById('adm-preview-cover').src = window.STATE.settings.cover;
+                if(document.getElementById('hw-bridge-url')) document.getElementById('hw-bridge-url').value = window.STATE.hardware.bridgeUrl || 'http://localhost:3000';
+                if(document.getElementById('hw-auto-drawer')) document.getElementById('hw-auto-drawer').checked = window.STATE.hardware.autoOpenDrawer !== false;
+            }
+        };
 
-        window.togglePomodoro = () => {
-            if (pomodoroIsRunning) {
-                clearInterval(pomodoroTimer);
-                pomodoroIsRunning = false;
-                document.getElementById('btn-pomodoro-start').innerText = 'Reanudar';
-                document.getElementById('btn-pomodoro-start').className = 'flex-1 py-3.5 bg-yellow-500 text-slate-950 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-yellow-600 transition cyber-btn';
+        window.abrirTurnoCaja = () => {
+            if(window.STATE.caja.isOpen) return window.showToast('Caja ya abierta', 'error');
+            const amt = parseFloat(document.getElementById('caja-monto').value || 0);
+            window.STATE.caja = { isOpen: true, startAmt: amt, total: amt, usuario: window.STATE.currentUser, turnoId: 'T-'+Date.now(), startTime: new Date().toLocaleString(), moves: [{ type: 'in', desc: 'Apertura (Fondo)', amt, time: new Date().toLocaleTimeString() }] };
+            window.secureSave(); window.renderCaja(); window.showToast('Turno Iniciado');
+        };
+
+        window.cerrarTurnoCaja = async () => {
+            if(!window.STATE.caja.isOpen) return;
+            const { value: montoReal } = await Swal.fire({ title: 'Arqueo Z', text: 'Ingrese el total de EFECTIVO físico contado:', input: 'number', background: '#111', color: '#fff', confirmButtonColor: '#FF3D00' });
+            if(montoReal !== undefined && montoReal !== null) {
+                const esperado = window.STATE.caja.total; const real = parseFloat(montoReal); const diferencia = real - esperado;
+                let msj = diferencia === 0 ? 'Caja Cuadrada Perfectamente' : (diferencia > 0 ? `Sobrante: +$${diferencia.toFixed(2)}` : `Faltante: -$${Math.abs(diferencia).toFixed(2)}`);
+                await Swal.fire({ title: 'Resumen de Arqueo', html: `<div class="text-left text-sm space-y-2 mt-4"><p><b>Esperado:</b> $${esperado.toFixed(2)}</p><p><b>Declarado:</b> $${real.toFixed(2)}</p><p class="${diferencia === 0 ? 'text-green-500' : 'text-red-500'} font-black text-lg mt-2">${msj}</p></div>`, background: '#111', color: '#fff' });
+                if(window.STATE.hardware.autoOpenDrawer) window.POS.abrirCaja('Cierre Z');
+                window.STATE.caja = { isOpen: false, startAmt: 0, total: 0, moves: [], usuario: null, turnoId: null, startTime: null }; window.secureSave(); window.renderCaja();
+            }
+        };
+
+        window.addManualCaja = (type) => {
+            if(!window.STATE.caja.isOpen) return window.showToast('Abra la caja primero', 'error');
+            const desc = window.sanitize(document.getElementById('manual-caja-desc').value.trim()); const amt = parseFloat(document.getElementById('manual-caja-amt').value || 0);
+            if(!desc || amt <= 0) return window.showToast('Faltan datos', 'error');
+            if(type === 'in') window.STATE.caja.total += amt; else window.STATE.caja.total -= amt;
+            window.STATE.caja.moves.push({ type, desc: `Manual: ${desc}`, amt, time: new Date().toLocaleTimeString() });
+            document.getElementById('manual-caja-desc').value = ''; document.getElementById('manual-caja-amt').value = '';
+            if(window.STATE.hardware.autoOpenDrawer) window.POS.abrirCaja(desc); window.secureSave(); window.renderCaja(); window.showToast('Movimiento Registrado');
+        };
+
+        window.renderCaja = () => {
+            const c = window.STATE.caja;
+            document.getElementById('caja-status').innerText = c.isOpen ? 'TURNO OPERATIVO' : 'TURNO CERRADO'; document.getElementById('caja-status').className = `text-xl font-black ${c.isOpen ? 'text-green-500' : 'text-red-500'}`;
+            document.getElementById('caja-apertura-box').classList.toggle('hidden', c.isOpen); document.getElementById('caja-cierre-box').classList.toggle('hidden', !c.isOpen);
+            document.getElementById('caja-info-operador').classList.toggle('hidden', !c.isOpen); document.getElementById('caja-info-time').classList.toggle('hidden', !c.isOpen);
+            if(c.isOpen) { document.getElementById('caja-operador-name').innerText = c.usuario; document.getElementById('caja-open-time').innerText = c.startTime; }
+            document.getElementById('caja-total-calc').innerText = `$${(c.total || 0).toFixed(2)}`;
+            const movesEl = document.getElementById('caja-moves');
+            if(!c.moves || c.moves.length === 0) movesEl.innerHTML = '<p class="text-xs text-zinc-500 text-center">Sin movimientos.</p>';
+            else { movesEl.innerHTML = [...c.moves].reverse().map(m => `<div class="flex justify-between bg-zinc-900/80 p-3 rounded-xl text-[10px] font-bold border border-white/5 mb-2"><div class="flex-1"><span class="text-zinc-500 block">${m.time}</span><span class="text-white uppercase">${m.desc}</span></div><div class="text-right"><span class="text-sm font-black ${m.type==='in'?'text-green-400':'text-red-400'}">${m.type==='in'?'+':'-'}$${m.amt.toFixed(2)}</span>${m.orderId ? `<br><button onclick="window.showTicketPreview('${m.orderId}')" class="bg-blue-600 text-white px-2 py-1 rounded mt-1">Factura</button>` : ''}</div></div>`).join(''); }
+        };
+
+        let calcInput = ''; window.stdCalc = (val) => { const display = document.getElementById('std-calc-display'); if(val === 'C') { calcInput = ''; display.value = ''; } else if(val === '=') { try { calcInput = Function('"use strict";return (' + calcInput + ')')().toString(); display.value = calcInput; } catch(e) { display.value = 'Error'; calcInput = ''; } } else { if(/^[0-9+\-*/.]$/.test(val)) { calcInput += val; display.value = calcInput; } } };
+        window.cobrarDesdeCalculadora = () => { const amt = parseFloat(document.getElementById('std-calc-display').value || 0); if(amt <= 0) return window.showToast("Monto inválido", "error"); document.getElementById('manual-caja-amt').value = amt; document.getElementById('manual-caja-desc').value = "Cobro Calculadora"; window.showToast("Monto transferido. Clicke en +", "success"); window.stdCalc('C'); };
+        window.calcSplitBill = () => { const t = parseFloat(document.getElementById('split-total').value || 0); const p = parseInt(document.getElementById('split-people').value || 1); document.getElementById('split-result').innerText = `$${(t / Math.max(1, p)).toFixed(2)}`; };
+        window.calcVuelto = () => { const t = parseFloat(document.getElementById('vuelto-total').value || 0); const p = parseFloat(document.getElementById('vuelto-pago').value || 0); const c = p - t; const r = document.getElementById('vuelto-result'); if(t === 0) { r.innerText = '$0.00'; r.className = 'text-2xl font-black text-white relative z-10'; } else if(c < 0 && p > 0) { r.innerText = 'FALTA'; r.className = 'text-xl font-black text-red-500 relative z-10'; } else { r.innerText = `$${Math.max(0, c).toFixed(2)}`; r.className = `text-3xl font-black relative z-10 ${c > 0 ? 'text-green-400' : 'text-white'}`; } };
+
+        window.renderAdminTerminal = () => { 
+            const menuGrid = document.getElementById('pos-menu-grid');
+            if(!window.STATE.menu || window.STATE.menu.length === 0) {
+                menuGrid.innerHTML = '<div class="col-span-full text-center text-zinc-500 text-xs py-10">No hay productos en el menú.</div>';
             } else {
-                pomodoroIsRunning = true;
-                document.getElementById('btn-pomodoro-start').innerText = 'Pausar';
-                document.getElementById('btn-pomodoro-start').className = 'flex-1 py-3.5 bg-slate-800 text-white border border-veloraBorder rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black/40 transition cyber-btn';
-                
-                pomodoroTimer = setInterval(() => {
-                    pomodoroTimeLeft--;
-                    updatePomodoroDisplay();
-
-                    if (pomodoroTimeLeft <= 0) {
-                        clearInterval(pomodoroTimer);
-                        pomodoroIsRunning = false;
-                        
-                        if (pomodoroMode === 'focus') {
-                            window.playLevelUpSound();
-                            window.gainXP(30);
-                            window.showToast("¡Enfoque Terminado!", "Toma un descanso y gana +30 XP.", "success");
-                            pomodoroMode = 'shortBreak';
-                            pomodoroTimeLeft = 5 * 60;
-                            document.getElementById('pomodoro-status-label').innerText = 'DESCANSO';
-                            document.getElementById('pomodoro-status-label').className = 'text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1';
-                        } else {
-                            window.playSuccessSound();
-                            window.showToast("Descanso Terminado", "Es hora de regresar al trabajo enfocado.", "success");
-                            pomodoroMode = 'focus';
-                            pomodoroTimeLeft = 25 * 60;
-                            document.getElementById('pomodoro-status-label').innerText = 'ENFOQUE';
-                            document.getElementById('pomodoro-status-label').className = 'text-[10px] font-black text-red-500 uppercase tracking-widest mt-1';
-                        }
-
-                        resetPomodoroUI();
-                    }
-                }, 1000);
+                menuGrid.innerHTML = window.STATE.menu.map(m => {
+                    const price = parseFloat(m.price) || 0;
+                    const title = m.title || 'Sin Nombre';
+                    const img = m.img || 'https://placehold.co/600x400/222/FFF';
+                    return `<div onclick="window.addToAdminCart('${m.id}')" class="bg-zinc-900 border border-white/5 rounded-xl p-3 cursor-pointer hover:border-papa-fire flex flex-col items-center text-center active:scale-95 transition-transform"><img src="${img}" class="w-16 h-16 object-cover rounded-lg mb-2"><p class="text-[10px] font-bold text-white uppercase leading-tight line-clamp-2">${title}</p><p class="text-xs font-black text-papa-yellow mt-1">$${price.toFixed(2)}</p></div>`;
+                }).join('');
             }
+            window.renderAdminCart(); 
         };
-
-        window.resetPomodoro = () => {
-            clearInterval(pomodoroTimer);
-            pomodoroIsRunning = false;
-            pomodoroMode = 'focus';
-            pomodoroTimeLeft = 25 * 60;
-            document.getElementById('pomodoro-status-label').innerText = 'ENFOQUE';
-            document.getElementById('pomodoro-status-label').className = 'text-[10px] font-black text-red-500 uppercase tracking-widest mt-1';
-            resetPomodoroUI();
-        };
-
-        function resetPomodoroUI() {
-            document.getElementById('btn-pomodoro-start').innerText = 'Iniciar';
-            document.getElementById('btn-pomodoro-start').className = 'flex-1 py-3.5 bg-red-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-600 transition shadow-[0_0_15px_rgba(239,68,68,0.3)] cyber-btn';
-            updatePomodoroDisplay();
-        }
-
-        function updatePomodoroDisplay() {
-            const minutes = Math.floor(pomodoroTimeLeft / 60);
-            const seconds = pomodoroTimeLeft % 60;
-            document.getElementById('pomodoro-time').innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-            const maxDuration = pomodoroMode === 'focus' ? 25 * 60 : 5 * 60;
-            const percentage = (pomodoroTimeLeft / maxDuration) * 502;
-            document.getElementById('pomodoro-progress').style.strokeDashoffset = 502 - percentage;
-        }
-
-        // --------------------------------------------------------
-        // PERSONALIZAR WORKSPACE (CATEGORÍAS Y ESTADOS DINÁMICOS)
-        // --------------------------------------------------------
-        window.renderCustomizer = () => {
-            const taskList = document.getElementById('custom-task-categories-list');
-            const intList = document.getElementById('custom-int-categories-list');
-
-            taskList.innerHTML = '';
-            intList.innerHTML = '';
-
-            window.workspaceConfig.taskCategories.forEach((cat, index) => {
-                taskList.innerHTML += `
-                    <div class="flex items-center justify-between p-3.5 bg-black/40 border border-veloraBorder rounded-2xl">
-                        <div class="flex items-center gap-3">
-                            <span class="text-xl">${cat.emoji}</span>
-                            <span class="text-xs font-black text-white uppercase tracking-wider">${cat.name}</span>
-                        </div>
-                        <button onclick="deleteCustomCategory('task', ${index})" class="text-xs text-gray-500 hover:text-red-400 p-2 cyber-btn"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                `;
-            });
-
-            window.workspaceConfig.interactionStatuses.forEach((st, index) => {
-                intList.innerHTML += `
-                    <div class="flex items-center justify-between p-3.5 bg-black/40 border border-veloraBorder rounded-2xl">
-                        <div class="flex items-center gap-3">
-                            <span class="text-xl">${st.emoji}</span>
-                            <span class="text-xs font-black text-white uppercase tracking-wider">${st.name}</span>
-                        </div>
-                        <button onclick="deleteCustomCategory('interaction', ${index})" class="text-xs text-gray-500 hover:text-red-400 p-2 cyber-btn"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                `;
-            });
-        };
-
-        window.handleAddCustomCategory = async (e, type) => {
-            e.preventDefault();
-            if (type === 'task') {
-                const emoji = document.getElementById('custom-task-emoji').value.trim();
-                const name = document.getElementById('custom-task-name').value.trim();
-                window.workspaceConfig.taskCategories.push({ emoji, name });
-                document.getElementById('custom-task-emoji').value = '';
-                document.getElementById('custom-task-name').value = '';
-            } else if (type === 'interaction') {
-                const emoji = document.getElementById('custom-int-emoji').value.trim();
-                const name = document.getElementById('custom-int-name').value.trim();
-                window.workspaceConfig.interactionStatuses.push({ emoji, name });
-                document.getElementById('custom-int-emoji').value = '';
-                document.getElementById('custom-int-name').value = '';
-            }
-
-            await window.saveWorkspaceConfig();
-            window.showToast("Configuración Actualizada", "Módulo guardado en la nube.", "success");
-            window.renderCustomizer();
-        };
-
-        window.deleteCustomCategory = async (type, index) => {
-            window.showConfirm("Eliminar Parámetro", "¿Seguro de borrar esta categoría? Afectará a los selects del sistema.", async () => {
-                if (type === 'task') {
-                    window.workspaceConfig.taskCategories.splice(index, 1);
-                } else if (type === 'interaction') {
-                    window.workspaceConfig.interactionStatuses.splice(index, 1);
-                }
-                await window.saveWorkspaceConfig();
-                window.showToast("Módulo Actualizado", "Configuración de categorías refrescada.", "error");
-                window.renderCustomizer();
-            });
-        };
-
-        // --------------------------------------------------------
-        // SETTINGS & PROFILE
-        // --------------------------------------------------------
-        window.saveProfileSettings = async (e) => {
-            e.preventDefault();
-            const n = document.getElementById('setting-name').value.trim();
-            const p = document.getElementById('setting-phone').value.trim();
-            const b = document.getElementById('setting-bio').value.trim();
-            
-            const updated = { ...window.currentUser, name: n, phone: p, position: b };
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', window.currentUser.uid), updated);
-            
-            window.currentUser = updated;
-            localStorage.setItem('velora_auth_session', JSON.stringify(updated));
-            window.showToast("Perfil Actualizado", "Tus datos han sido guardados.", "success");
-            filterDataAndRender();
-        };
-
-        window.handleProfileImageUpload = (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const img = new Image();
-                img.onload = async () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 250; const MAX_HEIGHT = 250;
-                    let width = img.width; let height = img.height;
-                    if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-                    canvas.width = width; canvas.height = height;
-                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                    
-                    const updated = { ...window.currentUser, avatarBase64: dataUrl };
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', window.currentUser.uid), updated);
-                    window.currentUser = updated;
-                    localStorage.setItem('velora_auth_session', JSON.stringify(updated));
-                    updateAvatars(updated);
-                    window.showToast("Avatar Actualizado", "Foto de perfil subida con éxito.", "success");
-                };
-                img.src = ev.target.result;
-            };
-            reader.readAsDataURL(file);
-        };
-
-        window.applyTheme = (themeClass) => {
-            const allThemes = ['theme-monolith', 'theme-cyberpunk', 'theme-emerald', 'theme-crimson', 'theme-nebula', 'theme-aurora'];
-            const body = document.getElementById('app-body');
-            allThemes.forEach(t => body.classList.remove(t));
-            body.classList.add(themeClass);
-            
-            document.querySelectorAll('.theme-btn').forEach(btn => {
-                btn.classList.remove('ring-4', 'ring-veloraAccent', 'border-transparent');
-                btn.classList.add('border-veloraBorder');
-            });
-            const activeBtn = document.querySelector(`.theme-btn.${themeClass}`);
-            if(activeBtn) {
-                activeBtn.classList.add('ring-4', 'ring-veloraAccent', 'border-transparent');
-                activeBtn.classList.remove('border-veloraBorder');
-            }
-
-            localStorage.setItem('velora_theme', themeClass);
-            if(window.currentView === 'settings') window.showToast("Entorno Actualizado", "Fondo dinámico aplicado.", "success");
-        };
-
-        const savedTheme = localStorage.getItem('velora_theme') || 'theme-monolith';
-        window.applyTheme(savedTheme);
-
-        // --------------------------------------------------------
-        // CRUD CONTACTOS Y MODALES
-        // --------------------------------------------------------
-        window.openContactModal = (id = null) => {
-            document.getElementById('contact-form').reset();
-            document.getElementById('modal-title').innerHTML = id ? '<i class="fas fa-edit text-veloraAccent mr-2"></i> Modificar' : '<i class="fas fa-cube text-veloraAccent mr-2"></i> Nuevo Registro';
-            if(id) { 
-                const c = window.visibleContacts.find(x => x.id === id); 
-                document.getElementById('form-contact-id').value = c.id; document.getElementById('form-name').value = c.name; document.getElementById('form-type').value = c.type; document.getElementById('form-phone').value = c.phone; document.getElementById('form-email').value = c.email || ''; document.getElementById('form-address').value = c.address || ''; 
-            } else { 
-                document.getElementById('form-contact-id').value = ''; 
-                if(window.currentView === 'leads' || window.currentView === 'clients') document.getElementById('form-type').value = window.currentListType;
-            }
-            const m = document.getElementById('contact-modal'); m.classList.remove('hidden'); setTimeout(() => { m.classList.remove('opacity-0'); document.getElementById('contact-modal-box').classList.remove('scale-95'); }, 10);
-        };
-
-        window.closeContactModal = () => { const m = document.getElementById('contact-modal'); m.classList.add('opacity-0'); document.getElementById('contact-modal-box').classList.add('scale-95'); setTimeout(() => m.classList.add('hidden'), 300); };
-        window.saveContactForm = async (e) => {
-            e.preventDefault(); const id = document.getElementById('form-contact-id').value;
-            const cObj = id ? window.visibleContacts.find(x => x.id === id) : { id: 'id_' + Date.now(), calls: [], ownerId: window.currentUser.uid, ownerName: window.currentUser.name };
-            cObj.name = document.getElementById('form-name').value; cObj.type = document.getElementById('form-type').value; cObj.phone = document.getElementById('form-phone').value; cObj.email = document.getElementById('form-email').value; cObj.address = document.getElementById('form-address').value;
-            await window.saveContactToDatabase(cObj); 
-            
-            window.gainXP(20);
-
-            window.showToast("Éxito", id ? "Ficha Actualizada" : "Ficha Creada y +20 XP", "success"); window.closeContactModal();
-        };
-
-        window.editCurrentContact = () => { if(window.currentContactId) window.openContactModal(window.currentContactId); };
-        window.deleteCurrentContact = () => { if(!window.currentContactId) return; window.showConfirm("Eliminar Ficha", "¿Confirma la eliminación permanente?", async () => { await window.deleteContactFromDatabase(window.currentContactId); window.showToast("Eliminado", "Ficha borrada.", "error"); window.goBack(); }); };
-
-        // --------------------------------------------------------
-        // PANEL DE ADMINISTRACIÓN
-        // --------------------------------------------------------
-        window.renderAdmin = () => {
-            document.getElementById('admin-stat-users').innerText = window.allUsers.length; document.getElementById('admin-stat-leads').innerText = window.allContacts.filter(c => c.type === 'lead').length; document.getElementById('admin-stat-clients').innerText = window.allContacts.filter(c => c.type === 'client').length;
-            const tb = document.querySelector('#admin-users-table tbody'); tb.innerHTML = '';
-            
-            window.allUsers.forEach(u => {
-                const uC = window.allContacts.filter(c => c.ownerId === u.uid);
-                const rB = u.role === 'admin' ? '<span class="text-purple-400 bg-purple-500/10 px-3 py-1.5 rounded-lg text-[9px] font-black border border-purple-500/30 uppercase tracking-widest">ADMIN</span>' : '<span class="text-veloraAccent bg-blue-500/10 px-3 py-1.5 rounded-lg text-[9px] font-black border border-blue-500/30 uppercase tracking-widest">WORKSPACE AGENT</span>';
-                tb.innerHTML += `
-                    <tr class="hover:bg-white/5 transition-colors">
-                        <td class="py-5 px-8">
-                            <div class="flex items-center gap-3">
-                                ${u.avatarBase64 ? `<img src="${u.avatarBase64}" class="w-8 h-8 rounded-lg object-cover">` : `<div class="w-8 h-8 rounded-lg bg-black/50 text-white flex items-center justify-center text-xs font-black">${u.name.charAt(0).toUpperCase()}</div>`}
-                                <div><p class="font-bold text-white">${u.name}</p><p class="text-[10px] text-gray-500">${u.email} <span class="opacity-30">(*${u.password})</span></p></div>
-                            </div>
-                        </td>
-                        <td class="py-5 px-8">${rB}</td>
-                        <td class="py-5 px-8 text-center text-orange-400 font-bold">${uC.filter(c => c.type === 'lead').length}</td>
-                        <td class="py-5 px-8 text-center text-veloraGreen font-bold">${uC.filter(c => c.type === 'client').length}</td>
-                        <td class="py-5 px-8 text-right">
-                            <div class="flex justify-end gap-2">
-                                <button onclick="window.openUserModal('${u.uid}')" class="w-8 h-8 flex items-center justify-center bg-black/40 text-gray-400 hover:text-purple-400 rounded-lg border border-veloraBorder transition cyber-btn" title="Editar"><i class="fas fa-pen text-xs"></i></button>
-                                ${u.uid !== window.currentUser.uid ? `<button onclick="window.deleteUser('${u.uid}')" class="w-8 h-8 flex items-center justify-center bg-black/40 text-gray-400 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 rounded-lg border border-veloraBorder transition cyber-btn"><i class="fas fa-trash text-xs"></i></button>` : '<span class="text-[10px] text-purple-400 font-black px-2 flex items-center">TÚ</span>'}
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-        };
-
-        window.openUserModal = (uid = null) => {
-            document.getElementById('user-form').reset(); const t = document.getElementById('user-modal-title');
-            if(uid) { 
-                const u = window.allUsers.find(x => x.uid === uid); 
-                t.innerHTML = '<i class="fas fa-user-edit text-purple-500 mr-2"></i> Modificar'; 
-                document.getElementById('edit-user-uid').value = u.uid; document.getElementById('new-user-name').value = u.name; document.getElementById('new-user-email').value = u.email; document.getElementById('new-user-pass').value = u.password; document.getElementById('new-user-role').value = u.role; 
-            } else { 
-                t.innerHTML = '<i class="fas fa-user-plus text-purple-500 mr-2"></i> Crear Agente'; document.getElementById('edit-user-uid').value = ''; 
-            }
-            const m = document.getElementById('user-modal'); m.classList.remove('hidden'); setTimeout(() => { m.classList.remove('opacity-0'); document.getElementById('user-modal-box').classList.remove('scale-95'); }, 10);
-        };
-        window.closeUserModal = () => { const m = document.getElementById('user-modal'); m.classList.add('opacity-0'); document.getElementById('user-modal-box').classList.add('scale-95'); setTimeout(() => m.classList.add('hidden'), 300); };
-
-        window.saveUserForm = async (e) => {
-            e.preventDefault(); const uid = document.getElementById('edit-user-uid').value; const email = document.getElementById('new-user-email').value.trim(); const pass = document.getElementById('new-user-pass').value.trim(); const name = document.getElementById('new-user-name').value.trim(); const role = document.getElementById('new-user-role').value;
-            if(uid) { 
-                const target = window.allUsers.find(x => x.uid === uid); 
-                if(target.email !== email && window.allUsers.find(x => x.email === email)) return window.showToast("Error", "Este correo ya está en uso", "error"); 
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', uid), { ...target, name, email, password: pass, role }); 
-                if(uid === window.currentUser.uid) { window.currentUser = { ...window.currentUser, name, email, password: pass, role }; localStorage.setItem('velora_auth_session', JSON.stringify(window.currentUser)); document.getElementById('user-display-name').innerText = name; }
-            } else { 
-                if(window.allUsers.find(x => x.email === email)) return window.showToast("Error", "Correo registrado", "error"); 
-                const id = 'u_' + Date.now(); await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', id), { uid: id, name, email, password: pass, role, created: new Date().toISOString() }); 
-            }
-            window.showToast("Actualizado", "Credenciales aplicadas", "success"); window.closeUserModal();
-        };
-
-        window.deleteUser = (uid) => { window.showConfirm("Eliminar Agente", "¿Seguro? Sus leads quedarán huérfanos.", async () => { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', uid)); window.showToast("Eliminado", "", "error"); }); };
-
-        // --------------------------------------------------------
-        // IMPORTACIÓN, EXPORTACIÓN Y PDF (ROBUSTOS)
-        // --------------------------------------------------------
-        window.importCSV = (e) => {
-            const f = e.target.files[0]; if(!f) return; const r = new FileReader();
-            r.onload = async (ev) => {
-                const rows = ev.target.result.split('\n'); let a = 0;
-                for(let i=1; i < rows.length; i++) {
-                    const c = rows[i].split(','); 
-                    if(c.length >= 3 && c[0].trim() !== '') {
-                        const tp = c[1] ? c[1].trim().toLowerCase() : ''; const mapT = (tp === 'client' || tp === 'cliente' || tp === 'clientes') ? 'client' : 'lead';
-                        await window.saveContactToDatabase({ id: 'id_' + Date.now() + Math.random(), name: c[0].trim(), type: mapT, phone: c[2].trim(), email: c[3] ? c[3].trim() : '', address: c[4] ? c[4].trim() : '', ownerId: window.currentUser.uid, ownerName: window.currentUser.name, calls: [] }); a++;
-                    }
-                }
-                window.showToast("Importado", `${a} registros vinculados a ti.`, "success"); document.getElementById('csv-upload').value = '';
-            }; r.readAsText(f);
-        };
-
-        window.exportCSV = () => {
-            if(!window.visibleContacts.length) return window.showToast("Error", "No hay datos", "error");
-            let csv = "Nombre,Clasificacion,Telefono,Email,Direccion,TotalLlamadas\n"; window.visibleContacts.forEach(c => { csv += `"${c.name}","${c.type}","${c.phone}","${c.email||''}","${c.address||''}","${c.calls ? c.calls.length : 0}"\n`; });
-            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' })); l.download = `Velora_Data_${Date.now()}.csv`; l.click();
-        };
-
-        window.openReportModal = () => { 
-            const agentContainer = document.getElementById('report-agent-container'); const agentSelect = document.getElementById('report-agent');
-            if(window.currentUser && window.currentUser.role === 'admin') {
-                agentContainer.classList.remove('hidden'); agentSelect.innerHTML = '<option value="all">Todo el Equipo</option>';
-                window.allUsers.forEach(u => agentSelect.innerHTML += `<option value="${u.uid}">${u.name}</option>`);
-            } else { agentContainer.classList.add('hidden'); if(agentSelect) { agentSelect.innerHTML = '<option value="all">Todos</option>'; agentSelect.value = 'all'; } }
-            const m = document.getElementById('report-modal'); m.classList.remove('hidden'); setTimeout(() => { m.classList.remove('opacity-0'); document.getElementById('report-modal-box').classList.remove('scale-95'); }, 10); 
-        };
-        window.closeReportModal = () => { const m = document.getElementById('report-modal'); m.classList.add('opacity-0'); document.getElementById('report-modal-box').classList.add('scale-95'); setTimeout(() => m.classList.add('hidden'), 300); };
         
-        window.generateGeneralReport = (e) => {
-            e.preventDefault(); const per = document.getElementById('report-period').value; const fil = document.getElementById('report-filter').value; const agentFilter = document.getElementById('report-agent').value;
-            const { jsPDF } = window.jspdf; const doc = new jsPDF();
-            const darkBlue = [10, 15, 25]; const accentBlue = [59, 130, 246]; const textDark = [30, 41, 59]; const textMuted = [100, 116, 139];
-
-            doc.setFillColor(...darkBlue); doc.rect(0, 0, 210, 35, 'F');
-            doc.setTextColor(255); doc.setFontSize(22); doc.setFont("helvetica", "bold"); doc.text("VELORA", 14, 22);
-            const pt = per === 'daily' ? 'Reporte Diario' : per === 'weekly' ? 'Reporte Semanal' : 'Reporte Mensual'; 
-            doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(pt.toUpperCase(), 155, 22);
-
-            const nw = new Date(); let st = new Date(); if(per === 'daily') st.setHours(0,0,0,0); else if(per === 'weekly') st.setDate(nw.getDate() - 7); else st.setDate(nw.getDate() - 30);
-            let tc = 0, ti = 0, tv = 0; const rows = [];
-            
-            window.visibleContacts.forEach(c => {
-                if(fil !== 'all' && c.type !== fil) return;
-                if(agentFilter !== 'all' && c.ownerId !== agentFilter) return;
-                if(c.calls) {
-                    c.calls.forEach(call => { 
-                        const cd = new Date(call.date); 
-                        if(cd >= st && cd <= nw) { 
-                            tc++; const lwr = call.status.toLowerCase();
-                            if(lwr.includes('interesado') && !lwr.includes('no')) ti++; 
-                            if(lwr.includes('cerrada')) tv++; 
-                            rows.push([`${cd.toLocaleDateString()} ${cd.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`, c.name, call.status, c.ownerName || 'Sistema']); 
-                        } 
-                    });
-                }
-            });
-            rows.sort((a,b) => new Date(b[0]) - new Date(a[0]));
-
-            doc.setTextColor(...textDark); doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.text("Rendimiento Operativo", 14, 50);
-            let currentY = 55;
-            if(agentFilter !== 'all') {
-                const targetAgent = window.allUsers.find(u => u.uid === agentFilter);
-                if(targetAgent) { doc.setFontSize(9); doc.setTextColor(...textMuted); doc.setFont("helvetica", "normal"); doc.text("Agente Evaluado:", 14, 56); doc.setTextColor(...accentBlue); doc.setFont("helvetica", "bold"); doc.text(targetAgent.name, 45, 56); currentY = 62; }
+        window.addToAdminCart = (id) => { 
+            const i = window.STATE.menu.find(m => m.id === id); 
+            if(i) { 
+                const cartItem = JSON.parse(JSON.stringify(i));
+                cartItem.price = parseFloat(cartItem.price) || 0; // Prevenir crash
+                window.adminCart.push(cartItem); 
+                window.renderAdminCart(); 
+            } 
+        };
+        
+        window.renderAdminCart = () => {
+            const c = document.getElementById('pos-cart-items'); 
+            document.getElementById('pos-cart-badge').innerText = `${window.adminCart.length} Items`;
+            if(window.adminCart.length === 0) { 
+                c.innerHTML = '<p class="text-xs text-zinc-500 text-center mt-10">El carrito está vacío.</p>'; 
+                document.getElementById('pos-total-price').innerText = '$0.00'; 
+                return; 
             }
-
-            doc.setFillColor(248, 250, 252); doc.setDrawColor(226, 232, 240);
-            doc.roundedRect(14, currentY, 55, 25, 2, 2, 'FD'); doc.roundedRect(77, currentY, 55, 25, 2, 2, 'FD'); doc.roundedRect(140, currentY, 56, 25, 2, 2, 'FD');
-            doc.setTextColor(...textMuted); doc.setFontSize(8); doc.setFont("helvetica", "bold");
-            doc.text("LLAMADAS", 41.5, currentY + 8, null, null, "center"); doc.text("PROSPECTOS CALIENTES", 104.5, currentY + 8, null, null, "center"); doc.text("CIERRES", 168, currentY + 8, null, null, "center");
-            doc.setTextColor(...accentBlue); doc.setFontSize(22); doc.text(`${tc}`, 41.5, currentY + 20, null, null, "center"); doc.setTextColor(24, 160, 251); doc.text(`${ti}`, 104.5, currentY + 20, null, null, "center"); doc.setTextColor(16, 185, 129); doc.text(`${tv}`, 168, currentY + 20, null, null, "center");
-
-            doc.autoTable({ startY: currentY + 32, head: [["Fecha y Hora", "Identidad", "Resolución", "Asignado"]], body: rows, theme: 'striped', headStyles: { fillColor: darkBlue, textColor: 255 }, bodyStyles: { textColor: textDark }, styles: { fontSize: 8, cellPadding: 4 } });
+            let s = 0; 
+            c.innerHTML = window.adminCart.map((item, idx) => { 
+                const price = parseFloat(item.price) || 0;
+                s += price; 
+                return `<div class="bg-black border border-white/5 p-2 rounded-lg flex justify-between items-center mb-2"><div class="flex-1 truncate"><p class="text-[10px] font-bold text-white uppercase">${item.title}</p><p class="text-[10px] text-zinc-500 font-bold">$${price.toFixed(2)}</p>${item.note ? `<p class="text-[9px] text-blue-400 font-bold bg-blue-900/20 px-1 rounded inline-block truncate max-w-[120px]">${item.note}</p>` : ''}</div><div class="flex gap-1"><button onclick="window.editAdminCartItemNote(${idx})" class="bg-blue-600/20 text-blue-400 p-1.5 rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="window.adminCart.splice(${idx},1); window.renderAdminCart();" class="bg-red-600/20 text-red-500 p-1.5 rounded"><i class="ph-bold ph-trash"></i></button></div></div>`; 
+            }).join('');
+            document.getElementById('pos-total-price').innerText = `$${s.toFixed(2)}`;
+        };
+        
+        window.editAdminCartItemNote = async (idx) => { const item = window.adminCart[idx]; const { value: text } = await Swal.fire({ title: 'Nota', input: 'text', inputValue: item.note || '', background: '#111', color: '#fff' }); if(text !== undefined) { item.note = window.sanitize(text.trim()); window.renderAdminCart(); } };
+        window.processTerminalOrder = (paymentType) => {
+            if(window.adminCart.length === 0) return window.showToast('Vacío', 'error');
+            const name = window.sanitize(document.getElementById('pos-client-name').value.trim() || 'Cliente POS'); const type = document.getElementById('pos-order-type').value; const table = window.sanitize(document.getElementById('pos-client-table').value.trim());
+            if(type === 'Mesa' && !table) return window.showToast('Ingrese Mesa', 'error');
+            const total = window.adminCart.reduce((a, i) => a + parseFloat(i.price), 0); const id = 'POS-' + Math.floor(1000 + Math.random() * 9000);
             
-            const pageCount = doc.internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) { doc.setPage(i); doc.setFontSize(7); doc.setTextColor(...textMuted); doc.text(`Confidencial - Velora Tracker`, 14, 290); doc.text(`Pag. ${i}/${pageCount}`, 185, 290); }
-            doc.save(`Velora_${pt.replace(' ','_')}.pdf`); window.closeReportModal(); window.showToast("Reporte Listo", "Descargado", "success");
+            window.adminCart.forEach(c => { (c.recipe||[]).forEach(r => { const ing = window.STATE.ingredients.find(i => i.id === r.id); if(ing) ing.stock -= r.qty; }); });
+            if(window.STATE.caja.isOpen && paymentType === 'Efectivo') { window.STATE.caja.total += total; window.STATE.caja.moves.push({ type: 'in', desc: `Venta POS ${id}`, amt: total, time: new Date().toLocaleTimeString(), orderId: id }); }
+            
+            if(!window.STATE.orders) window.STATE.orders = []; window.STATE.orders.push({ id, name, type: type === 'Mesa' ? 'Mesa' : 'Local', table, payment: paymentType, items: [...window.adminCart], total, status: 'Pendiente', timestamp: Date.now() });
+            
+            knownOrderIds.add(id); // Para que no suene notificacion propia
+            window.secureSave(); window.adminCart = []; window.renderAdminCart(); document.getElementById('pos-client-name').value = ''; document.getElementById('pos-client-table').value = '';
+            if(window.STATE.hardware.autoOpenDrawer && paymentType === 'Efectivo') window.POS.abrirCaja('Venta Efectivo');
+            window.showToast('Éxito', 'success'); window.showTicketPreview(id);
         };
 
-        window.exportToPDF = () => {
-            const c = window.visibleContacts.find(x => x.id === window.currentContactId); if(!c) return;
-            const { jsPDF } = window.jspdf; const doc = new jsPDF();
-            const darkBlue = [10, 15, 25]; const accentBlue = [59, 130, 246]; const textDark = [30, 41, 59]; const textMuted = [100, 116, 139];
+        window.getInvoiceHtml = (orderId) => {
+            const o = window.STATE.orders.find(x => x.id === orderId); if(!o) return ''; const sub = o.total / 1.18; const itbis = o.total - sub;
+            const itemsHtml = o.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom: 2px; font-weight:bold;"><span style="flex:1;">- ${i.title}</span><span>$${parseFloat(i.price).toFixed(2)}</span></div>${i.note ? `<div style="font-size: 10px; font-weight:bold; color: #000; padding-left: 10px; margin-bottom: 4px; text-transform: uppercase;">!!! NOTA: ${i.note}</div>` : ''}`).join('');
+            return `<div style="font-family:'Space Mono', monospace; color:#000; width:100%; padding: 0 2mm; box-sizing: border-box;"><div style="text-align:center; border-bottom:2px dashed #000; padding-bottom:10px; margin-bottom:10px;"><h2 style="font-size:20px; font-weight:900; margin:0; text-transform:uppercase;">LA PAPA CALIENTE</h2><p style="font-size:11px; margin:4px 0; border:1px solid #000; display:inline-block; padding: 2px 6px;">COMPROBANTE</p><p style="font-size:11px; margin:4px 0 0 0;">${new Date(o.timestamp).toLocaleString()}</p></div><div style="font-size:12px; margin-bottom:10px; line-height: 1.5; padding: 5px; background: #eee; border-radius: 4px;"><p style="margin:0; font-weight:900; font-size:14px;">TICKET: ${o.id}</p><p style="margin:0;"><strong>TIPO:</strong> ${o.type} ${o.table ? `(#${o.table})` : ''}</p><p style="margin:0;"><strong>CLIENTE:</strong> ${o.name}</p><p style="margin:0;"><strong>PAGO:</strong> ${o.payment}</p></div><div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:10px 0; margin-bottom:10px;">${itemsHtml}</div><div style="font-size:12px; line-height: 1.5; font-weight:bold;"><div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>$${sub.toFixed(2)}</span></div><div style="display:flex; justify-content:space-between;"><span>ITBIS (18%):</span><span>$${itbis.toFixed(2)}</span></div></div><div style="font-size:18px; font-weight:900; display:flex; justify-content:space-between; margin-top:5px; border-top:2px dashed #000; padding-top:8px;"><span>TOTAL:</span><span>$${o.total.toFixed(2)}</span></div><div style="text-align:center; margin-top:20px;"><svg id="barcode-ticket"></svg></div><div style="text-align:center; font-size:11px; font-weight:bold; margin-top:5px;">¡VUELVE PRONTO!</div></div>`;
+        };
+        window.showTicketPreview = (orderId) => { window.currentPreviewOrderId = orderId; const html = window.getInvoiceHtml(orderId); if(!html) return; document.getElementById('ticketPreviewContent').innerHTML = html; try { JsBarcode("#barcode-ticket", orderId, { format: "CODE128", width: 1.5, height: 40, displayValue: true, fontSize: 12, margin: 0, background: "transparent", lineColor: "#000", fontOptions: "bold" }); } catch(e) {} window.openModal('ticketPreviewModal'); };
+        window.printCurrentPreview = () => { if(window.currentPreviewOrderId) window.POS.imprimir(document.getElementById('ticketPreviewContent').innerHTML, window.currentPreviewOrderId); };
+        window.shareCurrentPreview = () => { if(window.currentPreviewOrderId) { const o = window.STATE.orders.find(x => x.id === window.currentPreviewOrderId); if(o) window.POS.compartir(`Ticket ${o.id}`, `Factura\nTicket: ${o.id}\nCliente: ${o.name}\nTotal: $${o.total.toFixed(2)}\nFecha: ${new Date(o.timestamp).toLocaleString()}`); } };
 
-            doc.setFillColor(...darkBlue); doc.rect(0, 0, 210, 35, 'F');
-            doc.setTextColor(255); doc.setFontSize(22); doc.setFont("helvetica", "bold"); doc.text("VELORA", 14, 22);
-            doc.setFillColor(...accentBlue); doc.roundedRect(165, 15, 30, 8, 1, 1, 'F'); doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.text(c.type.toUpperCase(), 180, 20, null, null, "center");
+        window.filteredReportOrders = [];
+        window.generateReport = () => {
+            const start = document.getElementById('rep-start').value; const end = document.getElementById('rep-end').value;
+            if(!start || !end) return window.showToast('Seleccione fecha inicio y fin', 'error');
+            const startDate = new Date(start).setHours(0,0,0,0); const endDate = new Date(end).setHours(23,59,59,999);
+            window.filteredReportOrders = (window.STATE.orders || []).filter(o => o.timestamp >= startDate && o.timestamp <= endDate && o.status !== 'Cancelada');
+            if (window.filteredReportOrders.length === 0) return window.showToast('No hay datos en esas fechas', 'error');
 
-            doc.setTextColor(...textDark); doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.text("Expediente de Contacto", 14, 50);
-            doc.setFillColor(248, 250, 252); doc.roundedRect(14, 55, 182, 35, 2, 2, 'F'); doc.setFontSize(9);
-            
-            doc.setTextColor(...textMuted); doc.setFont("helvetica", "normal"); doc.text("Nombre:", 20, 65); doc.setTextColor(...textDark); doc.setFont("helvetica", "bold"); doc.text(c.name, 40, 65);
-            doc.setTextColor(...textMuted); doc.setFont("helvetica", "normal"); doc.text("Teléfono:", 100, 65); doc.setTextColor(...textDark); doc.setFont("helvetica", "bold"); doc.text(c.phone, 120, 65);
-            doc.setTextColor(...textMuted); doc.setFont("helvetica", "normal"); doc.text("Correo:", 20, 80); doc.setTextColor(...textDark); doc.setFont("helvetica", "bold"); doc.text(c.email || 'N/A', 40, 80);
-            doc.setTextColor(...textMuted); doc.setFont("helvetica", "normal"); doc.text("Agente:", 100, 80); doc.setTextColor(...textDark); doc.setFont("helvetica", "bold"); doc.text(c.ownerName || 'Sistema', 120, 80);
+            const totalV = window.filteredReportOrders.reduce((acc, o) => acc + o.total, 0);
+            const totalE = window.filteredReportOrders.filter(o => (o.payment||'').toLowerCase().includes('efectivo')).reduce((acc, o) => acc + o.total, 0);
+            const totalD = totalV - totalE;
 
-            const tr = []; (c.calls||[]).forEach(x => { const d = new Date(x.date); tr.push([`${d.toLocaleDateString()} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`, x.status, x.notes]); });
-            doc.autoTable({ startY: 100, head: [["Día y Hora", "Resolución", "Minuta de Conversación"]], body: tr, theme: 'striped', headStyles: { fillColor: darkBlue, textColor: 255 }, bodyStyles: { textColor: textDark }, styles: { fontSize: 8, cellPadding: 4 }, columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 40, fontStyle: 'bold' }, 2: { cellWidth: 'auto' } } });
-
-            const pageCount = doc.internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) { doc.setPage(i); doc.setFontSize(7); doc.setTextColor(...textMuted); doc.text(`Confidencial - Velora Tracker`, 14, 290); doc.text(`Pag. ${i}/${pageCount}`, 185, 290); }
-            doc.save(`Ficha_${c.name.replace(/\s+/g,'_')}.pdf`); window.showToast("Descargado", "Ficha generada", "success");
+            document.getElementById('report-print-area').innerHTML = `
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
+                <h1 style="font-size: 20px; font-weight: 900; text-transform: uppercase; margin: 0;">Reporte Z Administrativo</h1>
+                <p style="font-size: 10px; color: #555; margin-top: 5px;">Período: ${start} al ${end}</p>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; text-align: center;">
+                <div style="flex: 1; background: #f3f4f6; padding: 10px; border-radius: 6px; border: 1px solid #ddd;"><p style="font-size: 9px; color: #666; margin: 0; text-transform: uppercase;">Órdenes</p><p style="font-size: 18px; font-weight: 900; margin: 2px 0 0 0;">${window.filteredReportOrders.length}</p></div>
+                <div style="flex: 1; background: #f3f4f6; padding: 10px; border-radius: 6px; border: 1px solid #ddd;"><p style="font-size: 9px; color: #666; margin: 0; text-transform: uppercase;">Efectivo</p><p style="font-size: 18px; font-weight: 900; margin: 2px 0 0 0; color: #15803d;">$${totalE.toFixed(2)}</p></div>
+                <div style="flex: 1; background: #f3f4f6; padding: 10px; border-radius: 6px; border: 1px solid #ddd;"><p style="font-size: 9px; color: #666; margin: 0; text-transform: uppercase;">Digital</p><p style="font-size: 18px; font-weight: 900; margin: 2px 0 0 0; color: #1d4ed8;">$${totalD.toFixed(2)}</p></div>
+            </div>
+            <div style="background: #000; color: #fff; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 900; text-transform: uppercase; font-size: 12px;">Total Ingresos</span><span style="font-size: 20px; font-weight: 900;">$${totalV.toFixed(2)}</span>
+            </div>
+            <table style="width: 100%; text-align: left; font-size: 10px; border-collapse: collapse;">
+                <thead><tr style="background: #e5e7eb; border-bottom: 2px solid #000;"><th style="padding: 8px;">Orden</th><th style="padding: 8px;">Fecha</th><th style="padding: 8px;">Cliente</th><th style="padding: 8px;">Pago</th><th style="padding: 8px; text-align: right;">Total</th></tr></thead>
+                <tbody>${window.filteredReportOrders.map(o => `<tr style="border-bottom: 1px solid #ddd;"><td style="padding: 8px; font-weight: bold;">${o.id}</td><td style="padding: 8px; color: #555;">${new Date(o.timestamp).toLocaleString()}</td><td style="padding: 8px;">${window.sanitize(o.name||'N/A')}</td><td style="padding: 8px; font-weight:bold; color: ${(o.payment||'').toLowerCase().includes('efectivo')?'#15803d':'#1d4ed8'};">${o.payment||'N/A'}</td><td style="padding: 8px; text-align: right; font-weight: 900;">$${o.total.toFixed(2)}</td></tr>`).join('')}</tbody>
+            </table>`;
+            document.getElementById('report-results-container').classList.remove('hidden'); window.showToast('Reporte Generado');
         };
 
+        window.exportReportCSV = () => {
+            if(!window.filteredReportOrders.length) return window.showToast('Genere un reporte primero', 'error');
+            let csv = "ID,Fecha,Cliente,Tipo,Pago,Total\n";
+            window.filteredReportOrders.forEach(o => { csv += `${o.id},${new Date(o.timestamp).toLocaleString().replace(/,/g, '')},${(o.name||'N/A').replace(/,/g, ' ')},${o.type||'N/A'},${o.payment||'N/A'},${o.total.toFixed(2)}\n`; });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const file = new File([blob], `Reporte_${Date.now()}.csv`, { type: 'text/csv' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ title: 'Reporte CSV', files: [file] }).catch(e => {}); } 
+            else { const link = document.createElement('a'); link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); link.download = file.name; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
+        };
+
+        window.exportReportPDF = () => {
+            if(!window.filteredReportOrders.length) return window.showToast('Genere un reporte primero', 'error');
+            const element = document.getElementById('report-print-area');
+            const opt = { margin: 10, filename: `Reporte_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            html2pdf().set(opt).from(element).output('blob').then(function(blob) {
+                const file = new File([blob], opt.filename, { type: 'application/pdf' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ title: 'Reporte Z', files: [file] }).catch(e => {}); } 
+                else { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = opt.filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
+            }).catch(e => window.showToast('Error generando PDF', 'error'));
+        };
+
+        window.cancelarOrdenTotal = async (orderId) => {
+            const { isConfirmed } = await Swal.fire({ title: '¿Anular Orden?', text: 'Devolverá insumos a inventario.', icon: 'warning', showCancelButton: true, background: '#111', color: '#fff', confirmButtonColor: '#d33' });
+            if(isConfirmed) {
+                const o = window.STATE.orders.find(x => x.id === orderId);
+                if(o && o.status !== 'Cancelada') {
+                    o.status = 'Cancelada'; o.items.forEach(item => { (item.recipe||[]).forEach(r => { const ing = window.STATE.ingredients.find(i => i.id === r.id); if(ing) ing.stock += r.qty; }); });
+                    window.secureSave(); window.renderOrdersHistory(); window.renderDashboardMetrics(); window.renderKDS(); window.showToast('Orden Anulada', 'success');
+                }
+            }
+        };
+
+        window.renderDashboardMetrics = () => { 
+            const elVentas = document.getElementById('dash-ventas-hoy');
+            if(!elVentas) return; 
+            const tOrders = (window.STATE.orders||[]).filter(o => new Date(o.timestamp).toDateString() === new Date().toDateString() && o.status !== 'Cancelada'); 
+            const tVentas = tOrders.reduce((s,o) => s + (o.total || 0), 0); 
+            elVentas.innerText = `$${tVentas.toFixed(2)}`; 
+            const elOrdenes = document.getElementById('dash-ordenes-hoy'); if(elOrdenes) elOrdenes.innerText = tOrders.length; 
+            const elProm = document.getElementById('dash-ticket-prom'); if(elProm) elProm.innerText = tOrders.length ? `$${(tVentas/tOrders.length).toFixed(2)}` : '$0.00'; 
+            const elStock = document.getElementById('dash-alertas-stock'); if(elStock) elStock.innerText = (window.STATE.ingredients||[]).filter(i => (parseFloat(i.stock||0) <= parseFloat(i.min||0))).length; 
+        };
+
+        window.renderKDS = () => {
+            const cols = { 'Pendiente': 'pen', 'Preparando': 'prep', 'Empacando': 'pack', 'Lista': 'ready' };
+            Object.values(cols).forEach(c => { document.getElementById(`kds-col-${c}`).innerHTML = ''; document.getElementById(`kds-cnt-${c}`).innerText = '0'; });
+            let counts = { pen:0, prep:0, pack:0, ready:0 }; const now = Date.now();
+            (window.STATE.orders || []).forEach(o => {
+                if(o.status === 'Entregada' || o.status === 'Cancelada') return;
+                const colId = cols[o.status]; if(!colId) return; counts[colId]++;
+                const mins = Math.floor((now - o.timestamp) / 60000); let timeClass = 'time-ok'; if(mins > 10) timeClass = 'time-warn'; if(mins > 20) timeClass = 'time-danger';
+                const itemsStr = o.items.map(i => `<div class="text-[10px] font-bold text-zinc-300">- ${i.title} ${i.note ? `<span class="bg-red-600 text-white px-1 rounded ml-1 uppercase animate-pulse block mt-1">NOTA: ${i.note}</span>` : ''}</div>`).join('');
+                let btn = '';
+                if(o.status === 'Pendiente') btn = `<button onclick="window.chgStatus('${o.id}','Preparando')" class="w-full bg-blue-600 py-2 rounded-lg mt-2 text-[10px] font-bold uppercase transition">Cocinar</button>`;
+                else if(o.status === 'Preparando') btn = `<button onclick="window.chgStatus('${o.id}','Empacando')" class="w-full bg-yellow-600 py-2 rounded-lg mt-2 text-[10px] text-black font-bold uppercase transition">A Empaque</button>`;
+                else if(o.status === 'Empacando') btn = `<button onclick="window.chgStatus('${o.id}','Lista')" class="w-full bg-green-600 py-2 rounded-lg mt-2 text-[10px] font-bold uppercase transition">Lista</button>`;
+                else if(o.status === 'Lista') btn = `<button onclick="window.chgStatus('${o.id}','Entregada')" class="w-full bg-zinc-600 py-2 rounded-lg mt-2 text-[10px] font-bold uppercase transition">Finalizar</button>`;
+
+                document.getElementById(`kds-col-${colId}`).innerHTML += `<div class="bg-black p-3 rounded-xl border border-white/5 kds-card shadow-lg ${timeClass}"><div class="flex justify-between items-start mb-2"><div class="flex items-center gap-2"><span class="font-black text-xs text-white">${o.id}</span><button onclick="window.openEditOrderModal('${o.id}')" class="text-blue-400 bg-blue-500/20 p-1 rounded"><i class="ph-bold ph-pencil-simple"></i></button></div><span class="text-[9px] text-zinc-400 bg-zinc-900 px-1 rounded">${mins}m</span></div><div class="text-[9px] text-papa-yellow font-bold uppercase mb-2">${o.type} <br><span class="text-white">${o.name}</span></div><div class="bg-zinc-900 p-2 rounded-lg border border-white/5 space-y-1">${itemsStr}</div>${btn}</div>`;
+            });
+            Object.keys(counts).forEach(k => document.getElementById(`kds-cnt-${k}`).innerText = counts[k]);
+        };
+        window.chgStatus = (id, stat) => { const o = window.STATE.orders.find(x => x.id === id); if(o) { o.status = stat; window.secureSave(); window.renderKDS(); window.renderOrdersHistory(); } };
+
+        window.openEditOrderModal = (id) => { window.currentEditOrderId = id; window.renderEditOrderModal(); window.openModal('editOrderModal'); };
+        window.renderEditOrderModal = () => {
+            const o = window.STATE.orders.find(x => x.id === window.currentEditOrderId); if(!o) return;
+            document.getElementById('edit-order-title').innerHTML = `<i class="ph-bold ph-pencil-simple"></i> Editando: ${o.id}`; document.getElementById('edit-order-total').innerText = `Total: $${(o.total || 0).toFixed(2)}`;
+            document.getElementById('edit-order-items').innerHTML = o.items.map((item, idx) => `<div class="bg-black border border-white/10 p-3 rounded-xl flex justify-between items-center"><div class="flex-1 pr-2"><p class="text-xs font-bold text-white uppercase">${item.title} <span class="text-[9px] text-papa-yellow">($${(item.price||0).toFixed(2)})</span></p>${item.note ? `<p class="text-[10px] text-red-400 font-bold bg-red-900/20 px-2 rounded mt-1">${item.note}</p>` : ''}</div><div class="flex gap-2"><button onclick="window.editOrderItemNote(${idx})" class="bg-blue-600/20 text-blue-400 p-2 rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="window.removeOrderItem(${idx})" class="bg-red-600/20 text-red-500 p-2 rounded"><i class="ph-bold ph-trash"></i></button></div></div>`).join('');
+            document.getElementById('edit-order-add-select').innerHTML = `<option value="" disabled selected>-- Seleccione plato --</option>` + (window.STATE.menu||[]).filter(m=>m.available!==false).map(m => `<option value="${m.id}">${m.title} (+ $${m.price.toFixed(2)})</option>`).join('');
+        };
+        window.addNewProductToEditOrder = () => { const o = window.STATE.orders.find(x => x.id === window.currentEditOrderId); const pId = document.getElementById('edit-order-add-select').value; if(!o || !pId) return; const pt = window.STATE.menu.find(m => m.id === pId); if(!pt) return; const newItem = JSON.parse(JSON.stringify(pt)); newItem.note = 'AGREGADO EXTRA'; (newItem.recipe||[]).forEach(r => { const ing = window.STATE.ingredients.find(i => i.id === r.id); if(ing) ing.stock -= r.qty; }); o.total += newItem.price; o.items.push(newItem); window.secureSave(); window.renderEditOrderModal(); window.renderKDS(); };
+        window.editOrderItemNote = async (idx) => { const o = window.STATE.orders.find(x => x.id === window.currentEditOrderId); if(!o) return; const { value: text } = await Swal.fire({ title: 'Editar Nota', input: 'text', inputValue: o.items[idx].note || '', background: '#111', color: '#fff' }); if(text !== undefined) { o.items[idx].note = window.sanitize(text.trim()); window.secureSave(); window.renderEditOrderModal(); window.renderKDS(); } };
+        window.removeOrderItem = async (idx) => { const o = window.STATE.orders.find(x => x.id === window.currentEditOrderId); if(!o) return; const { isConfirmed } = await Swal.fire({ title: '¿Eliminar plato?', icon: 'warning', showCancelButton: true, background: '#111', color: '#fff' }); if(isConfirmed) { (o.items[idx].recipe||[]).forEach(r => { const ing = window.STATE.ingredients.find(i => i.id === r.id); if(ing) ing.stock += r.qty; }); o.total -= o.items[idx].price; o.items.splice(idx, 1); if(o.items.length === 0) { o.status = 'Cancelada'; window.closeModal('editOrderModal'); } else window.renderEditOrderModal(); window.secureSave(); window.renderKDS(); } };
+
+        window.renderOrdersHistory = () => {
+            document.getElementById('orders-history-table').innerHTML = [...(window.STATE.orders||[])].sort((a,b) => b.timestamp - a.timestamp).map(o => `<tr class="hover:bg-white/5 border-b border-white/5 ${o.status === 'Cancelada' ? 'opacity-50' : ''}"><td class="py-2 pl-2">${o.id}</td><td class="py-2 text-[10px] text-zinc-400">${new Date(o.timestamp).toLocaleString()}</td><td class="py-2 font-black">${o.name}</td><td class="py-2 text-papa-yellow">$${(parseFloat(o.total)||0).toFixed(2)}</td><td class="py-2"><span class="text-[9px] px-2 py-1 bg-zinc-900 rounded uppercase">${o.status}</span></td><td class="py-2 pr-2 text-right flex justify-end gap-2"><button onclick="window.showTicketPreview('${o.id}')" class="bg-blue-600 text-white p-2 rounded"><i class="ph-bold ph-printer"></i></button>${o.status !== 'Cancelada' ? `<button onclick="window.cancelarOrdenTotal('${o.id}')" class="bg-red-600/20 text-red-500 p-2 rounded"><i class="ph-bold ph-x-circle"></i></button>` : ''}</td></tr>`).join('');
+        };
+
+        window.renderAdminCatalog = () => { 
+            const catalogGrid = document.getElementById('admin-catalog-grid');
+            if(!window.STATE.menu || window.STATE.menu.length === 0) {
+                catalogGrid.innerHTML = '<div class="col-span-full text-center text-zinc-500 text-xs py-10">No hay productos creados en el menú.</div>';
+            } else {
+                catalogGrid.innerHTML = window.STATE.menu.map(m => {
+                    const price = parseFloat(m.price) || 0;
+                    const title = m.title || 'Sin Nombre';
+                    const img = m.img || 'https://placehold.co/600x400/222/FFF';
+                    return `<div class="bg-zinc-900 border border-white/5 p-3 rounded-xl flex gap-3 items-center shadow-lg"><img src="${img}" class="w-12 h-12 rounded object-cover"><div class="flex-1 min-w-0"><p class="text-[10px] font-bold text-white uppercase truncate">${title}</p><p class="text-[10px] text-papa-yellow">$${price.toFixed(2)}</p></div><button onclick="window.openEditModal('${m.id}')" class="bg-blue-600/20 text-blue-400 p-2 rounded transition"><i class="ph-bold ph-pencil"></i></button><button onclick="window.deleteProduct('${m.id}')" class="bg-red-600/20 text-red-500 p-2 rounded transition"><i class="ph-bold ph-trash"></i></button></div>`;
+                }).join(''); 
+            }
+        };
+        window.deleteProduct = (id) => { window.STATE.menu = window.STATE.menu.filter(m => m.id !== id); window.secureSave(); window.renderAdminCatalog(); };
+        
+        window.renderIngredients = () => {
+            let totalValue = 0; const tbody = document.getElementById('ingredients-table');
+            if(!window.STATE.ingredients || window.STATE.ingredients.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center py-6 text-zinc-500 font-bold">No hay insumos.</td></tr>'; document.getElementById('ing-total-valuation').innerText = '$0.00'; return; }
+            tbody.innerHTML = window.STATE.ingredients.map(i => {
+                const c = parseFloat(i.cost || 0); const s = parseFloat(i.stock || 0); const m = parseFloat(i.min || 0); const v = s * c; totalValue += v;
+                return `<tr class="hover:bg-white/5 border-b border-white/5"><td class="py-3 pl-2 text-white font-bold">${i.name}</td><td class="py-3 text-[10px]">${i.sku || 'N/A'}</td><td class="py-3 text-[10px]">${i.unit || 'uds'}</td><td class="py-3">$${c.toFixed(2)}</td><td class="py-3 ${s<=m?'text-red-500 font-black':'text-green-400'}">${s}</td><td class="py-3 text-zinc-500">${m}</td><td class="py-3 text-white font-black">$${v.toFixed(2)}</td><td class="py-3 pr-2 text-right"><div class="flex justify-end gap-1"><button onclick="window.addStock('${i.id}')" class="bg-green-600/20 text-green-400 p-1.5 rounded"><i class="ph-bold ph-plus"></i></button><button onclick="window.editIng('${i.id}')" class="bg-blue-600/20 text-blue-400 p-1.5 rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="window.deleteIng('${i.id}')" class="bg-red-600/20 text-red-500 p-1.5 rounded"><i class="ph-bold ph-trash"></i></button></div></td></tr>`;
+            }).join('');
+            document.getElementById('ing-total-valuation').innerText = `$${totalValue.toFixed(2)}`;
+        };
+
+        window.addStock = async (id) => { const i = window.STATE.ingredients.find(x=>x.id===id); if(!i) return; const {value:a} = await Swal.fire({ title:`Reponer: ${i.name}`, input:'number', background:'#111', color:'#fff' }); if(a && parseFloat(a) > 0){ i.stock += parseFloat(a); window.secureSave(); window.renderIngredients(); } };
+        
+        window.openIngModal = (id = null) => {
+            if(id) {
+                const i = window.STATE.ingredients.find(x => x.id === id); if(!i) return;
+                document.getElementById('ing-modal-main-title').innerText = `Editando: ${i.name}`;
+                document.getElementById('edit-ing-id').value = i.id; document.getElementById('edit-ing-sku').value = i.sku || ''; document.getElementById('edit-ing-name').value = i.name || ''; document.getElementById('edit-ing-cost').value = i.cost || 0; document.getElementById('edit-ing-stock').value = i.stock || 0; document.getElementById('edit-ing-min').value = i.min || 0; document.getElementById('edit-ing-unit').value = i.unit || 'uds';
+            } else {
+                document.getElementById('ing-modal-main-title').innerText = `Nuevo Producto`;
+                ['edit-ing-id', 'edit-ing-sku', 'edit-ing-name', 'edit-ing-cost', 'edit-ing-stock', 'edit-ing-min'].forEach(field => { const el = document.getElementById(field); if(el) el.value = ''; });
+                document.getElementById('edit-ing-unit').value = 'uds'; 
+            }
+            window.openModal('editIngModal');
+        };
+
+        window.saveIngredient = () => {
+            const name = window.sanitize(document.getElementById('edit-ing-name').value.trim()); if(!name) return window.showToast('Nombre obligatorio', 'error');
+            const id = document.getElementById('edit-ing-id').value || ('ing-' + Date.now());
+            const ingData = { id, sku: window.sanitize(document.getElementById('edit-ing-sku').value.trim()), name, cost: parseFloat(document.getElementById('edit-ing-cost').value || 0), stock: parseFloat(document.getElementById('edit-ing-stock').value || 0), min: parseFloat(document.getElementById('edit-ing-min').value || 0), unit: document.getElementById('edit-ing-unit').value };
+            if(!window.STATE.ingredients) window.STATE.ingredients = [];
+            const idx = window.STATE.ingredients.findIndex(x => x.id === id); if(idx > -1) { window.STATE.ingredients[idx] = ingData; } else { window.STATE.ingredients.push(ingData); }
+            window.secureSave(); window.renderIngredients(); window.closeModal('editIngModal'); window.showToast('Guardado');
+        };
+
+        window.editIng = (id) => { window.openIngModal(id); };
+        window.deleteIng = async (id) => { const { isConfirmed } = await Swal.fire({ title: '¿Eliminar?', icon: 'warning', showCancelButton: true, background: '#111', color: '#fff' }); if(isConfirmed) { window.STATE.ingredients = window.STATE.ingredients.filter(x => x.id !== id); if(window.STATE.menu) { window.STATE.menu.forEach(m => { if(m.recipe) m.recipe = m.recipe.filter(r => r.id !== id); }); } window.secureSave(); window.renderIngredients(); window.showToast('Eliminado'); } };
+
+        window.addBankAccount = async () => { const { value: f } = await Swal.fire({ title: 'Cuenta', html: `<input id="bb" class="swal2-input bg-zinc-900 border-white/10 text-white" placeholder="Banco"><input id="bo" class="swal2-input bg-zinc-900 border-white/10 text-white" placeholder="Titular"><input id="bt" class="swal2-input bg-zinc-900 border-white/10 text-white" placeholder="Tipo"><input id="bn" class="swal2-input bg-zinc-900 border-white/10 text-white" placeholder="Número">`, background:'#111', color:'#fff', preConfirm: () => ({ bank: window.sanitize(document.getElementById('bb').value.trim()), owner: window.sanitize(document.getElementById('bo').value.trim()), type: window.sanitize(document.getElementById('bt').value.trim()), num: window.sanitize(document.getElementById('bn').value.trim()) }) }); if(f && f.bank) { window.STATE.settings.banks.push(f); window.secureSave(); window.renderBankAccounts(); } };
+        window.deleteBankAccount = (idx) => { window.STATE.settings.banks.splice(idx, 1); window.secureSave(); window.renderBankAccounts(); };
+        window.renderBankAccounts = () => { const list = document.getElementById('settings-banks-list'); if(!window.STATE.settings.banks.length) list.innerHTML = '<p class="text-xs text-zinc-500">Ninguna.</p>'; else list.innerHTML = window.STATE.settings.banks.map((b, idx) => `<div class="flex justify-between items-center bg-black border border-white/10 p-3 rounded"><div class="text-xs text-white"><span class="text-papa-yellow uppercase">${b.bank}</span> - ${b.num}</div><button onclick="window.deleteBankAccount(${idx})" class="text-red-500"><i class="ph-bold ph-trash"></i></button></div>`).join(''); };
+
+        window.openEditModal = (id = null) => {
+            window.STATE.tempRecipe = []; document.getElementById('recipe-ing-select').innerHTML = `<option value="" disabled selected>-- Elige Insumo --</option>` + window.STATE.ingredients.map(i => `<option value="${i.id}">${i.name} (${i.unit})</option>`).join('');
+            const imgPreview = document.getElementById('edit-img-preview');
+            if(id) { const p = window.STATE.menu.find(x => x.id === id); document.getElementById('edit-id').value = p.id; document.getElementById('edit-title').value = p.title; document.getElementById('edit-tag').value = p.cat || ''; document.getElementById('edit-cat').value = p.cat || ''; document.getElementById('edit-price').value = p.price; document.getElementById('edit-desc').value = p.desc; imgPreview.src = p.img; imgPreview.dataset.src = p.img; imgPreview.classList.remove('hidden'); window.STATE.tempRecipe = JSON.parse(JSON.stringify(p.recipe || [])); } 
+            else { ['edit-id','edit-title','edit-tag','edit-cat','edit-price','edit-desc'].forEach(i => document.getElementById(i).value = ''); imgPreview.classList.add('hidden'); imgPreview.src = ''; imgPreview.dataset.src = ''; }
+            window.renderRecipeList(); window.openModal('editModal');
+        };
+        window.addRecipeRow = () => { const id = document.getElementById('recipe-ing-select').value; const qty = parseFloat(document.getElementById('recipe-ing-qty').value); if(id && qty > 0) { const ex = window.STATE.tempRecipe.find(r => r.id === id); if(ex) ex.qty += qty; else window.STATE.tempRecipe.push({id, qty}); window.renderRecipeList(); document.getElementById('recipe-ing-qty').value = ''; } };
+        window.renderRecipeList = () => { document.getElementById('recipe-list').innerHTML = window.STATE.tempRecipe.map((r, idx) => { const ing = window.STATE.ingredients.find(i => i.id === r.id); if(!ing) return ''; return `<div class="flex justify-between bg-zinc-900 border border-white/5 p-2 rounded text-[10px] text-zinc-300"><span>${ing.name}</span><span class="text-white">${r.qty} ${ing.unit} <button onclick="window.STATE.tempRecipe.splice(${idx},1); window.renderRecipeList();" class="text-red-500 ml-2">X</button></span></div>`; }).join(''); };
+        window.saveProduct = () => { 
+            const title = window.sanitize(document.getElementById('edit-title').value.trim()); if(!title) return window.showToast('Nombre obligatorio', 'error');
+            if(!window.STATE.menu) window.STATE.menu = [];
+            const tagValue = document.getElementById('edit-tag').value;
+            // AUDITORIA: Desvincular referencia de memoria JSON.parse(JSON.stringify()) en receta para que editar múltiples productos no los cruce
+            const p = { id: document.getElementById('edit-id').value || 'p'+Date.now(), title, cat: window.sanitize(tagValue || document.getElementById('edit-cat').value), price: parseFloat(document.getElementById('edit-price').value || 0), img: document.getElementById('edit-img-preview').dataset.src || 'https://placehold.co/600x400/222/FFF', desc: window.sanitize(document.getElementById('edit-desc').value), recipe: JSON.parse(JSON.stringify(window.STATE.tempRecipe)), available: true }; 
+            const idx = window.STATE.menu.findIndex(x => x.id === p.id); if(idx > -1) window.STATE.menu[idx] = p; else window.STATE.menu.push(p); 
+            window.secureSave(); window.closeModal('editModal'); window.renderAdminCatalog(); window.showToast('Plato guardado'); 
+        };
+
+        window.uploadGalleryImage = (event) => { window.processImageUpload(event, (url) => { window.STATE.gallery.push(url); window.secureSave(); window.renderGalleryAdmin(); window.showToast('Foto subida'); }); };
+        window.renderGalleryAdmin = () => { document.getElementById('admin-gallery-grid').innerHTML = (window.STATE.gallery||[]).map((url, idx) => `<div class="h-32 bg-black rounded-xl border border-white/10 overflow-hidden relative group shadow-lg"><img src="${url}" class="w-full h-full object-cover"><button onclick="window.STATE.gallery.splice(${idx},1); window.secureSave(); window.renderGalleryAdmin();" class="absolute inset-0 bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="ph-bold ph-trash text-3xl"></i></button></div>`).join(''); };
+
+        window.saveSettings = () => { 
+            window.STATE.settings.apiKey = window.sanitize(document.getElementById('set-api-key').value.trim()); 
+            window.STATE.settings.phone = window.sanitize(document.getElementById('set-phone').value.trim()); 
+            window.STATE.settings.mapEmbed = window.sanitize(document.getElementById('set-map-embed').value.trim()); 
+            window.STATE.settings.mapLink = window.sanitize(document.getElementById('set-map-link').value.trim()); 
+            
+            const basePriceEl = document.getElementById('set-base-price');
+            const extraPriceEl = document.getElementById('set-extra-price');
+            
+            window.STATE.settings.customBasePrice = basePriceEl ? parseFloat(basePriceEl.value) || 6.00 : 6.00; 
+            window.STATE.settings.customExtraPrice = extraPriceEl ? parseFloat(extraPriceEl.value) || 1.50 : 1.50; 
+            
+            window.secureSave(); 
+            window.showToast('Configuración Guardada'); 
+        };
+        window.saveHardwareConfig = () => { window.STATE.hardware.bridgeUrl = window.sanitize(document.getElementById('hw-bridge-url').value); window.STATE.hardware.autoOpenDrawer = document.getElementById('hw-auto-drawer').checked; window.secureSave(); window.showToast('Hardware configurado'); window.POSBridge.ping(); };
+
+        setInterval(() => { if(window.STATE.currentUser && !document.getElementById('panel-admin-kds').classList.contains('hidden')) { window.renderKDS(); window.renderDashboardMetrics(); } }, 15000);
+        initCloudSystem();
     </script>
 </body>
 </html>
