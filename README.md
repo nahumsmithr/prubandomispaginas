@@ -608,7 +608,7 @@
         };
 
         window.POS = {
-            isApp: navigator.userAgent.includes("WebIntoApp") || window.location.href.includes("android_asset"),
+            isApp: navigator.userAgent.includes("WebIntoApp") || window.location.href.includes("android_asset") || navigator.userAgent.includes("wv"),
             init: () => { if (window.POS.isApp || /Android/i.test(navigator.userAgent)) document.getElementById('hw-status-badge').classList.replace('hidden', 'flex'); },
             imprimir: async (datosHtml, orderId) => {
                 if (window.AndroidPOS && typeof window.AndroidPOS.print === 'function') {
@@ -629,17 +629,14 @@
                 const isAndroid = /Android/i.test(navigator.userAgent);
                 if (window.POS.isApp || isAndroid) {
                     try {
-                        // ANTI-CRASH: Usamos un click virtual seguro y agregamos fallback a PlayStore si RawBT no está instalado.
                         const rawbtUrl = "intent://rawbt:" + encodeURIComponent(datosHtml) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
-                        const a = document.createElement('a');
-                        a.href = rawbtUrl;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
+                        let ifrm = document.getElementById('rawbt-frame');
+                        if(!ifrm) { ifrm = document.createElement('iframe'); ifrm.id = 'rawbt-frame'; ifrm.style.display = 'none'; document.body.appendChild(ifrm); }
+                        ifrm.src = rawbtUrl;
                         window.showToast("Enviado a impresora móvil"); 
                         return;
                     } catch (err) {
-                        window.showToast("Acción bloqueada por la APK", "error");
+                        window.showToast("Error al enviar a impresora", "error");
                         return;
                     }
                 }
@@ -672,14 +669,12 @@
                     try {
                         const comandoGaveta = "\x1B\x70\x00\x19\xFA"; // Comando universal ESC/POS
                         const rawbtUrl = "intent://rawbt:" + encodeURIComponent(comandoGaveta) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
-                        const a = document.createElement('a');
-                        a.href = rawbtUrl;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
+                        let ifrm = document.getElementById('rawbt-frame');
+                        if(!ifrm) { ifrm = document.createElement('iframe'); ifrm.id = 'rawbt-frame'; ifrm.style.display = 'none'; document.body.appendChild(ifrm); }
+                        ifrm.src = rawbtUrl;
                         return window.showToast("Orden enviada a caja registradora");
                     } catch (err) {
-                        window.showToast("App bloqueó apertura de caja", "error");
+                        window.showToast("Error al abrir caja", "error");
                     }
                 }
             },
@@ -903,6 +898,7 @@
         };
 
         window.exportReportCSV = () => {
+            if(/Android.*Version\/[0-9].[0-9]|wv/i.test(navigator.userAgent) || window.POS.isApp) return Swal.fire({ title: 'Acción Bloqueada', text: 'Para extraer archivos (Excel/PDF), inicie sesión en el sistema usando Google Chrome. Las aplicaciones (APK) bloquean las descargas locales por seguridad.', icon: 'info', background: '#111', color: '#fff', confirmButtonColor: '#FF3D00' });
             if(!window.filteredReportOrders.length) return window.showToast('Genere un reporte primero', 'error');
             let csv = "ID,Fecha,Cliente,Tipo,Pago,Total\n";
             window.filteredReportOrders.forEach(o => { csv += `${o.id},${new Date(o.timestamp).toLocaleString().replace(/,/g, '')},${(o.name||'N/A').replace(/,/g, ' ')},${o.type||'N/A'},${o.payment||'N/A'},${o.total.toFixed(2)}\n`; });
@@ -912,6 +908,7 @@
         };
 
         window.exportReportPDF = () => {
+            if(/Android.*Version\/[0-9].[0-9]|wv/i.test(navigator.userAgent) || window.POS.isApp) return Swal.fire({ title: 'Acción Bloqueada', text: 'Para extraer archivos (Excel/PDF), inicie sesión en el sistema usando Google Chrome. Las aplicaciones (APK) bloquean las descargas locales por seguridad.', icon: 'info', background: '#111', color: '#fff', confirmButtonColor: '#FF3D00' });
             if(!window.filteredReportOrders.length) return window.showToast('Genere un reporte primero', 'error');
             const element = document.getElementById('report-print-area');
             const opt = { margin: 10, filename: `Reporte_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
