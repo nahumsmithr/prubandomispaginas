@@ -13,9 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <!-- Enlace al Manifest para que sea una App Nativa -->
     <link rel="manifest" href="manifest.json">
-    <!-- Darle color a la barra superior en Android -->
     <meta name="theme-color" content="#050505">
 
     <script>
@@ -53,7 +51,6 @@
         .kds-card.time-danger { border-top: 4px solid #ef4444; animation: pulse-border 2s infinite; }
         @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* --- LOGIN STYLES --- */
         #app-login-screen {
             position: fixed; inset: 0; z-index: 999999;
             background: linear-gradient(135deg, rgba(5, 5, 5, 0.9) 0%, rgba(15, 8, 5, 0.95) 100%), url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1920&auto=format&fit=crop') center/cover no-repeat;
@@ -73,12 +70,12 @@
         .login-input:focus { border-color: #FF3D00; background: rgba(0, 0, 0, 0.7); }
         .login-btn-submit { width: 100%; background: linear-gradient(135deg, #FF3D00 0%, #d83400 100%); color: white; font-weight: 700; text-transform: uppercase; padding: 1.1rem; border-radius: 1rem; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
 
-        /* IMPRESION TERMICA */
+        /* IMPRESION TERMICA CORREGIDA */
         #thermal-print-area { display: none; }
         @media print {
-            body * { visibility: hidden; }
-            body.thermal-printing #thermal-print-area, body.thermal-printing #thermal-print-area * { visibility: visible; color: black !important; }
-            body.thermal-printing #thermal-print-area { display: block !important; position: absolute; left: 0; top: 0; width: 80mm; padding: 0 2mm; background: white !important; margin: 0; }
+            body * { visibility: hidden !important; display: none !important; }
+            body.thermal-printing #thermal-print-area, body.thermal-printing #thermal-print-area * { visibility: visible !important; display: block !important; color: black !important; }
+            body.thermal-printing #thermal-print-area { position: absolute; left: 0; top: 0; width: 80mm; padding: 0 2mm; background: white !important; margin: 0; }
             body.thermal-printing { background-color: white; }
             @page { margin: 0; }
         }
@@ -245,7 +242,6 @@
                             </div>
                         </div>
 
-                        <!-- Calculadora y Division Cuenta omitidos visualmente para no saturar, pero el código es el mismo -->
                         <div class="bg-black border border-white/10 p-6 rounded-2xl flex flex-col shadow-xl">
                             <h3 class="text-sm font-black uppercase text-white border-b border-white/10 pb-2 mb-4"><i class="ph-bold ph-calculator text-blue-400"></i> Calculadora</h3>
                             <input type="text" id="std-calc-display" class="w-full bg-zinc-900 border border-white/10 text-white px-4 py-3 rounded-xl text-2xl font-ticket text-right mb-4 outline-none" readonly placeholder="0">
@@ -519,7 +515,7 @@
                     <button onclick="window.printCurrentPreview()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-printer"></i> Imprimir</button>
                     <button onclick="window.POS.abrirCaja('Impresión de Venta')" class="flex-1 bg-[#107c41] text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-tray"></i> Gaveta</button>
                 </div>
-                <button onclick="window.shareCurrentPreview()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-share-network"></i> Enviar / Compartir</button>
+                <button onclick="window.shareCurrentPreview()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-share-network"></i> Compartir / Descargar PDF</button>
                 <button onclick="window.closeModal('ticketPreviewModal')" class="w-full bg-zinc-300 text-zinc-800 py-2.5 rounded-xl font-bold uppercase text-[10px]">Cerrar</button>
             </div>
         </div>
@@ -614,6 +610,7 @@
         window.POS = {
             isApp: navigator.userAgent.includes("WebIntoApp") || window.location.href.includes("android_asset") || navigator.userAgent.includes("wv"),
             init: () => { if (window.POS.isApp || /Android/i.test(navigator.userAgent)) document.getElementById('hw-status-badge').classList.replace('hidden', 'flex'); },
+            
             imprimir: async (datosHtml, orderId) => {
                 // 1. App Nativa (Android Studio/Capacitor)
                 if (window.AndroidPOS && typeof window.AndroidPOS.print === 'function') {
@@ -634,23 +631,16 @@
 
                 const isAndroid = /Android/i.test(navigator.userAgent);
                 if (window.POS.isApp || isAndroid) {
-                    
                     // 3. NUEVA SOLUCIÓN APPCREATOR24: Servidor Interno RawBT (No mueve la pantalla)
                     try {
-                        const rawbtPort = 40228; // Puerto oficial de RawBT
-                        const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, {
-                            method: 'POST',
-                            body: datosHtml
-                        });
-                        if (res.ok) {
-                            window.showToast("Ticket enviado (Servidor RawBT)");
-                            return;
-                        }
+                        const rawbtPort = 40228;
+                        const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, { method: 'POST', body: datosHtml });
+                        if (res.ok) { window.showToast("Ticket enviado (Servidor RawBT)"); return; }
                     } catch (e) {
                         console.log("Servidor interno de RawBT no activo, intentando método de emergencia...");
                     }
 
-                    // 4. Método de Emergencia (Puede causar pantalla blanca en AppCreator)
+                    // 4. Método de Emergencia
                     try {
                         const rawbtUrl = "intent://rawbt:" + encodeURIComponent(datosHtml) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
                         window.location.href = rawbtUrl;
@@ -664,13 +654,12 @@
 
                 // 5. Impresión Web Clásica (Chrome en PC sin Bridge)
                 try {
-                    window.showToast("Usando impresión web estándar");
+                    window.showToast("Preparando impresión...");
                     document.getElementById('thermal-print-area').innerHTML = datosHtml;
                     document.body.classList.add('thermal-printing');
-                    setTimeout(() => {
-                        try { window.print(); } catch(e) { window.showToast("Tu sistema no soporta impresión", "error"); }
-                        document.body.classList.remove('thermal-printing');
-                    }, 300);
+                    // Ejecución síncrona, eliminamos el setTimeout para evitar que el navegador móvil lo bloquee.
+                    window.print();
+                    document.body.classList.remove('thermal-printing');
                 } catch (err) {
                     window.showToast("Error crítico al imprimir", "error");
                     document.body.classList.remove('thermal-printing');
@@ -680,7 +669,6 @@
             abrirCaja: async (reason = "Manual") => {
                 if (window.AndroidPOS && typeof window.AndroidPOS.openDrawer === 'function') { window.AndroidPOS.openDrawer(); return; }
                 
-                // 1. PC (Windows) con Hardware Bridge USB
                 try {
                     const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 1500);
                     const res = await fetch(`${window.STATE.hardware.bridgeUrl || 'http://localhost:3000'}/api/drawer/open`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user: window.STATE.currentUser, reason }), signal: controller.signal });
@@ -690,29 +678,17 @@
 
                 const isAndroid = /Android/i.test(navigator.userAgent);
                 if (window.POS.isApp || isAndroid) {
-                    const comandoGaveta = "\x1B\x70\x00\x19\xFA"; // Comando universal ESC/POS
-
-                    // 2. NUEVA SOLUCIÓN APPCREATOR24: Servidor Interno RawBT
+                    const comandoGaveta = "\x1B\x70\x00\x19\xFA";
                     try {
                         const rawbtPort = 40228;
-                        const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, {
-                            method: 'POST',
-                            body: comandoGaveta
-                        });
-                        if (res.ok) {
-                            window.showToast("Caja abierta (Servidor RawBT)");
-                            return;
-                        }
+                        const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, { method: 'POST', body: comandoGaveta });
+                        if (res.ok) { window.showToast("Caja abierta (Servidor RawBT)"); return; }
                     } catch(e) {}
-
-                    // 3. Método de Emergencia
                     try {
                         const rawbtUrl = "intent://rawbt:" + encodeURIComponent(comandoGaveta) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
                         window.location.href = rawbtUrl;
                         return window.showToast("Orden enviada a caja registradora");
-                    } catch (err) {
-                        window.showToast("Error al abrir caja", "error");
-                    }
+                    } catch (err) { window.showToast("Error al abrir caja", "error"); }
                 }
             },
             
@@ -897,9 +873,54 @@
             const itemsHtml = o.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom: 2px; font-weight:bold;"><span style="flex:1;">- ${i.title}</span><span>$${parseFloat(i.price).toFixed(2)}</span></div>${i.note ? `<div style="font-size: 10px; font-weight:bold; color: #000; padding-left: 10px; margin-bottom: 4px; text-transform: uppercase;">!!! NOTA: ${i.note}</div>` : ''}`).join('');
             return `<div style="font-family:'Space Mono', monospace; color:#000; width:100%; padding: 0 2mm; box-sizing: border-box;"><div style="text-align:center; border-bottom:2px dashed #000; padding-bottom:10px; margin-bottom:10px;"><h2 style="font-size:20px; font-weight:900; margin:0; text-transform:uppercase;">LA PAPA CALIENTE</h2><p style="font-size:11px; margin:4px 0; border:1px solid #000; display:inline-block; padding: 2px 6px;">COMPROBANTE</p><p style="font-size:11px; margin:4px 0 0 0;">${new Date(o.timestamp).toLocaleString()}</p></div><div style="font-size:12px; margin-bottom:10px; line-height: 1.5; padding: 5px; background: #eee; border-radius: 4px;"><p style="margin:0; font-weight:900; font-size:14px;">TICKET: ${o.id}</p><p style="margin:0;"><strong>TIPO:</strong> ${o.type} ${o.table ? `(#${o.table})` : ''}</p><p style="margin:0;"><strong>CLIENTE:</strong> ${o.name}</p><p style="margin:0;"><strong>PAGO:</strong> ${o.payment}</p></div><div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:10px 0; margin-bottom:10px;">${itemsHtml}</div><div style="font-size:12px; line-height: 1.5; font-weight:bold;"><div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>$${sub.toFixed(2)}</span></div><div style="display:flex; justify-content:space-between;"><span>ITBIS (18%):</span><span>$${itbis.toFixed(2)}</span></div></div><div style="font-size:18px; font-weight:900; display:flex; justify-content:space-between; margin-top:5px; border-top:2px dashed #000; padding-top:8px;"><span>TOTAL:</span><span>$${o.total.toFixed(2)}</span></div><div style="text-align:center; margin-top:20px;"><svg id="barcode-ticket"></svg></div><div style="text-align:center; font-size:11px; font-weight:bold; margin-top:5px;">¡VUELVE PRONTO!</div></div>`;
         };
+        
         window.showTicketPreview = (orderId) => { window.currentPreviewOrderId = orderId; const html = window.getInvoiceHtml(orderId); if(!html) return; document.getElementById('ticketPreviewContent').innerHTML = html; try { JsBarcode("#barcode-ticket", orderId, { format: "CODE128", width: 1.5, height: 40, displayValue: true, fontSize: 12, margin: 0, background: "transparent", lineColor: "#000", fontOptions: "bold" }); } catch(e) {} window.openModal('ticketPreviewModal'); };
+        
         window.printCurrentPreview = () => { if(window.currentPreviewOrderId) window.POS.imprimir(document.getElementById('ticketPreviewContent').innerHTML, window.currentPreviewOrderId); };
-        window.shareCurrentPreview = () => { if(window.currentPreviewOrderId) { const o = window.STATE.orders.find(x => x.id === window.currentPreviewOrderId); if(o) window.POS.compartir(`Ticket ${o.id}`, `Factura\nTicket: ${o.id}\nCliente: ${o.name}\nTotal: $${o.total.toFixed(2)}\nFecha: ${new Date(o.timestamp).toLocaleString()}`); } };
+        
+        window.shareCurrentPreview = async () => { 
+            if(!window.currentPreviewOrderId) return; 
+            const o = window.STATE.orders.find(x => x.id === window.currentPreviewOrderId); 
+            if(!o) return; 
+            
+            const textSummary = `Factura\nTicket: ${o.id}\nCliente: ${o.name}\nTotal: $${o.total.toFixed(2)}\nFecha: ${new Date(o.timestamp).toLocaleString()}`;
+            window.showToast("Generando documento para compartir...");
+            
+            try {
+                // Seleccionamos el contenido del ticket
+                const ticketContent = document.getElementById('ticketPreviewContent');
+                const opt = { margin: 2, filename: `Ticket_${o.id}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: [80, 150], orientation: 'portrait' } };
+                
+                // Generamos el Blob (Archivo) de PDF
+                html2pdf().set(opt).from(ticketContent).output('blob').then(async function(blob) {
+                    const file = new File([blob], `Ticket_${o.id}.pdf`, { type: 'application/pdf' });
+                    
+                    try {
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) { 
+                            // Comparte el archivo PDF directamente (Abre Whatsapp, Correo, etc.)
+                            await navigator.share({ title: `Ticket ${o.id}`, text: 'Su comprobante de pago.', files: [file] }); 
+                            window.showToast('Ticket compartido con éxito');
+                        } else { 
+                            // Rescate (Fallback): Si Chrome bloquea el compartir archivos, lo forzamos a descargar.
+                            const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                            window.showToast('Ticket descargado en el dispositivo');
+                        }
+                    } catch (shareError) {
+                        // Si el usuario canceló (AbortError) no decimos nada, pero si es otro error compartimos texto.
+                        if (shareError.name !== 'AbortError') { 
+                            window.POS.compartir(`Ticket ${o.id}`, textSummary); 
+                        }
+                    }
+                }).catch(e => {
+                    // Fallback extremo
+                    window.POS.compartir(`Ticket ${o.id}`, textSummary);
+                });
+                
+            } catch(e) {
+                // Fallback extremo si falla la librería de PDF
+                window.POS.compartir(`Ticket ${o.id}`, textSummary);
+            }
+        };
 
         window.filteredReportOrders = [];
         window.generateReport = () => {
