@@ -612,14 +612,12 @@
             init: () => { if (window.POS.isApp || /Android/i.test(navigator.userAgent)) document.getElementById('hw-status-badge').classList.replace('hidden', 'flex'); },
             
             imprimir: async (datosHtml, orderId) => {
-                // 1. App Nativa (Android Studio/Capacitor)
                 if (window.AndroidPOS && typeof window.AndroidPOS.print === 'function') {
                     window.AndroidPOS.print(JSON.stringify({id: orderId, html: datosHtml}));
-                    window.showToast("Ticket enviado a la impresora de la App");
+                    window.showToast("Ticket enviado a la App");
                     return;
                 }
                 
-                // 2. PC (Windows) con Hardware Bridge USB
                 try {
                     const hwBridgeUrl = window.STATE.hardware.bridgeUrl || 'http://localhost:3000';
                     const res = await fetch(`${hwBridgeUrl}/api/printer/print`, {
@@ -631,35 +629,37 @@
 
                 const isAndroid = /Android/i.test(navigator.userAgent);
                 if (window.POS.isApp || isAndroid) {
-                    // 3. NUEVA SOLUCIÓN APPCREATOR24: Servidor Interno RawBT (No mueve la pantalla)
+                    const printContent = `<html><head><meta charset="utf-8"></head><body style="margin:0;padding:0;">${datosHtml}</body></html>`;
+                    
+                    // Estrategia combinada para RawBT: Intentar server interno, si falla -> Intent Base64 garantizado
                     try {
                         const rawbtPort = 40228;
-                        const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, { method: 'POST', body: datosHtml });
-                        if (res.ok) { window.showToast("Ticket enviado (Servidor RawBT)"); return; }
-                    } catch (e) {
-                        console.log("Servidor interno de RawBT no activo, intentando método de emergencia...");
-                    }
-
-                    // 4. Método de Emergencia
-                    try {
-                        const rawbtUrl = "intent://rawbt:" + encodeURIComponent(datosHtml) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
-                        window.location.href = rawbtUrl;
-                        window.showToast("Enviado por comando clásico"); 
+                        fetch(`http://127.0.0.1:${rawbtPort}/`, { method: 'POST', body: printContent })
+                        .then(res => {
+                            if (res.ok) window.showToast("Enviado (Servidor RawBT)");
+                        })
+                        .catch(e => {
+                            // SI FALLA EL SERVIDOR, DISPARA EL INTENT DE RAWBT (Solución definitiva para APP/Celular)
+                            const base64Data = btoa(unescape(encodeURIComponent(printContent)));
+                            const rawbtUrl = "intent:base64," + base64Data + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+                            window.location.href = rawbtUrl;
+                            window.showToast("Abriendo RawBT...");
+                        });
                         return;
                     } catch (err) {
-                        window.showToast("Error al enviar a impresora", "error");
+                        window.showToast("Error de conexión RawBT", "error");
                         return;
                     }
                 }
 
-                // 5. Impresión Web Clásica (Chrome en PC sin Bridge)
                 try {
-                    window.showToast("Preparando impresión...");
+                    window.showToast("Preparando impresión web...");
                     document.getElementById('thermal-print-area').innerHTML = datosHtml;
                     document.body.classList.add('thermal-printing');
-                    // Ejecución síncrona, eliminamos el setTimeout para evitar que el navegador móvil lo bloquee.
-                    window.print();
-                    document.body.classList.remove('thermal-printing');
+                    setTimeout(() => { 
+                        window.print(); 
+                        document.body.classList.remove('thermal-printing'); 
+                    }, 500);
                 } catch (err) {
                     window.showToast("Error crítico al imprimir", "error");
                     document.body.classList.remove('thermal-printing');
@@ -883,42 +883,50 @@
             const o = window.STATE.orders.find(x => x.id === window.currentPreviewOrderId); 
             if(!o) return; 
             
-            const textSummary = `Factura\nTicket: ${o.id}\nCliente: ${o.name}\nTotal: $${o.total.toFixed(2)}\nFecha: ${new Date(o.timestamp).toLocaleString()}`;
-            window.showToast("Generando documento para compartir...");
+            // Texto robusto y limpio para enviar por WhatsApp o Compartir nativo
+            const textSummary = `*LA PAPA CALIENTE*\nTicket: ${o.id}\nCliente: ${o.name}\nTotal: $${o.total.toFixed(2)}\nFecha: ${new Date(o.timestamp).toLocaleString()}\n\n*Detalle:*\n` + o.items.map(i => `- ${i.title} ($${parseFloat(i.price).toFixed(2)})`).join('\n') + `\n\n¡Gracias por preferirnos!`;
             
+            const isAndroid = /Android/i.test(navigator.userAgent) || window.POS.isApp;
+            
+            // SOLUCIÓN DEFINITIVA PARA MÓVIL: Evita crear el PDF que da error en APKs y comparte texto limpio
+            if (isAndroid) {
+                try {
+                    if (navigator.share) {
+                        await navigator.share({ title: `Ticket ${o.id}`, text: textSummary });
+                        window.showToast('Ticket enviado');
+                    } else {
+                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textSummary)}`, '_blank');
+                    }
+                } catch(e) {
+                    if(e.name !== 'AbortError') window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textSummary)}`, '_blank');
+                }
+                return; // IMPORTANTE: Cortamos aquí para móviles
+            }
+
+            // MANTENEMOS EL PDF SÓLO PARA PC DONDE FUNCIONA PERFECTO
+            window.showToast("Generando documento PDF...");
             try {
-                // Seleccionamos el contenido del ticket
                 const ticketContent = document.getElementById('ticketPreviewContent');
                 const opt = { margin: 2, filename: `Ticket_${o.id}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: [80, 150], orientation: 'portrait' } };
                 
-                // Generamos el Blob (Archivo) de PDF
                 html2pdf().set(opt).from(ticketContent).output('blob').then(async function(blob) {
                     const file = new File([blob], `Ticket_${o.id}.pdf`, { type: 'application/pdf' });
-                    
                     try {
                         if (navigator.canShare && navigator.canShare({ files: [file] })) { 
-                            // Comparte el archivo PDF directamente (Abre Whatsapp, Correo, etc.)
                             await navigator.share({ title: `Ticket ${o.id}`, text: 'Su comprobante de pago.', files: [file] }); 
-                            window.showToast('Ticket compartido con éxito');
                         } else { 
-                            // Rescate (Fallback): Si Chrome bloquea el compartir archivos, lo forzamos a descargar.
-                            const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-                            window.showToast('Ticket descargado en el dispositivo');
+                            throw new Error("No soporta compartir archivos");
                         }
                     } catch (shareError) {
-                        // Si el usuario canceló (AbortError) no decimos nada, pero si es otro error compartimos texto.
                         if (shareError.name !== 'AbortError') { 
-                            window.POS.compartir(`Ticket ${o.id}`, textSummary); 
+                            // Rescate: Descargar en PC
+                            const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                            window.showToast('Ticket descargado');
                         }
                     }
-                }).catch(e => {
-                    // Fallback extremo
-                    window.POS.compartir(`Ticket ${o.id}`, textSummary);
                 });
-                
             } catch(e) {
-                // Fallback extremo si falla la librería de PDF
-                window.POS.compartir(`Ticket ${o.id}`, textSummary);
+                window.showToast("Error generando archivo", "error");
             }
         };
 
