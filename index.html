@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> <!-- LIBRERIA PDF AÑADIDA -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script>
         window.tailwind = {
@@ -560,7 +560,6 @@
                     if (snapshot.exists() && !isSaving) {
                         const cloudData = snapshot.val();
                         
-                        // --- SISTEMA DE ALERTA DE SONIDO (KDS) ---
                         const cloudOrders = cloudData.orders || [];
                         if (!isInitialLoad && window.STATE.currentUser) {
                             let hasNewOrders = false;
@@ -630,9 +629,14 @@
                 if (window.POS.isApp || isAndroid) {
                     try {
                         const rawbtUrl = "intent://rawbt:" + encodeURIComponent(datosHtml) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
-                        let ifrm = document.getElementById('rawbt-frame');
-                        if(!ifrm) { ifrm = document.createElement('iframe'); ifrm.id = 'rawbt-frame'; ifrm.style.display = 'none'; document.body.appendChild(ifrm); }
-                        ifrm.src = rawbtUrl;
+                        
+                        let btnVirtual = document.createElement('a');
+                        btnVirtual.href = rawbtUrl;
+                        btnVirtual.style.display = 'none';
+                        document.body.appendChild(btnVirtual);
+                        btnVirtual.click();
+                        setTimeout(() => document.body.removeChild(btnVirtual), 500);
+
                         window.showToast("Enviado a impresora móvil"); 
                         return;
                     } catch (err) {
@@ -669,9 +673,14 @@
                     try {
                         const comandoGaveta = "\x1B\x70\x00\x19\xFA"; // Comando universal ESC/POS
                         const rawbtUrl = "intent://rawbt:" + encodeURIComponent(comandoGaveta) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
-                        let ifrm = document.getElementById('rawbt-frame');
-                        if(!ifrm) { ifrm = document.createElement('iframe'); ifrm.id = 'rawbt-frame'; ifrm.style.display = 'none'; document.body.appendChild(ifrm); }
-                        ifrm.src = rawbtUrl;
+                        
+                        let btnVirtual = document.createElement('a');
+                        btnVirtual.href = rawbtUrl;
+                        btnVirtual.style.display = 'none';
+                        document.body.appendChild(btnVirtual);
+                        btnVirtual.click();
+                        setTimeout(() => document.body.removeChild(btnVirtual), 500);
+                        
                         return window.showToast("Orden enviada a caja registradora");
                     } catch (err) {
                         window.showToast("Error al abrir caja", "error");
@@ -715,7 +724,6 @@
             const u = window.sanitize(document.getElementById('epic-user').value.trim().toLowerCase()); const p = window.sanitize(document.getElementById('epic-pass').value.trim());
             if (u === 'papitacaliente' && p === '8494648650') { window.STATE.currentUser = 'admin'; } else if (u === 'cocinapapitacaliente' && p === '11223344') { window.STATE.currentUser = 'cocina'; } else { return window.showToast('Credenciales Inválidas', 'error'); }
             
-            // AUDITORIA: Desbloquear motor de audio en teléfonos (iOS/Android) al interactuar para permitir sonido de nueva orden.
             try { const actx = new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch(e) {}
 
             document.getElementById('app-login-screen').classList.add('hidden-auth'); const dash = document.getElementById('adminDashboard'); dash.classList.remove('hidden', 'opacity-0', 'pointer-events-none'); dash.classList.add('flex', 'opacity-100', 'pointer-events-auto');
@@ -815,7 +823,7 @@
             const i = window.STATE.menu.find(m => m.id === id); 
             if(i) { 
                 const cartItem = JSON.parse(JSON.stringify(i));
-                cartItem.price = parseFloat(cartItem.price) || 0; // Prevenir crash
+                cartItem.price = parseFloat(cartItem.price) || 0;
                 window.adminCart.push(cartItem); 
                 window.renderAdminCart(); 
             } 
@@ -850,7 +858,7 @@
             
             if(!window.STATE.orders) window.STATE.orders = []; window.STATE.orders.push({ id, name, type: type === 'Mesa' ? 'Mesa' : 'Local', table, payment: paymentType, items: [...window.adminCart], total, status: 'Pendiente', timestamp: Date.now() });
             
-            knownOrderIds.add(id); // Para que no suene notificacion propia
+            knownOrderIds.add(id);
             window.secureSave(); window.adminCart = []; window.renderAdminCart(); document.getElementById('pos-client-name').value = ''; document.getElementById('pos-client-table').value = '';
             if(window.STATE.hardware.autoOpenDrawer && paymentType === 'Efectivo') window.POS.abrirCaja('Venta Efectivo');
             window.showToast('Éxito', 'success'); window.showTicketPreview(id);
@@ -1046,7 +1054,6 @@
             const title = window.sanitize(document.getElementById('edit-title').value.trim()); if(!title) return window.showToast('Nombre obligatorio', 'error');
             if(!window.STATE.menu) window.STATE.menu = [];
             const tagValue = document.getElementById('edit-tag').value;
-            // AUDITORIA: Desvincular referencia de memoria JSON.parse(JSON.stringify()) en receta para que editar múltiples productos no los cruce
             const p = { id: document.getElementById('edit-id').value || 'p'+Date.now(), title, cat: window.sanitize(tagValue || document.getElementById('edit-cat').value), price: parseFloat(document.getElementById('edit-price').value || 0), img: document.getElementById('edit-img-preview').dataset.src || 'https://placehold.co/600x400/222/FFF', desc: window.sanitize(document.getElementById('edit-desc').value), recipe: JSON.parse(JSON.stringify(window.STATE.tempRecipe)), available: true }; 
             const idx = window.STATE.menu.findIndex(x => x.id === p.id); if(idx > -1) window.STATE.menu[idx] = p; else window.STATE.menu.push(p); 
             window.secureSave(); window.closeModal('editModal'); window.renderAdminCatalog(); window.showToast('Plato guardado'); 
