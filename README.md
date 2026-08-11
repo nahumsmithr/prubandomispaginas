@@ -13,6 +13,11 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+    <!-- Enlace al Manifest para que sea una App Nativa -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Darle color a la barra superior en Android -->
+    <meta name="theme-color" content="#050505">
+
     <script>
         window.tailwind = {
             config: {
@@ -610,12 +615,14 @@
             isApp: navigator.userAgent.includes("WebIntoApp") || window.location.href.includes("android_asset") || navigator.userAgent.includes("wv"),
             init: () => { if (window.POS.isApp || /Android/i.test(navigator.userAgent)) document.getElementById('hw-status-badge').classList.replace('hidden', 'flex'); },
             imprimir: async (datosHtml, orderId) => {
+                // 1. App Nativa (Android Studio/Capacitor)
                 if (window.AndroidPOS && typeof window.AndroidPOS.print === 'function') {
                     window.AndroidPOS.print(JSON.stringify({id: orderId, html: datosHtml}));
                     window.showToast("Ticket enviado a la impresora de la App");
                     return;
                 }
                 
+                // 2. PC (Windows) con Hardware Bridge USB
                 try {
                     const hwBridgeUrl = window.STATE.hardware.bridgeUrl || 'http://localhost:3000';
                     const res = await fetch(`${hwBridgeUrl}/api/printer/print`, {
@@ -623,21 +630,31 @@
                         body: JSON.stringify({ html: datosHtml, id: orderId })
                     });
                     if(res.ok) { window.showToast("Impresión Local Enviada"); return; }
-                } catch(e) { console.log("Sin bridge local. Usando Web Print."); }
+                } catch(e) {}
 
                 const isAndroid = /Android/i.test(navigator.userAgent);
                 if (window.POS.isApp || isAndroid) {
+                    
+                    // 3. NUEVA SOLUCIÓN APPCREATOR24: Servidor Interno RawBT (No mueve la pantalla)
+                    try {
+                        const rawbtPort = 40228; // Puerto oficial de RawBT
+                        const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, {
+                            method: 'POST',
+                            body: datosHtml
+                        });
+                        if (res.ok) {
+                            window.showToast("Ticket enviado (Servidor RawBT)");
+                            return;
+                        }
+                    } catch (e) {
+                        console.log("Servidor interno de RawBT no activo, intentando método de emergencia...");
+                    }
+
+                    // 4. Método de Emergencia (Puede causar pantalla blanca en AppCreator)
                     try {
                         const rawbtUrl = "intent://rawbt:" + encodeURIComponent(datosHtml) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
-                        
-                        let btnVirtual = document.createElement('a');
-                        btnVirtual.href = rawbtUrl;
-                        btnVirtual.style.display = 'none';
-                        document.body.appendChild(btnVirtual);
-                        btnVirtual.click();
-                        setTimeout(() => document.body.removeChild(btnVirtual), 500);
-
-                        window.showToast("Enviado a impresora móvil"); 
+                        window.location.href = rawbtUrl;
+                        window.showToast("Enviado por comando clásico"); 
                         return;
                     } catch (err) {
                         window.showToast("Error al enviar a impresora", "error");
@@ -645,6 +662,7 @@
                     }
                 }
 
+                // 5. Impresión Web Clásica (Chrome en PC sin Bridge)
                 try {
                     window.showToast("Usando impresión web estándar");
                     document.getElementById('thermal-print-area').innerHTML = datosHtml;
@@ -661,6 +679,8 @@
             
             abrirCaja: async (reason = "Manual") => {
                 if (window.AndroidPOS && typeof window.AndroidPOS.openDrawer === 'function') { window.AndroidPOS.openDrawer(); return; }
+                
+                // 1. PC (Windows) con Hardware Bridge USB
                 try {
                     const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 1500);
                     const res = await fetch(`${window.STATE.hardware.bridgeUrl || 'http://localhost:3000'}/api/drawer/open`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user: window.STATE.currentUser, reason }), signal: controller.signal });
@@ -670,17 +690,25 @@
 
                 const isAndroid = /Android/i.test(navigator.userAgent);
                 if (window.POS.isApp || isAndroid) {
+                    const comandoGaveta = "\x1B\x70\x00\x19\xFA"; // Comando universal ESC/POS
+
+                    // 2. NUEVA SOLUCIÓN APPCREATOR24: Servidor Interno RawBT
                     try {
-                        const comandoGaveta = "\x1B\x70\x00\x19\xFA"; // Comando universal ESC/POS
+                        const rawbtPort = 40228;
+                        const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, {
+                            method: 'POST',
+                            body: comandoGaveta
+                        });
+                        if (res.ok) {
+                            window.showToast("Caja abierta (Servidor RawBT)");
+                            return;
+                        }
+                    } catch(e) {}
+
+                    // 3. Método de Emergencia
+                    try {
                         const rawbtUrl = "intent://rawbt:" + encodeURIComponent(comandoGaveta) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
-                        
-                        let btnVirtual = document.createElement('a');
-                        btnVirtual.href = rawbtUrl;
-                        btnVirtual.style.display = 'none';
-                        document.body.appendChild(btnVirtual);
-                        btnVirtual.click();
-                        setTimeout(() => document.body.removeChild(btnVirtual), 500);
-                        
+                        window.location.href = rawbtUrl;
                         return window.showToast("Orden enviada a caja registradora");
                     } catch (err) {
                         window.showToast("Error al abrir caja", "error");
