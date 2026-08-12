@@ -2,7 +2,11 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <!-- Ajuste CRÍTICO para móviles: Evita zoom al escribir, ajusta al borde seguro (notches) y previene bloqueos -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>La Papa Caliente | App ERP & POS</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -79,6 +83,13 @@
             body.thermal-printing { background-color: white; }
             @page { margin: 0; }
         }
+
+        /* EFECTO DE TICKET DE PAPEL REALISTA */
+        .receipt-paper { background: #fff; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding-bottom: 25px; margin-bottom: 10px; }
+        .receipt-paper::after { content: ''; position: absolute; bottom: -8px; left: 0; right: 0; height: 16px; background: radial-gradient(circle, transparent, transparent 50%, #fff 50%, #fff 100%) 0 0 / 16px 16px; transform: rotate(180deg); }
+        
+        /* FIX iOS Y ANDROID PEQUEÑOS: Asegurar que los modales tengan scroll si la pantalla es enana */
+        .modal-content { max-height: 92dvh !important; display: flex; flex-direction: column; }
     </style>
 </head>
 <body class="antialiased selection:bg-papa-fire selection:text-white">
@@ -170,7 +181,7 @@
                     <div class="w-full md:w-[400px] bg-black border border-white/10 rounded-2xl flex flex-col h-auto md:h-full shrink-0 shadow-2xl relative min-h-[500px]">
                         <div class="bg-gradient-to-r from-zinc-900 to-black p-4 border-b border-white/10 flex justify-between items-center shrink-0">
                             <h3 class="font-black uppercase text-sm flex items-center gap-2"><i class="ph-bold ph-shopping-cart text-papa-fire text-lg"></i> Orden Actual</h3>
-                            <span class="bg-papa-fire text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg" id="pos-cart-badge">0 Items</span>
+                            <span class="bg-papa-fire text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg transition-all duration-300 transform origin-center" id="pos-cart-badge">0 Items</span>
                         </div>
                         <div class="p-3 bg-zinc-950 border-b border-white/10 shrink-0 space-y-2">
                             <div><label class="block text-[9px] text-zinc-500 font-bold uppercase mb-1">Nombre / Cliente</label><input type="text" id="pos-client-name" placeholder="Ej: Juan Perez..." class="w-full bg-black border border-white/10 text-white px-3 py-2.5 rounded-lg text-xs font-bold outline-none focus:border-papa-fire transition"></div>
@@ -509,15 +520,15 @@
 
     <!-- VISTA PREVIA TICKETS & ACCIONES -->
     <div id="ticketPreviewModal" class="modal-overlay fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/80">
-        <div class="modal-content bg-white w-[calc(100%-1.5rem)] md:w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
-            <div class="p-4 overflow-y-auto no-scrollbar flex-1 bg-white relative"><div id="ticketPreviewContent" class="text-black text-sm"></div></div>
-            <div class="bg-zinc-100 border-t border-gray-300 p-4 shrink-0 flex flex-col gap-2">
+        <div class="modal-content bg-zinc-200 w-[calc(100%-1.5rem)] md:w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="p-4 overflow-y-auto no-scrollbar flex-1 relative flex flex-col items-center pt-6"><div id="ticketPreviewContent" class="text-black text-sm receipt-paper w-full"></div></div>
+            <div class="bg-white border-t border-gray-300 p-4 shrink-0 flex flex-col gap-2 shadow-[0_-10px_20px_rgba(0,0,0,0.1)] z-10">
                 <div class="flex gap-2">
-                    <button onclick="window.printCurrentPreview()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-printer"></i> Imprimir</button>
-                    <button onclick="window.POS.abrirCaja('Impresión de Venta')" class="flex-1 bg-[#107c41] text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-tray"></i> Gaveta</button>
+                    <button onclick="window.printCurrentPreview()" class="flex-1 bg-blue-600 hover:bg-blue-700 transition text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-printer"></i> Imprimir</button>
+                    <button onclick="window.POS.abrirCaja('Impresión de Venta')" class="flex-1 bg-[#107c41] hover:bg-green-700 transition text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-tray"></i> Gaveta</button>
                 </div>
-                <button onclick="window.shareCurrentPreview()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-share-network"></i> Compartir / Descargar PDF</button>
-                <button onclick="window.closeModal('ticketPreviewModal')" class="w-full bg-zinc-300 text-zinc-800 py-2.5 rounded-xl font-bold uppercase text-[10px]">Cerrar</button>
+                <button onclick="window.shareCurrentPreview()" class="w-full bg-purple-600 hover:bg-purple-700 transition text-white py-3 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-md"><i class="ph-fill ph-share-network text-lg"></i> Compartir / Enviar PDF</button>
+                <button onclick="window.closeModal('ticketPreviewModal')" class="w-full bg-zinc-200 hover:bg-zinc-300 transition text-zinc-800 py-3 rounded-xl font-bold uppercase text-[10px]">Cerrar Vista Previa</button>
             </div>
         </div>
     </div>
@@ -658,7 +669,10 @@
 
         window.POS = {
             isApp: navigator.userAgent.includes("WebIntoApp") || window.location.href.includes("android_asset") || navigator.userAgent.includes("wv"),
-            init: () => { if (window.POS.isApp || /Android/i.test(navigator.userAgent)) document.getElementById('hw-status-badge').classList.replace('hidden', 'flex'); },
+            isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream,
+            isAndroid: /Android/i.test(navigator.userAgent),
+            
+            init: () => { if (window.POS.isApp || window.POS.isAndroid || window.POS.isIOS) document.getElementById('hw-status-badge').classList.replace('hidden', 'flex'); },
             
             imprimir: async (datosHtml, orderId) => {
                 if (window.AndroidPOS && typeof window.AndroidPOS.print === 'function') {
@@ -668,17 +682,21 @@
                 }
                 
                 try {
+                    // Intento 1: PC Bridge Local (USB/Red)
                     const hwBridgeUrl = window.STATE.hardware.bridgeUrl || 'http://localhost:3000';
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 1500); // Timeout rápido si no hay PC
                     const res = await fetch(`${hwBridgeUrl}/api/printer/print`, {
                         method: 'POST', headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ html: datosHtml, id: orderId })
+                        body: JSON.stringify({ html: datosHtml, id: orderId }),
+                        signal: controller.signal
                     });
-                    if(res.ok) { window.showToast("Impresión Local Enviada"); return; }
+                    clearTimeout(timeoutId);
+                    if(res.ok) { window.showToast("Impresión Local PC Enviada"); return; }
                 } catch(e) {}
 
-                const isAndroid = /Android/i.test(navigator.userAgent);
-                if (window.POS.isApp || isAndroid) {
-                    // MODO NATIVO RAWBT ESC/POS (IMPRESIÓN TÉRMICA PERFECTA)
+                // Intento 2: Dispositivos Móviles Android (Bluetooth / RawBT)
+                if (window.POS.isApp || window.POS.isAndroid) {
                     const o = window.STATE.orders.find(x => x.id === orderId);
                     if (o) {
                         let t = "[C]<b>LA PAPA CALIENTE</b>\n";
@@ -701,10 +719,9 @@
                         t += `[L]ITBIS (18%):[R]$${itbis.toFixed(2)}\n`;
                         t += `[L]<b>TOTAL:</b>[R]<b>$${o.total.toFixed(2)}</b>\n`;
                         t += "[C]--------------------------------\n";
-                        t += `[C]<barcode>${o.id}</barcode>\n`;
                         t += "[C]¡VUELVE PRONTO!\n";
 
-                        // SOLUCIÓN APPCREATOR24: Enviar intent por ancla invisible para saltar bloqueos de seguridad.
+                        // Intent a RawBT (El estándar para imprimir Bluetooth en Android Web)
                         const base64Data = btoa(unescape(encodeURIComponent(t)));
                         const rawbtUrl = `intent:${base64Data}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
                         
@@ -714,21 +731,23 @@
                         fakeLink.click();
                         document.body.removeChild(fakeLink);
                         
-                        window.showToast("Enviado a impresora móvil");
+                        window.showToast("Enviado a impresora móvil Bluetooth");
                         return;
                     }
                 }
 
+                // Intento 3: iOS (iPhone/iPad AirPrint) y Fallback de PC (Navegador Nativo)
                 try {
-                    window.showToast("Preparando impresión web...");
+                    window.showToast(window.POS.isIOS ? "Abriendo AirPrint (iOS)..." : "Preparando impresión web...");
                     document.getElementById('thermal-print-area').innerHTML = datosHtml;
                     document.body.classList.add('thermal-printing');
+                    // Usar un pequeño timeout para que el DOM se actualice antes de abrir el diálogo
                     setTimeout(() => { 
                         window.print(); 
                         document.body.classList.remove('thermal-printing'); 
                     }, 500);
                 } catch (err) {
-                    window.showToast("Error crítico al imprimir", "error");
+                    window.showToast("Error al abrir diálogo de impresión", "error");
                     document.body.classList.remove('thermal-printing');
                 }
             },
@@ -1004,6 +1023,16 @@
             }
             window.renderAdminCart();
             window.closeModal('posModifierModal');
+            
+            // Animación "Wow Factor" en el carrito
+            const badge = document.getElementById('pos-cart-badge');
+            badge.classList.add('scale-125', 'bg-green-500');
+            badge.classList.remove('bg-papa-fire');
+            setTimeout(() => { 
+                badge.classList.remove('scale-125', 'bg-green-500'); 
+                badge.classList.add('bg-papa-fire');
+            }, 300);
+
             window.showToast(`${window.currentModQty} agregado(s) a la orden`, 'success');
         };
         
@@ -1116,10 +1145,11 @@
         window.getInvoiceHtml = (orderId) => {
             const o = window.STATE.orders.find(x => x.id === orderId); if(!o) return ''; const sub = o.total / 1.18; const itbis = o.total - sub;
             const itemsHtml = o.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom: 2px; font-weight:bold;"><span style="flex:1;">- ${i.title}</span><span>$${parseFloat(i.price).toFixed(2)}</span></div>${i.note ? `<div style="font-size: 10px; font-weight:bold; color: #000; padding-left: 10px; margin-bottom: 4px; text-transform: uppercase;">!!! NOTA: ${i.note}</div>` : ''}`).join('');
-            return `<div style="font-family:'Space Mono', monospace; color:#000; width:100%; padding: 0 2mm; box-sizing: border-box;"><div style="text-align:center; border-bottom:2px dashed #000; padding-bottom:10px; margin-bottom:10px;"><h2 style="font-size:20px; font-weight:900; margin:0; text-transform:uppercase;">LA PAPA CALIENTE</h2><p style="font-size:11px; margin:4px 0; border:1px solid #000; display:inline-block; padding: 2px 6px;">COMPROBANTE</p><p style="font-size:11px; margin:4px 0 0 0;">${new Date(o.timestamp).toLocaleString()}</p></div><div style="font-size:12px; margin-bottom:10px; line-height: 1.5; padding: 5px; background: #eee; border-radius: 4px;"><p style="margin:0; font-weight:900; font-size:14px;">TICKET: ${o.id}</p><p style="margin:0;"><strong>TIPO:</strong> ${o.type} ${o.table ? `(#${o.table})` : ''}</p><p style="margin:0;"><strong>CLIENTE:</strong> ${o.name}</p><p style="margin:0;"><strong>PAGO:</strong> ${o.payment}</p></div><div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:10px 0; margin-bottom:10px;">${itemsHtml}</div><div style="font-size:12px; line-height: 1.5; font-weight:bold;"><div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>$${sub.toFixed(2)}</span></div><div style="display:flex; justify-content:space-between;"><span>ITBIS (18%):</span><span>$${itbis.toFixed(2)}</span></div></div><div style="font-size:18px; font-weight:900; display:flex; justify-content:space-between; margin-top:5px; border-top:2px dashed #000; padding-top:8px;"><span>TOTAL:</span><span>$${o.total.toFixed(2)}</span></div><div style="text-align:center; margin-top:20px;"><img id="barcode-ticket" style="max-width: 100%; height: auto; display: inline-block;"></div><div style="text-align:center; font-size:11px; font-weight:bold; margin-top:5px;">¡VUELVE PRONTO!</div></div>`;
+            // Ticket limpio, sin códigos de barras, optimizado para lectura rápida y ahorro de tinta.
+            return `<div style="font-family:'Space Mono', monospace; color:#000; width:100%; padding: 15px; box-sizing: border-box; background: white;"><div style="text-align:center; border-bottom:2px dashed #000; padding-bottom:10px; margin-bottom:10px;"><h2 style="font-size:22px; font-weight:900; margin:0; text-transform:uppercase; letter-spacing: -1px;">LA PAPA CALIENTE</h2><p style="font-size:11px; margin:6px 0; border:2px solid #000; display:inline-block; padding: 2px 8px; font-weight:bold;">COMPROBANTE</p><p style="font-size:11px; margin:4px 0 0 0; font-weight:bold;">${new Date(o.timestamp).toLocaleString()}</p></div><div style="font-size:12px; margin-bottom:10px; line-height: 1.5; padding: 8px; background: #f4f4f4; border-radius: 6px; border: 1px solid #ddd;"><p style="margin:0; font-weight:900; font-size:14px;">TICKET: ${o.id}</p><p style="margin:0;"><strong>TIPO:</strong> ${o.type} ${o.table ? `(#${o.table})` : ''}</p><p style="margin:0;"><strong>CLIENTE:</strong> ${o.name}</p><p style="margin:0;"><strong>PAGO:</strong> ${o.payment}</p></div><div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:10px 0; margin-bottom:10px;">${itemsHtml}</div><div style="font-size:12px; line-height: 1.5; font-weight:bold;"><div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>$${sub.toFixed(2)}</span></div><div style="display:flex; justify-content:space-between;"><span>ITBIS (18%):</span><span>$${itbis.toFixed(2)}</span></div></div><div style="font-size:20px; font-weight:900; display:flex; justify-content:space-between; margin-top:5px; border-top:2px dashed #000; padding-top:8px; margin-bottom:10px;"><span>TOTAL:</span><span>$${o.total.toFixed(2)}</span></div><div style="text-align:center; font-size:12px; font-weight:bold; margin-top:15px; background: #000; color: #fff; padding: 6px; border-radius: 4px;">¡VUELVE PRONTO!</div></div>`;
         };
         
-        window.showTicketPreview = (orderId) => { window.currentPreviewOrderId = orderId; const html = window.getInvoiceHtml(orderId); if(!html) return; document.getElementById('ticketPreviewContent').innerHTML = html; try { JsBarcode("#barcode-ticket", orderId, { format: "CODE128", width: 1.5, height: 40, displayValue: true, fontSize: 12, margin: 0, background: "transparent", lineColor: "#000", fontOptions: "bold" }); } catch(e) {} window.openModal('ticketPreviewModal'); };
+        window.showTicketPreview = (orderId) => { window.currentPreviewOrderId = orderId; const html = window.getInvoiceHtml(orderId); if(!html) return; document.getElementById('ticketPreviewContent').innerHTML = html; window.openModal('ticketPreviewModal'); };
         
         window.printCurrentPreview = () => { if(window.currentPreviewOrderId) window.POS.imprimir(document.getElementById('ticketPreviewContent').innerHTML, window.currentPreviewOrderId); };
         
@@ -1128,50 +1158,62 @@
             const o = window.STATE.orders.find(x => x.id === window.currentPreviewOrderId); 
             if(!o) return; 
             
-            // Texto robusto y limpio para enviar por WhatsApp o Compartir nativo
             const textSummary = `*LA PAPA CALIENTE*\nTicket: ${o.id}\nCliente: ${o.name}\nTotal: $${o.total.toFixed(2)}\nFecha: ${new Date(o.timestamp).toLocaleString()}\n\n*Detalle:*\n` + o.items.map(i => `- ${i.title} ($${parseFloat(i.price).toFixed(2)})`).join('\n') + `\n\n¡Gracias por preferirnos!`;
             
-            const isAndroid = /Android/i.test(navigator.userAgent) || window.POS.isApp;
-            
-            // SOLUCIÓN DEFINITIVA PARA MÓVIL: Evita crear el PDF que da error en APKs y comparte texto limpio
-            if (isAndroid) {
+            // Modal inteligente y moderno para decidir cómo compartir
+            const { value: shareMode } = await Swal.fire({
+                title: 'Opciones de Envío',
+                html: '<p style="font-size: 13px; color: #aaa; margin-bottom: 10px;">Seleccione el formato para enviar el ticket al cliente:</p>',
+                icon: 'share',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: '<i class="ph-bold ph-whatsapp text-lg"></i> Enviar Texto',
+                denyButtonText: '<i class="ph-bold ph-file-pdf text-lg"></i> Archivo PDF',
+                cancelButtonText: 'Cancelar',
+                background: '#111', color: '#fff',
+                confirmButtonColor: '#25D366', // Color WhatsApp
+                denyButtonColor: '#3b82f6', // Color Azul Tech
+                customClass: { confirmButton: 'font-black uppercase text-[10px]', denyButton: 'font-black uppercase text-[10px]', cancelButton: 'font-bold uppercase text-[10px]' }
+            });
+
+            if(shareMode === true) {
+                // Compartir como texto (WhatsApp u otras redes, nativo super rápido)
                 try {
-                    if (navigator.share) {
+                    if (navigator.share && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
                         await navigator.share({ title: `Ticket ${o.id}`, text: textSummary });
-                        window.showToast('Ticket enviado');
                     } else {
                         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textSummary)}`, '_blank');
                     }
+                    window.showToast('Mensaje de ticket enviado', 'success');
+                } catch(e) { if(e.name !== 'AbortError') window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textSummary)}`, '_blank'); }
+            
+            } else if (shareMode === false) {
+                // Compartir como PDF (Universal, descarga en PC, menú de compartir en celular)
+                window.showToast("Generando PDF de Alta Calidad...");
+                try {
+                    const ticketContent = document.getElementById('ticketPreviewContent');
+                    const opt = { margin: [0, 0, 0, 0], filename: `Factura_${o.id}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 3, useCORS: true, backgroundColor: '#ffffff' }, jsPDF: { unit: 'mm', format: [80, 150], orientation: 'portrait' } };
+                    
+                    html2pdf().set(opt).from(ticketContent).output('blob').then(async function(blob) {
+                        const file = new File([blob], `Factura_${o.id}.pdf`, { type: 'application/pdf' });
+                        try {
+                            if (navigator.canShare && navigator.canShare({ files: [file] })) { 
+                                await navigator.share({ title: `Factura ${o.id}`, text: 'Adjunto su comprobante de pago.', files: [file] }); 
+                                window.showToast('PDF compartido con éxito', 'success');
+                            } else { 
+                                throw new Error("Share API no soporta archivos");
+                            }
+                        } catch (shareError) {
+                            if (shareError.name !== 'AbortError') { 
+                                // Si falla compartir, fuerza la descarga directa del PDF
+                                const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                                window.showToast('Factura PDF descargada', 'success');
+                            }
+                        }
+                    });
                 } catch(e) {
-                    if(e.name !== 'AbortError') window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textSummary)}`, '_blank');
+                    window.showToast("Error generando archivo", "error");
                 }
-                return; // IMPORTANTE: Cortamos aquí para móviles
-            }
-
-            // MANTENEMOS EL PDF SÓLO PARA PC DONDE FUNCIONA PERFECTO
-            window.showToast("Generando documento PDF...");
-            try {
-                const ticketContent = document.getElementById('ticketPreviewContent');
-                const opt = { margin: 2, filename: `Ticket_${o.id}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: [80, 150], orientation: 'portrait' } };
-                
-                html2pdf().set(opt).from(ticketContent).output('blob').then(async function(blob) {
-                    const file = new File([blob], `Ticket_${o.id}.pdf`, { type: 'application/pdf' });
-                    try {
-                        if (navigator.canShare && navigator.canShare({ files: [file] })) { 
-                            await navigator.share({ title: `Ticket ${o.id}`, text: 'Su comprobante de pago.', files: [file] }); 
-                        } else { 
-                            throw new Error("No soporta compartir archivos");
-                        }
-                    } catch (shareError) {
-                        if (shareError.name !== 'AbortError') { 
-                            // Rescate: Descargar en PC
-                            const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-                            window.showToast('Ticket descargado');
-                        }
-                    }
-                });
-            } catch(e) {
-                window.showToast("Error generando archivo", "error");
             }
         };
 
