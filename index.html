@@ -475,6 +475,7 @@
                     <div><label class="block font-bold text-sm text-zinc-400 mb-1.5">Costo ($) <span class="text-papa-fire">*</span></label><input type="number" step="0.01" id="edit-ing-cost" class="w-full bg-black border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm outline-none"></div>
                     <div><label class="block font-bold text-sm text-zinc-400 mb-1.5">Stock Inicial</label><input type="number" step="any" id="edit-ing-stock" class="w-full bg-black border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm outline-none"></div>
                     <div><label class="block font-bold text-sm text-red-500 mb-1.5">Alerta Mín. *</label><input type="number" step="any" id="edit-ing-min" class="w-full bg-black border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm outline-none"></div>
+                    <div><label class="block font-bold text-sm text-papa-yellow mb-1.5">Precio Venta Extra ($)</label><input type="number" step="0.01" id="edit-ing-extra-price" class="w-full bg-black border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm outline-none" placeholder="0.00" title="Precio a cobrar si se pide como extra"></div>
                     <div>
                         <label class="block font-bold text-sm text-zinc-400 mb-1.5">Unidad</label>
                         <select id="edit-ing-unit" class="w-full bg-black border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm outline-none">
@@ -524,6 +525,51 @@
     <!-- ÁREA OCULTA PARA IMPRESIÓN TÉRMICA WEB -->
     <div id="thermal-print-area"></div>
 
+    <!-- MODAL MODIFICADOR POS -->
+    <div id="posModifierModal" class="modal-overlay fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/80">
+        <div class="modal-content bg-[#111] border border-white/10 w-full max-w-sm rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+            <div class="bg-black px-6 py-4 border-b border-white/10 flex justify-between items-center shrink-0">
+                <h2 id="mod-title" class="font-black text-lg text-white uppercase tracking-tight">Producto</h2>
+                <button onclick="window.closeModal('posModifierModal')"><i class="ph-bold ph-x text-xl text-zinc-400 hover:text-white"></i></button>
+            </div>
+            <div class="p-6 bg-[#0a0a0a] space-y-5 overflow-y-auto max-h-[65vh] no-scrollbar">
+                <div class="flex justify-between items-center bg-zinc-900/50 p-4 rounded-xl border border-white/5">
+                    <span class="text-xs font-bold text-zinc-400 uppercase">Subtotal:</span>
+                    <span id="mod-price" class="text-2xl font-black text-papa-yellow">$0.00</span>
+                </div>
+                
+                <div>
+                    <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-3">Cantidad</label>
+                    <div id="mod-qty-controls" class="flex items-center justify-between bg-black border border-white/10 rounded-xl p-2 w-full transition-opacity">
+                        <button onclick="window.modQty(-1)" class="w-12 h-12 bg-zinc-900 rounded-lg text-white font-bold text-xl hover:bg-papa-fire transition flex items-center justify-center">-</button>
+                        <span id="mod-qty" class="flex-1 text-center font-black text-2xl text-white">1</span>
+                        <button onclick="window.modQty(1)" class="w-12 h-12 bg-zinc-900 rounded-lg text-white font-bold text-xl hover:bg-green-500 transition flex items-center justify-center">+</button>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-white/10">
+                    <label class="block text-[10px] font-bold text-papa-yellow uppercase mb-2"><i class="ph-bold ph-plus-circle"></i> Ingredientes Extras (Desde Inventario)</label>
+                    <div class="flex gap-2">
+                        <select id="mod-extra-select" class="flex-1 bg-black border border-white/10 px-3 py-2 rounded-lg text-xs font-bold text-white outline-none focus:border-papa-yellow transition">
+                            <!-- Inyectado por JS -->
+                        </select>
+                        <input type="number" id="mod-extra-price" placeholder="$ Precio Venta" class="w-24 bg-black border border-white/10 px-3 py-2 rounded-lg text-xs font-bold text-white outline-none focus:border-papa-yellow transition text-center" title="Precio a cobrar al cliente">
+                        <button onclick="window.addModExtraFromInventory()" class="bg-papa-yellow text-black font-black px-4 py-2 rounded-lg text-xs hover:bg-yellow-500 transition"><i class="ph-bold ph-plus"></i></button>
+                    </div>
+                    <div id="mod-extras-list" class="mt-3 space-y-1"></div>
+                </div>
+
+                <div class="pt-4 border-t border-white/10">
+                    <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-2">Notas Especiales (Sin Costo)</label>
+                    <textarea id="mod-notes" placeholder="Ej. Sin cebolla, mayonesa aparte..." class="w-full bg-black border border-white/10 px-4 py-3 rounded-xl text-xs font-bold text-white outline-none focus:border-papa-fire transition" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="bg-black p-4 border-t border-white/10 flex gap-2 shrink-0">
+                <button id="mod-confirm-btn" onclick="window.confirmAddToCart()" class="flex-1 bg-papa-fire hover:bg-orange-600 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg transition flex justify-center items-center gap-2"><i class="ph-bold ph-shopping-cart text-lg"></i> Añadir a Orden</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
@@ -548,7 +594,10 @@
         
         window.adminCart = []; window.currentEditOrderId = null; window.currentPreviewOrderId = null;
         let app, db, isSaving = false; let isInitialLoad = true; let knownOrderIds = new Set();
-
+        
+        // Variables nativas para el modificador
+        window.currentModItem = null; window.currentModQty = 1; window.currentModExtras = [];
+        window.editingCartIndex = null; // Índice del carrito siendo editado
         window.sanitize = (str) => {
             if(typeof str !== 'string') return '';
             const div = document.createElement('div'); div.appendChild(document.createTextNode(str)); return div.innerHTML;
@@ -629,25 +678,43 @@
 
                 const isAndroid = /Android/i.test(navigator.userAgent);
                 if (window.POS.isApp || isAndroid) {
-                    const printContent = `<html><head><meta charset="utf-8"></head><body style="margin:0;padding:0;">${datosHtml}</body></html>`;
-                    
-                    // Estrategia combinada para RawBT: Intentar server interno, si falla -> Intent Base64 garantizado
-                    try {
-                        const rawbtPort = 40228;
-                        fetch(`http://127.0.0.1:${rawbtPort}/`, { method: 'POST', body: printContent })
-                        .then(res => {
-                            if (res.ok) window.showToast("Enviado (Servidor RawBT)");
-                        })
-                        .catch(e => {
-                            // SI FALLA EL SERVIDOR, DISPARA EL INTENT DE RAWBT (Solución definitiva para APP/Celular)
-                            const base64Data = btoa(unescape(encodeURIComponent(printContent)));
-                            const rawbtUrl = "intent:base64," + base64Data + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
-                            window.location.href = rawbtUrl;
-                            window.showToast("Abriendo RawBT...");
+                    // MODO NATIVO RAWBT ESC/POS (IMPRESIÓN TÉRMICA PERFECTA)
+                    const o = window.STATE.orders.find(x => x.id === orderId);
+                    if (o) {
+                        let t = "[C]<b>LA PAPA CALIENTE</b>\n";
+                        t += "[C]COMPROBANTE\n";
+                        t += `[C]${new Date(o.timestamp).toLocaleString()}\n`;
+                        t += "[C]--------------------------------\n";
+                        t += `[L]TICKET: ${o.id}\n`;
+                        t += `[L]TIPO: ${o.type} ${o.table ? `(#${o.table})` : ''}\n`;
+                        t += `[L]CLIENTE: ${o.name}\n`;
+                        t += `[L]PAGO: ${o.payment}\n`;
+                        t += "[C]--------------------------------\n";
+                        o.items.forEach(i => {
+                            t += `[L]${i.title}\n`;
+                            t += `[L]$${parseFloat(i.price).toFixed(2)}\n`;
+                            if (i.note) t += `[L]  Nota: ${i.note}\n`;
                         });
-                        return;
-                    } catch (err) {
-                        window.showToast("Error de conexión RawBT", "error");
+                        const sub = o.total / 1.18; const itbis = o.total - sub;
+                        t += "[C]--------------------------------\n";
+                        t += `[L]Subtotal:[R]$${sub.toFixed(2)}\n`;
+                        t += `[L]ITBIS (18%):[R]$${itbis.toFixed(2)}\n`;
+                        t += `[L]<b>TOTAL:</b>[R]<b>$${o.total.toFixed(2)}</b>\n`;
+                        t += "[C]--------------------------------\n";
+                        t += `[C]<barcode>${o.id}</barcode>\n`;
+                        t += "[C]¡VUELVE PRONTO!\n";
+
+                        // SOLUCIÓN APPCREATOR24: Enviar intent por ancla invisible para saltar bloqueos de seguridad.
+                        const base64Data = btoa(unescape(encodeURIComponent(t)));
+                        const rawbtUrl = `intent:${base64Data}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+                        
+                        const fakeLink = document.createElement('a');
+                        fakeLink.href = rawbtUrl;
+                        document.body.appendChild(fakeLink);
+                        fakeLink.click();
+                        document.body.removeChild(fakeLink);
+                        
+                        window.showToast("Enviado a impresora móvil");
                         return;
                     }
                 }
@@ -826,11 +893,118 @@
         window.addToAdminCart = (id) => { 
             const i = window.STATE.menu.find(m => m.id === id); 
             if(i) { 
-                const cartItem = JSON.parse(JSON.stringify(i));
-                cartItem.price = parseFloat(cartItem.price) || 0;
-                window.adminCart.push(cartItem); 
-                window.renderAdminCart(); 
+                window.editingCartIndex = null;
+                window.currentModItem = JSON.parse(JSON.stringify(i));
+                window.currentModQty = 1;
+                window.currentModExtras = [];
+                document.getElementById('mod-title').innerText = window.currentModItem.title;
+                document.getElementById('mod-qty').innerText = window.currentModQty;
+                document.getElementById('mod-notes').value = '';
+                
+                document.getElementById('mod-qty-controls').classList.remove('opacity-50', 'pointer-events-none');
+                const btn = document.getElementById('mod-confirm-btn');
+                btn.innerHTML = `<i class="ph-bold ph-shopping-cart text-lg"></i> Añadir a Orden`;
+                btn.onclick = window.confirmAddToCart;
+
+                // Llenar el select de extras con el inventario actual
+                const extraSelect = document.getElementById('mod-extra-select');
+                if(extraSelect) {
+                    extraSelect.innerHTML = `<option value="" disabled selected>-- Seleccionar Extra --</option>` + 
+                        (window.STATE.ingredients || []).map(ing => `<option value="${ing.id}" data-extra-price="${ing.extraPrice || 0}">+ ${ing.name} (Venta: $${parseFloat(ing.extraPrice || 0).toFixed(2)})</option>`).join('');
+                    
+                    extraSelect.onchange = (e) => {
+                        const selectedOption = e.target.options[e.target.selectedIndex];
+                        const extraPrice = parseFloat(selectedOption.dataset.extraPrice || 0);
+                        document.getElementById('mod-extra-price').value = extraPrice.toFixed(2);
+                    };
+                    document.getElementById('mod-extra-price').value = '';
+                }
+
+                window.updateModPriceUI();
+                window.openModal('posModifierModal');
             } 
+        };
+
+        window.updateModPriceUI = () => {
+            if(!window.currentModItem) return;
+            const basePrice = parseFloat(window.currentModItem.price);
+            const extrasTotal = window.currentModExtras.reduce((sum, ext) => sum + ext.price, 0);
+            const total = (basePrice + extrasTotal) * window.currentModQty;
+            document.getElementById('mod-price').innerText = `$${total.toFixed(2)}`;
+            
+            const extrasList = document.getElementById('mod-extras-list');
+            if(extrasList) {
+                if(window.currentModExtras.length === 0) extrasList.innerHTML = '';
+                else extrasList.innerHTML = window.currentModExtras.map((ext, idx) => `<div class="flex justify-between items-center bg-zinc-900 border border-white/10 p-2 rounded-lg text-[10px] font-bold"><span class="text-white">+ ${ext.name}</span><div class="flex items-center gap-3"><span class="text-papa-yellow">+$${ext.price.toFixed(2)}</span><button onclick="window.removeModExtra(${idx})" class="text-red-500 hover:text-red-400 text-sm"><i class="ph-bold ph-x"></i></button></div></div>`).join('');
+            }
+        };
+
+        window.addModExtraFromInventory = () => {
+            const selectEl = document.getElementById('mod-extra-select');
+            const ingId = selectEl.value;
+            const price = parseFloat(document.getElementById('mod-extra-price').value || 0);
+            
+            if(!ingId) return window.showToast('Seleccione un ingrediente del inventario', 'error');
+            if(price < 0) return window.showToast('Precio inválido', 'error');
+
+            const ingredient = window.STATE.ingredients.find(i => i.id === ingId);
+            if(!ingredient) return;
+
+            // Agregamos el extra incluyendo su ID para poder descontarlo del inventario luego
+            window.currentModExtras.push({ id: ingredient.id, name: `Extra ${ingredient.name}`, price: price, qty: 1 });
+            
+            selectEl.value = ''; 
+            document.getElementById('mod-extra-price').value = '';
+            window.updateModPriceUI();
+        };
+
+        window.removeModExtra = (idx) => { window.currentModExtras.splice(idx, 1); window.updateModPriceUI(); };
+
+        window.modQty = (delta) => {
+            const newVal = window.currentModQty + delta;
+            if(newVal > 0) {
+                window.currentModQty = newVal;
+                document.getElementById('mod-qty').innerText = window.currentModQty;
+                window.updateModPriceUI();
+            }
+        };
+
+        window.confirmAddToCart = () => {
+            if(!window.currentModItem) return;
+            const note = window.sanitize(document.getElementById('mod-notes').value.trim());
+            const basePrice = parseFloat(window.currentModItem.price);
+            const extrasTotal = window.currentModExtras.reduce((s, e) => s + e.price, 0);
+            const finalPrice = basePrice + extrasTotal;
+            
+            const extrasText = window.currentModExtras.map(e => `+ ${e.name} ($${e.price.toFixed(2)})`).join(' | ');
+            let finalNote = note;
+            if(extrasText) { finalNote = finalNote ? `${extrasText} | Nota: ${finalNote}` : extrasText; }
+            
+            for(let j = 0; j < window.currentModQty; j++) {
+                const cartItem = JSON.parse(JSON.stringify(window.currentModItem));
+                cartItem.price = finalPrice;
+                cartItem._pureNote = note; 
+                cartItem._extras = JSON.parse(JSON.stringify(window.currentModExtras));
+                if(finalNote) cartItem.note = finalNote;
+                
+                // Anexar los extras a la receta para que se descuenten del inventario
+                if(window.currentModExtras.length > 0) {
+                    if(!cartItem.recipe) cartItem.recipe = [];
+                    window.currentModExtras.forEach(ext => {
+                        if(ext.id) {
+                            // Revisar si ya existe en la receta principal para sumar cantidad
+                            const existingIng = cartItem.recipe.find(r => r.id === ext.id);
+                            if(existingIng) existingIng.qty += ext.qty;
+                            else cartItem.recipe.push({ id: ext.id, qty: ext.qty });
+                        }
+                    });
+                }
+
+                window.adminCart.push(cartItem);
+            }
+            window.renderAdminCart();
+            window.closeModal('posModifierModal');
+            window.showToast(`${window.currentModQty} agregado(s) a la orden`, 'success');
         };
         
         window.renderAdminCart = () => {
@@ -845,12 +1019,83 @@
             c.innerHTML = window.adminCart.map((item, idx) => { 
                 const price = parseFloat(item.price) || 0;
                 s += price; 
-                return `<div class="bg-black border border-white/5 p-2 rounded-lg flex justify-between items-center mb-2"><div class="flex-1 truncate"><p class="text-[10px] font-bold text-white uppercase">${item.title}</p><p class="text-[10px] text-zinc-500 font-bold">$${price.toFixed(2)}</p>${item.note ? `<p class="text-[9px] text-blue-400 font-bold bg-blue-900/20 px-1 rounded inline-block truncate max-w-[120px]">${item.note}</p>` : ''}</div><div class="flex gap-1"><button onclick="window.editAdminCartItemNote(${idx})" class="bg-blue-600/20 text-blue-400 p-1.5 rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="window.adminCart.splice(${idx},1); window.renderAdminCart();" class="bg-red-600/20 text-red-500 p-1.5 rounded"><i class="ph-bold ph-trash"></i></button></div></div>`; 
+                return `<div class="bg-black border border-white/5 p-2 rounded-lg flex justify-between items-center mb-2"><div class="flex-1 truncate"><p class="text-[10px] font-bold text-white uppercase">${item.title}</p><p class="text-[10px] text-zinc-500 font-bold">$${price.toFixed(2)}</p>${item.note ? `<p class="text-[9px] text-blue-400 font-bold bg-blue-900/20 px-1 rounded inline-block truncate max-w-[120px]">${item.note}</p>` : ''}</div><div class="flex gap-1"><button onclick="window.openEditCartItem(${idx})" class="bg-blue-600/20 text-blue-400 p-1.5 rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="window.adminCart.splice(${idx},1); window.renderAdminCart();" class="bg-red-600/20 text-red-500 p-1.5 rounded"><i class="ph-bold ph-trash"></i></button></div></div>`; 
             }).join('');
             document.getElementById('pos-total-price').innerText = `$${s.toFixed(2)}`;
         };
         
-        window.editAdminCartItemNote = async (idx) => { const item = window.adminCart[idx]; const { value: text } = await Swal.fire({ title: 'Nota', input: 'text', inputValue: item.note || '', background: '#111', color: '#fff' }); if(text !== undefined) { item.note = window.sanitize(text.trim()); window.renderAdminCart(); } };
+        window.openEditCartItem = (idx) => {
+            const item = window.adminCart[idx];
+            window.editingCartIndex = idx;
+            
+            const originalItem = window.STATE.menu.find(m => m.id === item.id);
+            if(!originalItem) return window.showToast('Error: Plato original no encontrado', 'error');
+            
+            window.currentModItem = JSON.parse(JSON.stringify(originalItem));
+            window.currentModQty = 1;
+            window.currentModExtras = item._extras ? JSON.parse(JSON.stringify(item._extras)) : [];
+            
+            document.getElementById('mod-title').innerText = "Editando: " + window.currentModItem.title;
+            document.getElementById('mod-qty-controls').classList.add('opacity-50', 'pointer-events-none');
+            document.getElementById('mod-qty').innerText = "1";
+            document.getElementById('mod-notes').value = item._pureNote || '';
+            
+            const extraSelect = document.getElementById('mod-extra-select');
+            if(extraSelect) {
+                extraSelect.innerHTML = `<option value="" disabled selected>-- Seleccionar Extra --</option>` + 
+                    (window.STATE.ingredients || []).map(ing => `<option value="${ing.id}" data-extra-price="${ing.extraPrice || 0}">+ ${ing.name} (Venta: $${parseFloat(ing.extraPrice || 0).toFixed(2)})</option>`).join('');
+                extraSelect.onchange = (e) => {
+                    const selectedOption = e.target.options[e.target.selectedIndex];
+                    const extraPrice = parseFloat(selectedOption.dataset.extraPrice || 0);
+                    document.getElementById('mod-extra-price').value = extraPrice.toFixed(2);
+                };
+                document.getElementById('mod-extra-price').value = '';
+            }
+
+            const btn = document.getElementById('mod-confirm-btn');
+            btn.innerHTML = `<i class="ph-bold ph-check-circle text-lg"></i> Guardar Cambios`;
+            btn.onclick = window.saveCartItemEdit;
+            
+            window.updateModPriceUI();
+            window.openModal('posModifierModal');
+        };
+
+        window.saveCartItemEdit = () => {
+            if(window.editingCartIndex === null || !window.currentModItem) return;
+            
+            const note = window.sanitize(document.getElementById('mod-notes').value.trim());
+            const basePrice = parseFloat(window.currentModItem.price);
+            const extrasTotal = window.currentModExtras.reduce((s, e) => s + e.price, 0);
+            const finalPrice = basePrice + extrasTotal;
+            
+            const extrasText = window.currentModExtras.map(e => `+ ${e.name} ($${e.price.toFixed(2)})`).join(' | ');
+            let finalNote = note;
+            if(extrasText) { finalNote = finalNote ? `${extrasText} | Nota: ${finalNote}` : extrasText; }
+            
+            const cartItem = JSON.parse(JSON.stringify(window.currentModItem));
+            cartItem.price = finalPrice;
+            cartItem._pureNote = note;
+            cartItem._extras = JSON.parse(JSON.stringify(window.currentModExtras));
+            if(finalNote) cartItem.note = finalNote;
+            
+            if(window.currentModExtras.length > 0) {
+                if(!cartItem.recipe) cartItem.recipe = [];
+                window.currentModExtras.forEach(ext => {
+                    if(ext.id) {
+                        const existingIng = cartItem.recipe.find(r => r.id === ext.id);
+                        if(existingIng) existingIng.qty += ext.qty;
+                        else cartItem.recipe.push({ id: ext.id, qty: ext.qty });
+                    }
+                });
+            }
+            
+            window.adminCart[window.editingCartIndex] = cartItem;
+            window.editingCartIndex = null;
+            window.renderAdminCart();
+            window.closeModal('posModifierModal');
+            window.showToast('Plato actualizado', 'success');
+        };
+
         window.processTerminalOrder = (paymentType) => {
             if(window.adminCart.length === 0) return window.showToast('Vacío', 'error');
             const name = window.sanitize(document.getElementById('pos-client-name').value.trim() || 'Cliente POS'); const type = document.getElementById('pos-order-type').value; const table = window.sanitize(document.getElementById('pos-client-table').value.trim());
@@ -871,7 +1116,7 @@
         window.getInvoiceHtml = (orderId) => {
             const o = window.STATE.orders.find(x => x.id === orderId); if(!o) return ''; const sub = o.total / 1.18; const itbis = o.total - sub;
             const itemsHtml = o.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom: 2px; font-weight:bold;"><span style="flex:1;">- ${i.title}</span><span>$${parseFloat(i.price).toFixed(2)}</span></div>${i.note ? `<div style="font-size: 10px; font-weight:bold; color: #000; padding-left: 10px; margin-bottom: 4px; text-transform: uppercase;">!!! NOTA: ${i.note}</div>` : ''}`).join('');
-            return `<div style="font-family:'Space Mono', monospace; color:#000; width:100%; padding: 0 2mm; box-sizing: border-box;"><div style="text-align:center; border-bottom:2px dashed #000; padding-bottom:10px; margin-bottom:10px;"><h2 style="font-size:20px; font-weight:900; margin:0; text-transform:uppercase;">LA PAPA CALIENTE</h2><p style="font-size:11px; margin:4px 0; border:1px solid #000; display:inline-block; padding: 2px 6px;">COMPROBANTE</p><p style="font-size:11px; margin:4px 0 0 0;">${new Date(o.timestamp).toLocaleString()}</p></div><div style="font-size:12px; margin-bottom:10px; line-height: 1.5; padding: 5px; background: #eee; border-radius: 4px;"><p style="margin:0; font-weight:900; font-size:14px;">TICKET: ${o.id}</p><p style="margin:0;"><strong>TIPO:</strong> ${o.type} ${o.table ? `(#${o.table})` : ''}</p><p style="margin:0;"><strong>CLIENTE:</strong> ${o.name}</p><p style="margin:0;"><strong>PAGO:</strong> ${o.payment}</p></div><div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:10px 0; margin-bottom:10px;">${itemsHtml}</div><div style="font-size:12px; line-height: 1.5; font-weight:bold;"><div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>$${sub.toFixed(2)}</span></div><div style="display:flex; justify-content:space-between;"><span>ITBIS (18%):</span><span>$${itbis.toFixed(2)}</span></div></div><div style="font-size:18px; font-weight:900; display:flex; justify-content:space-between; margin-top:5px; border-top:2px dashed #000; padding-top:8px;"><span>TOTAL:</span><span>$${o.total.toFixed(2)}</span></div><div style="text-align:center; margin-top:20px;"><svg id="barcode-ticket"></svg></div><div style="text-align:center; font-size:11px; font-weight:bold; margin-top:5px;">¡VUELVE PRONTO!</div></div>`;
+            return `<div style="font-family:'Space Mono', monospace; color:#000; width:100%; padding: 0 2mm; box-sizing: border-box;"><div style="text-align:center; border-bottom:2px dashed #000; padding-bottom:10px; margin-bottom:10px;"><h2 style="font-size:20px; font-weight:900; margin:0; text-transform:uppercase;">LA PAPA CALIENTE</h2><p style="font-size:11px; margin:4px 0; border:1px solid #000; display:inline-block; padding: 2px 6px;">COMPROBANTE</p><p style="font-size:11px; margin:4px 0 0 0;">${new Date(o.timestamp).toLocaleString()}</p></div><div style="font-size:12px; margin-bottom:10px; line-height: 1.5; padding: 5px; background: #eee; border-radius: 4px;"><p style="margin:0; font-weight:900; font-size:14px;">TICKET: ${o.id}</p><p style="margin:0;"><strong>TIPO:</strong> ${o.type} ${o.table ? `(#${o.table})` : ''}</p><p style="margin:0;"><strong>CLIENTE:</strong> ${o.name}</p><p style="margin:0;"><strong>PAGO:</strong> ${o.payment}</p></div><div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:10px 0; margin-bottom:10px;">${itemsHtml}</div><div style="font-size:12px; line-height: 1.5; font-weight:bold;"><div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>$${sub.toFixed(2)}</span></div><div style="display:flex; justify-content:space-between;"><span>ITBIS (18%):</span><span>$${itbis.toFixed(2)}</span></div></div><div style="font-size:18px; font-weight:900; display:flex; justify-content:space-between; margin-top:5px; border-top:2px dashed #000; padding-top:8px;"><span>TOTAL:</span><span>$${o.total.toFixed(2)}</span></div><div style="text-align:center; margin-top:20px;"><img id="barcode-ticket" style="max-width: 100%; height: auto; display: inline-block;"></div><div style="text-align:center; font-size:11px; font-weight:bold; margin-top:5px;">¡VUELVE PRONTO!</div></div>`;
         };
         
         window.showTicketPreview = (orderId) => { window.currentPreviewOrderId = orderId; const html = window.getInvoiceHtml(orderId); if(!html) return; document.getElementById('ticketPreviewContent').innerHTML = html; try { JsBarcode("#barcode-ticket", orderId, { format: "CODE128", width: 1.5, height: 40, displayValue: true, fontSize: 12, margin: 0, background: "transparent", lineColor: "#000", fontOptions: "bold" }); } catch(e) {} window.openModal('ticketPreviewModal'); };
@@ -1073,10 +1318,10 @@
             if(id) {
                 const i = window.STATE.ingredients.find(x => x.id === id); if(!i) return;
                 document.getElementById('ing-modal-main-title').innerText = `Editando: ${i.name}`;
-                document.getElementById('edit-ing-id').value = i.id; document.getElementById('edit-ing-sku').value = i.sku || ''; document.getElementById('edit-ing-name').value = i.name || ''; document.getElementById('edit-ing-cost').value = i.cost || 0; document.getElementById('edit-ing-stock').value = i.stock || 0; document.getElementById('edit-ing-min').value = i.min || 0; document.getElementById('edit-ing-unit').value = i.unit || 'uds';
+                document.getElementById('edit-ing-id').value = i.id; document.getElementById('edit-ing-sku').value = i.sku || ''; document.getElementById('edit-ing-name').value = i.name || ''; document.getElementById('edit-ing-cost').value = i.cost || 0; document.getElementById('edit-ing-stock').value = i.stock || 0; document.getElementById('edit-ing-min').value = i.min || 0; document.getElementById('edit-ing-unit').value = i.unit || 'uds'; document.getElementById('edit-ing-extra-price').value = i.extraPrice || 0;
             } else {
                 document.getElementById('ing-modal-main-title').innerText = `Nuevo Producto`;
-                ['edit-ing-id', 'edit-ing-sku', 'edit-ing-name', 'edit-ing-cost', 'edit-ing-stock', 'edit-ing-min'].forEach(field => { const el = document.getElementById(field); if(el) el.value = ''; });
+                ['edit-ing-id', 'edit-ing-sku', 'edit-ing-name', 'edit-ing-cost', 'edit-ing-stock', 'edit-ing-min', 'edit-ing-extra-price'].forEach(field => { const el = document.getElementById(field); if(el) el.value = ''; });
                 document.getElementById('edit-ing-unit').value = 'uds'; 
             }
             window.openModal('editIngModal');
@@ -1085,7 +1330,7 @@
         window.saveIngredient = () => {
             const name = window.sanitize(document.getElementById('edit-ing-name').value.trim()); if(!name) return window.showToast('Nombre obligatorio', 'error');
             const id = document.getElementById('edit-ing-id').value || ('ing-' + Date.now());
-            const ingData = { id, sku: window.sanitize(document.getElementById('edit-ing-sku').value.trim()), name, cost: parseFloat(document.getElementById('edit-ing-cost').value || 0), stock: parseFloat(document.getElementById('edit-ing-stock').value || 0), min: parseFloat(document.getElementById('edit-ing-min').value || 0), unit: document.getElementById('edit-ing-unit').value };
+            const ingData = { id, sku: window.sanitize(document.getElementById('edit-ing-sku').value.trim()), name, cost: parseFloat(document.getElementById('edit-ing-cost').value || 0), stock: parseFloat(document.getElementById('edit-ing-stock').value || 0), min: parseFloat(document.getElementById('edit-ing-min').value || 0), extraPrice: parseFloat(document.getElementById('edit-ing-extra-price').value || 0), unit: document.getElementById('edit-ing-unit').value };
             if(!window.STATE.ingredients) window.STATE.ingredients = [];
             const idx = window.STATE.ingredients.findIndex(x => x.id === id); if(idx > -1) { window.STATE.ingredients[idx] = ingData; } else { window.STATE.ingredients.push(ingData); }
             window.secureSave(); window.renderIngredients(); window.closeModal('editIngModal'); window.showToast('Guardado');
