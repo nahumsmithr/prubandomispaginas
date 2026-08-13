@@ -14,7 +14,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <!-- JsBarcode Eliminado completamente para ahorrar recursos y quitar el código de barras -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <link rel="manifest" href="manifest.json">
@@ -97,14 +97,15 @@
     <audio id="kds-alert" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
     <div id="toast-container" class="fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
 
+    <!-- PANTALLA LOGIN -->
     <div id="app-login-screen">
         <div class="login-glass-card">
             <div class="login-logo-container"><img id="login-brand-logo" src="https://placehold.co/150x150/FF3D00/FFF?text=PC" class="login-logo-img" alt="Logo"></div>
             <h1 class="login-title">La Papa Caliente<br><span class="text-sm text-papa-fire uppercase tracking-widest">App Administrativa</span></h1>
             <div class="flex flex-col gap-4 w-full">
                 <div class="login-input-group"><input type="text" id="epic-user" class="login-input" placeholder="Usuario" autocomplete="off" autocapitalize="off"><i class="ph-bold ph-user login-input-icon"></i></div>
-                <div class="login-input-group"><input type="password" id="epic-pass" class="login-input" placeholder="Contraseña" autocomplete="off" onkeypress="if(event.key === 'Enter') window.handleEpicLogin()"><i class="ph-bold ph-lock-key login-input-icon"></i></div>
-                <button onclick="window.handleEpicLogin()" class="login-btn-submit">Ingresar <i class="ph-bold ph-sign-in"></i></button>
+                <div class="login-input-group"><input type="password" id="epic-pass" class="login-input" placeholder="Contraseña" autocomplete="off"><i class="ph-bold ph-lock-key login-input-icon"></i></div>
+                <button id="login-submit-btn" class="login-btn-submit">Ingresar <i class="ph-bold ph-sign-in"></i></button>
             </div>
         </div>
     </div>
@@ -508,13 +509,14 @@
             </div>
             <div class="p-4 overflow-y-auto space-y-3 no-scrollbar bg-[#0a0a0a] flex-1" id="edit-order-items"></div>
             <div class="p-5 bg-zinc-950 border-t border-white/5 shrink-0 flex flex-col gap-3">
-                <label class="text-[10px] text-zinc-400 font-bold uppercase"><i class="ph-bold ph-plus-circle text-papa-fire"></i> Agregar extra</label>
+                <label class="text-[10px] text-zinc-400 font-bold uppercase"><i class="ph-bold ph-plus-circle text-papa-fire"></i> Añadir Nuevo Plato a la Orden</label>
                 <div class="flex flex-col sm:flex-row gap-3">
                     <select id="edit-order-add-select" class="flex-1 bg-black border border-white/10 text-white px-4 py-3 rounded-xl text-xs outline-none focus:border-blue-500"></select>
-                    <button onclick="window.addNewProductToEditOrder()" class="bg-papa-fire text-white font-black px-6 py-3 rounded-xl text-xs uppercase shrink-0">Añadir</button>
+                    <!-- Al dar clic aquí, se abre la ventana de extras para configurar el plato nuevo -->
+                    <button onclick="window.openAddKdsItem()" class="bg-papa-fire text-white font-black px-6 py-3 rounded-xl text-xs uppercase shrink-0">Configurar y Añadir</button>
                 </div>
             </div>
-            <div class="bg-black border-t border-white/10 px-6 py-4 shrink-0"><button onclick="window.closeModal('editOrderModal')" class="w-full bg-blue-600 text-white font-black uppercase text-xs py-3.5 rounded-xl">Guardar Cambios</button></div>
+            <div class="bg-black border-t border-white/10 px-6 py-4 shrink-0"><button onclick="window.closeModal('editOrderModal')" class="w-full bg-blue-600 text-white font-black uppercase text-xs py-3.5 rounded-xl">Cerrar</button></div>
         </div>
     </div>
 
@@ -559,13 +561,14 @@
                 </div>
 
                 <div class="pt-4 border-t border-white/10">
-                    <label class="block text-[10px] font-bold text-papa-yellow uppercase mb-2"><i class="ph-bold ph-plus-circle"></i> Ingredientes Extras (Desde Inventario)</label>
+                    <!-- Mejora UX: Textos Claros indicando cómo añadir múltiples -->
+                    <label class="block text-[10px] font-bold text-papa-yellow uppercase mb-2"><i class="ph-bold ph-plus-circle"></i> 1. Selecciona Extra / 2. Presiona el botón [+]</label>
                     <div class="flex gap-2">
                         <select id="mod-extra-select" class="flex-1 bg-black border border-white/10 px-3 py-2 rounded-lg text-xs font-bold text-white outline-none focus:border-papa-yellow transition">
                             <!-- Inyectado por JS -->
                         </select>
-                        <input type="number" id="mod-extra-price" placeholder="$ Precio Venta" class="w-24 bg-black border border-white/10 px-3 py-2 rounded-lg text-xs font-bold text-white outline-none focus:border-papa-yellow transition text-center" title="Precio a cobrar al cliente">
-                        <button onclick="window.addModExtraFromInventory()" class="bg-papa-yellow text-black font-black px-4 py-2 rounded-lg text-xs hover:bg-yellow-500 transition"><i class="ph-bold ph-plus"></i></button>
+                        <input type="number" id="mod-extra-price" placeholder="$ Venta" class="w-20 bg-black border border-white/10 px-3 py-2 rounded-lg text-xs font-bold text-white outline-none focus:border-papa-yellow transition text-center" title="Precio a cobrar al cliente">
+                        <button onclick="window.addModExtraFromInventory()" class="bg-papa-yellow text-black font-black px-5 py-2 rounded-lg text-lg hover:bg-yellow-500 transition shadow-lg"><i class="ph-bold ph-plus"></i></button>
                     </div>
                     <div id="mod-extras-list" class="mt-3 space-y-1"></div>
                 </div>
@@ -606,7 +609,6 @@
         window.adminCart = []; window.currentEditOrderId = null; window.currentPreviewOrderId = null;
         let app, db, isSaving = false; let isInitialLoad = true; let knownOrderIds = new Set();
         
-        // DEFINICIÓN GLOBAL DE AUDIO / BEEP CORREGIDA
         window.playBeep = () => { 
             try { 
                 const actx = new (window.AudioContext || window.webkitAudioContext)(); 
@@ -623,9 +625,8 @@
         };
         window.playNewOrderSound = window.playBeep;
         
-        // Variables nativas para el modificador
         window.currentModItem = null; window.currentModQty = 1; window.currentModExtras = [];
-        window.editingCartIndex = null; // Índice del carrito siendo editado
+        window.editingCartIndex = null;
         window.sanitize = (str) => {
             if(typeof str !== 'string') return '';
             const div = document.createElement('div'); div.appendChild(document.createTextNode(str)); return div.innerHTML;
@@ -699,7 +700,6 @@
                 }
                 
                 try {
-                    // Intento 1: PC Bridge Local (USB/Red)
                     const hwBridgeUrl = window.STATE.hardware.bridgeUrl || 'http://localhost:3000';
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 1500);
@@ -712,24 +712,14 @@
                     if(res.ok) { window.showToast("Impresión Local PC Enviada"); return; }
                 } catch(e) {}
 
-                // Intento 2: LA SOLUCIÓN PARA APP CREATOR 24 (WebViews Android)
-                // Usamos el servidor HTTP interno de RawBT porque App Creator bloquea los Intents.
                 if (window.POS.isApp || window.POS.isAndroid) {
                     try {
                         const rawbtPort = 40228;
-                        const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, { 
-                            method: 'POST', 
-                            body: datosHtml 
-                        });
-                        if (res.ok) { 
-                            window.showToast("Impresión enviada (App Creator / RawBT)"); 
-                            return; 
-                        }
+                        const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, { method: 'POST', body: datosHtml });
+                        if (res.ok) { window.showToast("Impresión enviada (App Creator / RawBT)"); return; }
                     } catch(e) {
                         console.log("Fallo server local RawBT, intentando enlace rawbt...");
                     }
-
-                    // Intento 3: Fallback Android usando protocolo rawbt: 
                     try {
                         const base64Data = btoa(unescape(encodeURIComponent(datosHtml)));
                         window.location.href = "rawbt:base64," + base64Data;
@@ -740,7 +730,6 @@
                     }
                 }
 
-                // Intento 4: iOS (iPhone/iPad AirPrint) y Fallback de PC (Navegador Nativo)
                 try {
                     window.showToast(window.POS.isIOS ? "Abriendo AirPrint (iOS)..." : "Preparando impresión web...");
                     document.getElementById('thermal-print-area').innerHTML = datosHtml;
@@ -757,7 +746,6 @@
             
             abrirCaja: async (reason = "Manual") => {
                 if (window.AndroidPOS && typeof window.AndroidPOS.openDrawer === 'function') { window.AndroidPOS.openDrawer(); return; }
-                
                 try {
                     const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 1500);
                     const res = await fetch(`${window.STATE.hardware.bridgeUrl || 'http://localhost:3000'}/api/drawer/open`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user: window.STATE.currentUser, reason }), signal: controller.signal });
@@ -788,21 +776,6 @@
         };
 
         window.POSBridge = { ping: async () => { try { const res = await fetch(`${window.STATE.hardware.bridgeUrl}/api/hardware`); if(res.ok) window.showToast('Hardware OK'); } catch(e) { window.showToast('Hardware Falló', 'error'); } } };
-
-        window.playNewOrderSound = () => { 
-            try { 
-                const actx = new (window.AudioContext || window.webkitAudioContext)(); 
-                const playBeep = (time) => { 
-                    const osc = actx.createOscillator(); const gain = actx.createGain(); 
-                    osc.connect(gain); gain.connect(actx.destination); 
-                    osc.type = 'triangle'; osc.frequency.value = 800; 
-                    gain.gain.setValueAtTime(0.3, actx.currentTime + time); 
-                    gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + time + 0.3); 
-                    osc.start(actx.currentTime + time); osc.stop(actx.currentTime + time + 0.3); 
-                }; 
-                playBeep(0); playBeep(0.4); 
-            } catch(e) {} 
-        };
 
         window.showToast = (msg, type = 'success') => { const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = `bg-zinc-900 border ${type === 'success' ? 'border-green-500/30' : 'border-red-500/30'} rounded-xl p-3 flex items-center gap-2 toast-custom`; t.innerHTML = `<span class="font-bold text-xs text-white">${msg}</span>`; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3000); };
         window.openModal = (id) => document.getElementById(id).classList.add('active'); window.closeModal = (id) => document.getElementById(id).classList.remove('active');
@@ -928,7 +901,6 @@
                 btn.innerHTML = `<i class="ph-bold ph-shopping-cart text-lg"></i> Añadir a Orden`;
                 btn.onclick = window.confirmAddToCart;
 
-                // Llenar el select de extras con el inventario actual
                 const extraSelect = document.getElementById('mod-extra-select');
                 if(extraSelect) {
                     extraSelect.innerHTML = `<option value="" disabled selected>-- Seleccionar Extra --</option>` + 
@@ -957,7 +929,7 @@
             const extrasList = document.getElementById('mod-extras-list');
             if(extrasList) {
                 if(window.currentModExtras.length === 0) extrasList.innerHTML = '';
-                else extrasList.innerHTML = window.currentModExtras.map((ext, idx) => `<div class="flex justify-between items-center bg-zinc-900 border border-white/10 p-2 rounded-lg text-[10px] font-bold"><span class="text-white">+ ${ext.name}</span><div class="flex items-center gap-3"><span class="text-papa-yellow">+$${ext.price.toFixed(2)}</span><button onclick="window.removeModExtra(${idx})" class="text-red-500 hover:text-red-400 text-sm"><i class="ph-bold ph-x"></i></button></div></div>`).join('');
+                else extrasList.innerHTML = window.currentModExtras.map((ext, idx) => `<div class="flex justify-between items-center bg-zinc-900 border border-white/10 p-2 rounded-lg text-[10px] font-bold"><span class="text-white">+ ${ext.qty > 1 ? ext.qty + 'x ' : ''}${ext.name}</span><div class="flex items-center gap-3"><span class="text-papa-yellow">+$${ext.price.toFixed(2)}</span><button onclick="window.removeModExtra(${idx})" class="text-red-500 hover:text-red-400 text-sm" title="Quitar"><i class="ph-bold ph-x"></i></button></div></div>`).join('');
             }
         };
 
@@ -972,8 +944,14 @@
             const ingredient = window.STATE.ingredients.find(i => i.id === ingId);
             if(!ingredient) return;
 
-            // Agregamos el extra incluyendo su ID para poder descontarlo del inventario luego
-            window.currentModExtras.push({ id: ingredient.id, name: `Extra ${ingredient.name}`, price: price, qty: 1 });
+            const existingIndex = window.currentModExtras.findIndex(e => e.id === ingredient.id && e.unitPrice === price);
+            
+            if(existingIndex > -1) {
+                window.currentModExtras[existingIndex].qty += 1;
+                window.currentModExtras[existingIndex].price += price;
+            } else {
+                window.currentModExtras.push({ id: ingredient.id, name: `Extra ${ingredient.name}`, price: price, unitPrice: price, qty: 1 });
+            }
             
             selectEl.value = ''; 
             document.getElementById('mod-extra-price').value = '';
@@ -998,7 +976,7 @@
             const extrasTotal = window.currentModExtras.reduce((s, e) => s + e.price, 0);
             const finalPrice = basePrice + extrasTotal;
             
-            const extrasText = window.currentModExtras.map(e => `+ ${e.name} ($${e.price.toFixed(2)})`).join(' | ');
+            const extrasText = window.currentModExtras.map(e => `+ ${e.qty > 1 ? e.qty + 'x ' : ''}${e.name} ($${e.price.toFixed(2)})`).join(' | ');
             let finalNote = note;
             if(extrasText) { finalNote = finalNote ? `${extrasText} | Nota: ${finalNote}` : extrasText; }
             
@@ -1009,12 +987,10 @@
                 cartItem._extras = JSON.parse(JSON.stringify(window.currentModExtras));
                 if(finalNote) cartItem.note = finalNote;
                 
-                // Anexar los extras a la receta para que se descuenten del inventario
                 if(window.currentModExtras.length > 0) {
                     if(!cartItem.recipe) cartItem.recipe = [];
                     window.currentModExtras.forEach(ext => {
                         if(ext.id) {
-                            // Revisar si ya existe en la receta principal para sumar cantidad
                             const existingIng = cartItem.recipe.find(r => r.id === ext.id);
                             if(existingIng) existingIng.qty += ext.qty;
                             else cartItem.recipe.push({ id: ext.id, qty: ext.qty });
@@ -1027,7 +1003,6 @@
             window.renderAdminCart();
             window.closeModal('posModifierModal');
             
-            // Animación "Wow Factor" en el carrito
             const badge = document.getElementById('pos-cart-badge');
             badge.classList.add('scale-125', 'bg-green-500');
             badge.classList.remove('bg-papa-fire');
@@ -1100,7 +1075,7 @@
             const extrasTotal = window.currentModExtras.reduce((s, e) => s + e.price, 0);
             const finalPrice = basePrice + extrasTotal;
             
-            const extrasText = window.currentModExtras.map(e => `+ ${e.name} ($${e.price.toFixed(2)})`).join(' | ');
+            const extrasText = window.currentModExtras.map(e => `+ ${e.qty > 1 ? e.qty + 'x ' : ''}${e.name} ($${e.price.toFixed(2)})`).join(' | ');
             let finalNote = note;
             if(extrasText) { finalNote = finalNote ? `${extrasText} | Nota: ${finalNote}` : extrasText; }
             
@@ -1147,51 +1122,72 @@
         };
 
         window.getInvoiceHtml = (orderId) => {
-            const o = window.STATE.orders.find(x => x.id === orderId); if(!o) return ''; const sub = o.total / 1.18; const itbis = o.total - sub;
+            const o = window.STATE.orders.find(x => x.id === orderId); if(!o) return ''; 
+            const sub = o.total / 1.18; const itbis = o.total - sub;
             
-            // Renderizado de productos limpio y alineado
-            const itemsHtml = o.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 4px;"><span style="text-align:left; flex:1; text-transform: uppercase;">${i.title}</span><span style="text-align:right; margin-left: 5px;">$${parseFloat(i.price).toFixed(2)}</span></div>${i.note ? `<div style="font-size: 9px; font-weight:bold; color: #444; text-align:left; padding-left: 5px; margin-bottom: 5px; text-transform:uppercase;">*Nota: ${i.note}</div>` : ''}`).join('');
+            const itemsHtml = o.items.map(i => `
+                <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; margin-bottom: 2px;">
+                    <span style="text-transform: uppercase;">${i.title}</span>
+                    <span>$${parseFloat(i.price).toFixed(2)}</span>
+                </div>
+                ${i.note ? `<div style="font-size: 10px; font-style: italic; color: #333; margin-bottom: 4px;">*Nota: ${i.note}</div>` : ''}
+            `).join('');
             
             const logoUrl = window.STATE.settings.logo || 'https://placehold.co/200x200/000/FFF?text=PAPA';
 
-            return `<div style="font-family: Arial, Helvetica, sans-serif; color:#000; width:100%; max-width: 100%; text-align:center; padding: 0; margin: 0; background: white; box-sizing: border-box;">
+            return `
+            <div style="font-family: Arial, Helvetica, sans-serif; color:#000; width:100%; text-align:left; background: white; padding-bottom: 10px;">
                 
-                <!-- LOGO ESTRICTAMENTE CENTRALIZADO -->
-                <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 5px;">
-                    <img src="${logoUrl}" style="width: 65px; height: 65px; object-fit: cover; filter: grayscale(100%) contrast(1.2); border-radius: 8px;">
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <img src="${logoUrl}" style="width: 70px; height: 70px; object-fit: cover; filter: grayscale(100%) contrast(1.2); border-radius: 50%; margin: 0 auto 5px; display: block;">
+                    <h2 style="font-size:18px; font-weight:900; margin:0; text-transform:uppercase;">LA PAPA CALIENTE</h2>
                 </div>
-                
-                <!-- CABECERA CENTRALIZADA -->
-                <div style="border-bottom: 1.5px solid #000; padding-bottom:6px; margin-bottom:6px; text-align:center; width: 100%;">
-                    <h2 style="font-size:17px; font-weight:900; margin:0; text-transform:uppercase; letter-spacing: 0.5px;">LA PAPA CALIENTE</h2>
-                    <div style="font-size:11px; margin-top:4px; background:#000; color:#fff; display:inline-block; padding:3px 10px; font-weight:900; border-radius:4px; text-transform: uppercase;">ORDEN: ${o.id}</div>
-                    <div style="font-size:10px; font-weight:bold; margin-top:4px; color: #333;">${new Date(o.timestamp).toLocaleString()}</div>
+
+                <div style="text-align: center; margin: 10px 0;">
+                    <div style="display: inline-block; border: 2px solid #000; padding: 4px 12px; font-size: 14px; font-weight: 900; text-transform: uppercase;">
+                        ORDEN: ${o.id}
+                    </div>
+                    <div style="font-size:10px; font-weight:bold; margin-top:4px;">${new Date(o.timestamp).toLocaleString()}</div>
                 </div>
+
+                <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
                 
-                <!-- INFO CLIENTE CENTRALIZADA EN CAJA -->
-                <div style="font-size:11px; margin-bottom:8px; padding: 6px; border: 1.5px solid #000; border-radius: 6px; text-align: center; width: 100%; box-sizing: border-box;">
-                    <div style="margin:2px 0; font-weight:900; text-transform: uppercase;">TIPO: ${o.type} ${o.table ? `(#${o.table})` : ''}</div>
-                    <div style="margin:2px 0; font-weight:bold;">CLIENTE: ${o.name}</div>
-                    <div style="margin:2px 0; font-weight:bold;">PAGO: ${o.payment}</div>
+                <div style="font-size:11px; font-weight: bold; line-height: 1.5;">
+                    <div>CLIENTE: <span style="text-transform: uppercase;">${o.name}</span></div>
+                    <div>TIPO: <span style="text-transform: uppercase;">${o.type} ${o.table ? `(Mesa #${o.table})` : ''}</span></div>
+                    <div>PAGO: <span style="text-transform: uppercase;">${o.payment}</span></div>
                 </div>
+
+                <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
                 
-                <!-- LISTA DE PRODUCTOS -->
-                <div style="padding:4px 0; margin-bottom:6px; border-bottom: 1.5px solid #000; width: 100%;">
+                <div style="margin-bottom: 10px;">
                     ${itemsHtml}
                 </div>
                 
-                <!-- TOTALES (PEGADOS A LA DERECHA PERO EN CAJA CENTRADA) -->
-                <div style="font-size:11px; text-align:right; font-weight:bold; margin-bottom: 8px; width: 100%; box-sizing: border-box;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom: 3px;"><span>Subtotal:</span><span>$${sub.toFixed(2)}</span></div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom: 3px;"><span>ITBIS:</span><span>$${itbis.toFixed(2)}</span></div>
-                    <div style="font-size:15px; font-weight:900; display:flex; justify-content:space-between; margin-top:4px; border-top: 2px solid #000; padding-top:4px;">
-                        <span>TOTAL:</span><span>$${o.total.toFixed(2)}</span>
+                <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
+                
+                <div style="font-size:12px; font-weight:bold; margin-bottom: 15px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+                        <span>SUBTOTAL:</span>
+                        <span>$${sub.toFixed(2)}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+                        <span>ITBIS (18%):</span>
+                        <span>$${itbis.toFixed(2)}</span>
+                    </div>
+                    
+                    <div style="border-top: 2px solid #000; margin: 6px 0;"></div>
+                    
+                    <div style="display:flex; justify-content:space-between; font-size: 16px; font-weight: 900; margin-top: 4px;">
+                        <span>TOTAL:</span>
+                        <span>$${o.total.toFixed(2)}</span>
                     </div>
                 </div>
                 
-                <!-- DESPEDIDA CENTRALIZADA -->
-                <div style="text-align:center; padding-top: 4px; width: 100%;">
-                    <div style="font-size:11px; font-weight:900; background: #000; color: #fff; padding: 6px 10px; border-radius: 4px; display: inline-block; text-transform: uppercase;">¡GRACIAS POR TU COMPRA!</div>
+                <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
+                
+                <div style="text-align:center; font-size:11px; font-weight:bold; text-transform: uppercase;">
+                    ¡Gracias por preferirnos!
                 </div>
             </div>`;
         };
@@ -1207,7 +1203,6 @@
             
             const textSummary = `*LA PAPA CALIENTE*\nTicket: ${o.id}\nCliente: ${o.name}\nTotal: $${o.total.toFixed(2)}\nFecha: ${new Date(o.timestamp).toLocaleString()}\n\n*Detalle:*\n` + o.items.map(i => `- ${i.title} ($${parseFloat(i.price).toFixed(2)})`).join('\n') + `\n\n¡Gracias por preferirnos!`;
             
-            // Modal inteligente y moderno para decidir cómo compartir
             const { value: shareMode } = await Swal.fire({
                 title: 'Opciones de Envío',
                 html: '<p style="font-size: 13px; color: #aaa; margin-bottom: 10px;">Seleccione el formato para enviar el ticket al cliente:</p>',
@@ -1218,13 +1213,12 @@
                 denyButtonText: '<i class="ph-bold ph-file-pdf text-lg"></i> Archivo PDF',
                 cancelButtonText: 'Cancelar',
                 background: '#111', color: '#fff',
-                confirmButtonColor: '#25D366', // Color WhatsApp
-                denyButtonColor: '#3b82f6', // Color Azul Tech
+                confirmButtonColor: '#25D366', 
+                denyButtonColor: '#3b82f6', 
                 customClass: { confirmButton: 'font-black uppercase text-[10px]', denyButton: 'font-black uppercase text-[10px]', cancelButton: 'font-bold uppercase text-[10px]' }
             });
 
             if(shareMode === true) {
-                // Compartir como texto (WhatsApp u otras redes, nativo super rápido)
                 try {
                     if (navigator.share && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
                         await navigator.share({ title: `Ticket ${o.id}`, text: textSummary });
@@ -1235,7 +1229,6 @@
                 } catch(e) { if(e.name !== 'AbortError') window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textSummary)}`, '_blank'); }
             
             } else if (shareMode === false) {
-                // Compartir como PDF (Universal, descarga en PC, menú de compartir en celular)
                 window.showToast("Generando PDF de Alta Calidad...");
                 try {
                     const ticketContent = document.getElementById('ticketPreviewContent');
@@ -1252,7 +1245,6 @@
                             }
                         } catch (shareError) {
                             if (shareError.name !== 'AbortError') { 
-                                // Si falla compartir, fuerza la descarga directa del PDF
                                 const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
                                 window.showToast('Factura PDF descargada', 'success');
                             }
@@ -1362,14 +1354,112 @@
         window.chgStatus = (id, stat) => { const o = window.STATE.orders.find(x => x.id === id); if(o) { o.status = stat; window.secureSave(); window.renderKDS(); window.renderOrdersHistory(); } };
 
         window.openEditOrderModal = (id) => { window.currentEditOrderId = id; window.renderEditOrderModal(); window.openModal('editOrderModal'); };
+        
         window.renderEditOrderModal = () => {
             const o = window.STATE.orders.find(x => x.id === window.currentEditOrderId); if(!o) return;
             document.getElementById('edit-order-title').innerHTML = `<i class="ph-bold ph-pencil-simple"></i> Editando: ${o.id}`; document.getElementById('edit-order-total').innerText = `Total: $${(o.total || 0).toFixed(2)}`;
-            document.getElementById('edit-order-items').innerHTML = o.items.map((item, idx) => `<div class="bg-black border border-white/10 p-3 rounded-xl flex justify-between items-center"><div class="flex-1 pr-2"><p class="text-xs font-bold text-white uppercase">${item.title} <span class="text-[9px] text-papa-yellow">($${(item.price||0).toFixed(2)})</span></p>${item.note ? `<p class="text-[10px] text-red-400 font-bold bg-red-900/20 px-2 rounded mt-1">${item.note}</p>` : ''}</div><div class="flex gap-2"><button onclick="window.editOrderItemNote(${idx})" class="bg-blue-600/20 text-blue-400 p-2 rounded"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="window.removeOrderItem(${idx})" class="bg-red-600/20 text-red-500 p-2 rounded"><i class="ph-bold ph-trash"></i></button></div></div>`).join('');
+            document.getElementById('edit-order-items').innerHTML = o.items.map((item, idx) => `<div class="bg-black border border-white/10 p-3 rounded-xl flex justify-between items-center"><div class="flex-1 pr-2"><p class="text-xs font-bold text-white uppercase">${item.title} <span class="text-[9px] text-papa-yellow">($${(item.price||0).toFixed(2)})</span></p>${item.note ? `<p class="text-[10px] text-red-400 font-bold bg-red-900/20 px-2 rounded mt-1">${item.note}</p>` : ''}</div><div class="flex gap-2"><button onclick="window.openEditKdsItem(${idx})" class="bg-blue-600/20 text-blue-400 p-2 rounded" title="Editar Producto y Extras"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="window.removeOrderItem(${idx})" class="bg-red-600/20 text-red-500 p-2 rounded"><i class="ph-bold ph-trash"></i></button></div></div>`).join('');
             document.getElementById('edit-order-add-select').innerHTML = `<option value="" disabled selected>-- Seleccione plato --</option>` + (window.STATE.menu||[]).filter(m=>m.available!==false).map(m => `<option value="${m.id}">${m.title} (+ $${m.price.toFixed(2)})</option>`).join('');
         };
-        window.addNewProductToEditOrder = () => { const o = window.STATE.orders.find(x => x.id === window.currentEditOrderId); const pId = document.getElementById('edit-order-add-select').value; if(!o || !pId) return; const pt = window.STATE.menu.find(m => m.id === pId); if(!pt) return; const newItem = JSON.parse(JSON.stringify(pt)); newItem.note = 'AGREGADO EXTRA'; (newItem.recipe||[]).forEach(r => { const ing = window.STATE.ingredients.find(i => i.id === r.id); if(ing) ing.stock -= r.qty; }); o.total += newItem.price; o.items.push(newItem); window.secureSave(); window.renderEditOrderModal(); window.renderKDS(); };
-        window.editOrderItemNote = async (idx) => { const o = window.STATE.orders.find(x => x.id === window.currentEditOrderId); if(!o) return; const { value: text } = await Swal.fire({ title: 'Editar Nota', input: 'text', inputValue: o.items[idx].note || '', background: '#111', color: '#fff' }); if(text !== undefined) { o.items[idx].note = window.sanitize(text.trim()); window.secureSave(); window.renderEditOrderModal(); window.renderKDS(); } };
+
+        window.openEditKdsItem = (idx) => {
+            const o = window.STATE.orders.find(x => x.id === window.currentEditOrderId); if(!o) return;
+            const item = o.items[idx]; window.editingCartIndex = idx;
+            
+            window.currentModItem = JSON.parse(JSON.stringify(window.STATE.menu.find(m => m.id === item.id) || item));
+            window.currentModQty = 1; window.currentModExtras = item._extras ? JSON.parse(JSON.stringify(item._extras)) : [];
+            
+            document.getElementById('mod-title').innerText = "Editando Orden: " + window.currentModItem.title;
+            document.getElementById('mod-qty-controls').classList.add('opacity-50', 'pointer-events-none');
+            document.getElementById('mod-qty').innerText = "1"; document.getElementById('mod-notes').value = item._pureNote || '';
+            
+            const extraSelect = document.getElementById('mod-extra-select');
+            if(extraSelect) {
+                extraSelect.innerHTML = `<option value="" disabled selected>-- Seleccionar Extra --</option>` + (window.STATE.ingredients || []).map(ing => `<option value="${ing.id}" data-extra-price="${ing.extraPrice || 0}">+ ${ing.name} (Venta: $${parseFloat(ing.extraPrice || 0).toFixed(2)})</option>`).join('');
+                extraSelect.onchange = (e) => { document.getElementById('mod-extra-price').value = parseFloat(e.target.options[e.target.selectedIndex].dataset.extraPrice || 0).toFixed(2); };
+                document.getElementById('mod-extra-price').value = '';
+            }
+
+            const btn = document.getElementById('mod-confirm-btn');
+            btn.innerHTML = `<i class="ph-bold ph-check-circle text-lg"></i> Guardar Cambios en Orden`;
+            btn.onclick = window.saveKdsItemEdit; window.updateModPriceUI(); window.openModal('posModifierModal');
+        };
+
+        window.saveKdsItemEdit = () => {
+            const o = window.STATE.orders.find(x => x.id === window.currentEditOrderId);
+            if(window.editingCartIndex === null || !window.currentModItem || !o) return;
+            const oldItem = o.items[window.editingCartIndex];
+            
+            // Devolvemos el inventario del item viejo
+            (oldItem.recipe||[]).forEach(r => { const ing = window.STATE.ingredients.find(i => i.id === r.id); if(ing) ing.stock += r.qty; });
+            
+            const note = window.sanitize(document.getElementById('mod-notes').value.trim());
+            const finalPrice = parseFloat(window.currentModItem.price) + window.currentModExtras.reduce((s, e) => s + e.price, 0);
+            const extrasText = window.currentModExtras.map(e => `+ ${e.qty > 1 ? e.qty + 'x ' : ''}${e.name} ($${e.price.toFixed(2)})`).join(' | ');
+            let finalNote = note; if(extrasText) { finalNote = finalNote ? `${extrasText} | Nota: ${finalNote}` : extrasText; }
+            
+            const newItem = JSON.parse(JSON.stringify(window.currentModItem));
+            newItem.price = finalPrice; newItem._pureNote = note; newItem._extras = JSON.parse(JSON.stringify(window.currentModExtras));
+            if(finalNote) newItem.note = finalNote;
+            
+            // Descontamos inventario del item nuevo
+            if(window.currentModExtras.length > 0) {
+                if(!newItem.recipe) newItem.recipe = [];
+                window.currentModExtras.forEach(ext => {
+                    if(ext.id) { const existingIng = newItem.recipe.find(r => r.id === ext.id); if(existingIng) existingIng.qty += ext.qty; else newItem.recipe.push({ id: ext.id, qty: ext.qty }); }
+                });
+            }
+            (newItem.recipe||[]).forEach(r => { const ing = window.STATE.ingredients.find(i => i.id === r.id); if(ing) ing.stock -= r.qty; });
+            
+            o.total = o.total - oldItem.price + newItem.price;
+            o.items[window.editingCartIndex] = newItem; window.editingCartIndex = null;
+            window.secureSave(); window.renderEditOrderModal(); window.renderKDS(); window.closeModal('posModifierModal'); window.showToast('Actualizado', 'success');
+        };
+
+        window.openAddKdsItem = () => {
+            const pId = document.getElementById('edit-order-add-select').value; if(!pId) return window.showToast('Seleccione un plato', 'error');
+            const pt = window.STATE.menu.find(m => m.id === pId); if(!pt) return;
+            
+            window.currentModItem = JSON.parse(JSON.stringify(pt)); window.currentModQty = 1; window.currentModExtras = [];
+            document.getElementById('mod-title').innerText = "Añadir a Orden: " + window.currentModItem.title;
+            document.getElementById('mod-qty-controls').classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('mod-qty').innerText = "1"; document.getElementById('mod-notes').value = '';
+            
+            const extraSelect = document.getElementById('mod-extra-select');
+            if(extraSelect) {
+                extraSelect.innerHTML = `<option value="" disabled selected>-- Seleccionar Extra --</option>` + (window.STATE.ingredients || []).map(ing => `<option value="${ing.id}" data-extra-price="${ing.extraPrice || 0}">+ ${ing.name} (Venta: $${parseFloat(ing.extraPrice || 0).toFixed(2)})</option>`).join('');
+                extraSelect.onchange = (e) => { document.getElementById('mod-extra-price').value = parseFloat(e.target.options[e.target.selectedIndex].dataset.extraPrice || 0).toFixed(2); };
+                document.getElementById('mod-extra-price').value = '';
+            }
+
+            const btn = document.getElementById('mod-confirm-btn');
+            btn.innerHTML = `<i class="ph-bold ph-plus-circle text-lg"></i> Agregar a Orden Activa`;
+            btn.onclick = window.saveNewKdsItem; window.updateModPriceUI(); window.openModal('posModifierModal');
+        };
+
+        window.saveNewKdsItem = () => {
+            const o = window.STATE.orders.find(x => x.id === window.currentEditOrderId); if(!window.currentModItem || !o) return;
+            const note = window.sanitize(document.getElementById('mod-notes').value.trim());
+            const finalPrice = parseFloat(window.currentModItem.price) + window.currentModExtras.reduce((s, e) => s + e.price, 0);
+            const extrasText = window.currentModExtras.map(e => `+ ${e.qty > 1 ? e.qty + 'x ' : ''}${e.name} ($${e.price.toFixed(2)})`).join(' | ');
+            let finalNote = note; if(extrasText) { finalNote = finalNote ? `${extrasText} | Nota: ${finalNote}` : extrasText; }
+            
+            for(let j = 0; j < window.currentModQty; j++) {
+                const newItem = JSON.parse(JSON.stringify(window.currentModItem));
+                newItem.price = finalPrice; newItem._pureNote = note; newItem._extras = JSON.parse(JSON.stringify(window.currentModExtras));
+                if(finalNote) newItem.note = finalNote;
+                
+                if(window.currentModExtras.length > 0) {
+                    if(!newItem.recipe) newItem.recipe = [];
+                    window.currentModExtras.forEach(ext => { if(ext.id) { const existingIng = newItem.recipe.find(r => r.id === ext.id); if(existingIng) existingIng.qty += ext.qty; else newItem.recipe.push({ id: ext.id, qty: ext.qty }); } });
+                }
+                (newItem.recipe||[]).forEach(r => { const ing = window.STATE.ingredients.find(i => i.id === r.id); if(ing) ing.stock -= r.qty; });
+                o.total += newItem.price; o.items.push(newItem);
+            }
+            
+            window.secureSave(); window.renderEditOrderModal(); window.renderKDS(); window.closeModal('posModifierModal'); window.showToast('Agregado', 'success');
+        };
+
         window.removeOrderItem = async (idx) => { const o = window.STATE.orders.find(x => x.id === window.currentEditOrderId); if(!o) return; const { isConfirmed } = await Swal.fire({ title: '¿Eliminar plato?', icon: 'warning', showCancelButton: true, background: '#111', color: '#fff' }); if(isConfirmed) { (o.items[idx].recipe||[]).forEach(r => { const ing = window.STATE.ingredients.find(i => i.id === r.id); if(ing) ing.stock += r.qty; }); o.total -= o.items[idx].price; o.items.splice(idx, 1); if(o.items.length === 0) { o.status = 'Cancelada'; window.closeModal('editOrderModal'); } else window.renderEditOrderModal(); window.secureSave(); window.renderKDS(); } };
 
         window.renderOrdersHistory = () => {
@@ -1469,6 +1559,16 @@
             window.showToast('Configuración Guardada'); 
         };
         window.saveHardwareConfig = () => { window.STATE.hardware.bridgeUrl = window.sanitize(document.getElementById('hw-bridge-url').value); window.STATE.hardware.autoOpenDrawer = document.getElementById('hw-auto-drawer').checked; window.secureSave(); window.showToast('Hardware configurado'); window.POSBridge.ping(); };
+
+        document.getElementById('login-submit-btn').addEventListener('click', () => {
+            if(typeof window.handleEpicLogin === 'function') window.handleEpicLogin();
+        });
+        
+        document.getElementById('epic-pass').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && typeof window.handleEpicLogin === 'function') {
+                window.handleEpicLogin();
+            }
+        });
 
         setInterval(() => { if(window.STATE.currentUser && !document.getElementById('panel-admin-kds').classList.contains('hidden')) { window.renderKDS(); window.renderDashboardMetrics(); } }, 15000);
         initCloudSystem();
