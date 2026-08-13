@@ -606,6 +606,23 @@
         window.adminCart = []; window.currentEditOrderId = null; window.currentPreviewOrderId = null;
         let app, db, isSaving = false; let isInitialLoad = true; let knownOrderIds = new Set();
         
+        // DEFINICIÓN GLOBAL DE AUDIO / BEEP CORREGIDA
+        window.playBeep = () => { 
+            try { 
+                const actx = new (window.AudioContext || window.webkitAudioContext)(); 
+                const playTone = (time) => { 
+                    const osc = actx.createOscillator(); const gain = actx.createGain(); 
+                    osc.connect(gain); gain.connect(actx.destination); 
+                    osc.type = 'triangle'; osc.frequency.value = 800; 
+                    gain.gain.setValueAtTime(0.3, actx.currentTime + time); 
+                    gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + time + 0.3); 
+                    osc.start(actx.currentTime + time); osc.stop(actx.currentTime + time + 0.3); 
+                }; 
+                playTone(0); playTone(0.4); 
+            } catch(e) {} 
+        };
+        window.playNewOrderSound = window.playBeep;
+        
         // Variables nativas para el modificador
         window.currentModItem = null; window.currentModQty = 1; window.currentModExtras = [];
         window.editingCartIndex = null; // Índice del carrito siendo editado
@@ -677,7 +694,7 @@
             imprimir: async (datosHtml, orderId) => {
                 if (window.AndroidPOS && typeof window.AndroidPOS.print === 'function') {
                     window.AndroidPOS.print(JSON.stringify({id: orderId, html: datosHtml}));
-                    window.showToast("Ticket enviado a la App");
+                    window.showToast("Ticket enviado a la App nativa");
                     return;
                 }
                 
@@ -685,7 +702,7 @@
                     // Intento 1: PC Bridge Local (USB/Red)
                     const hwBridgeUrl = window.STATE.hardware.bridgeUrl || 'http://localhost:3000';
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 1500); // Timeout rápido si no hay PC
+                    const timeoutId = setTimeout(() => controller.abort(), 1500);
                     const res = await fetch(`${hwBridgeUrl}/api/printer/print`, {
                         method: 'POST', headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({ html: datosHtml, id: orderId }),
@@ -695,53 +712,39 @@
                     if(res.ok) { window.showToast("Impresión Local PC Enviada"); return; }
                 } catch(e) {}
 
-                // Intento 2: Dispositivos Móviles Android (Bluetooth / RawBT)
+                // Intento 2: LA SOLUCIÓN PARA APP CREATOR 24 (WebViews Android)
+                // Usamos el servidor HTTP interno de RawBT porque App Creator bloquea los Intents.
                 if (window.POS.isApp || window.POS.isAndroid) {
-                    const o = window.STATE.orders.find(x => x.id === orderId);
-                    if (o) {
-                        let t = "[C]<b>LA PAPA CALIENTE</b>\n";
-                        t += "[C]COMPROBANTE\n";
-                        t += `[C]${new Date(o.timestamp).toLocaleString()}\n`;
-                        t += "[C]--------------------------------\n";
-                        t += `[L]TICKET: ${o.id}\n`;
-                        t += `[L]TIPO: ${o.type} ${o.table ? `(#${o.table})` : ''}\n`;
-                        t += `[L]CLIENTE: ${o.name}\n`;
-                        t += `[L]PAGO: ${o.payment}\n`;
-                        t += "[C]--------------------------------\n";
-                        o.items.forEach(i => {
-                            t += `[L]${i.title}\n`;
-                            t += `[L]$${parseFloat(i.price).toFixed(2)}\n`;
-                            if (i.note) t += `[L]  Nota: ${i.note}\n`;
+                    try {
+                        const rawbtPort = 40228;
+                        const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, { 
+                            method: 'POST', 
+                            body: datosHtml 
                         });
-                        const sub = o.total / 1.18; const itbis = o.total - sub;
-                        t += "[C]--------------------------------\n";
-                        t += `[L]Subtotal:[R]$${sub.toFixed(2)}\n`;
-                        t += `[L]ITBIS (18%):[R]$${itbis.toFixed(2)}\n`;
-                        t += `[L]<b>TOTAL:</b>[R]<b>$${o.total.toFixed(2)}</b>\n`;
-                        t += "[C]--------------------------------\n";
-                        t += "[C]¡VUELVE PRONTO!\n";
+                        if (res.ok) { 
+                            window.showToast("Impresión enviada (App Creator / RawBT)"); 
+                            return; 
+                        }
+                    } catch(e) {
+                        console.log("Fallo server local RawBT, intentando enlace rawbt...");
+                    }
 
-                        // Intent a RawBT (El estándar para imprimir Bluetooth en Android Web)
-                        const base64Data = btoa(unescape(encodeURIComponent(t)));
-                        const rawbtUrl = `intent:${base64Data}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
-                        
-                        const fakeLink = document.createElement('a');
-                        fakeLink.href = rawbtUrl;
-                        document.body.appendChild(fakeLink);
-                        fakeLink.click();
-                        document.body.removeChild(fakeLink);
-                        
+                    // Intento 3: Fallback Android usando protocolo rawbt: 
+                    try {
+                        const base64Data = btoa(unescape(encodeURIComponent(datosHtml)));
+                        window.location.href = "rawbt:base64," + base64Data;
                         window.showToast("Enviado a impresora móvil Bluetooth");
                         return;
+                    } catch (err) {
+                        window.showToast("Error de permisos en WebView", "error");
                     }
                 }
 
-                // Intento 3: iOS (iPhone/iPad AirPrint) y Fallback de PC (Navegador Nativo)
+                // Intento 4: iOS (iPhone/iPad AirPrint) y Fallback de PC (Navegador Nativo)
                 try {
                     window.showToast(window.POS.isIOS ? "Abriendo AirPrint (iOS)..." : "Preparando impresión web...");
                     document.getElementById('thermal-print-area').innerHTML = datosHtml;
                     document.body.classList.add('thermal-printing');
-                    // Usar un pequeño timeout para que el DOM se actualice antes de abrir el diálogo
                     setTimeout(() => { 
                         window.print(); 
                         document.body.classList.remove('thermal-printing'); 
@@ -1139,14 +1142,59 @@
             knownOrderIds.add(id);
             window.secureSave(); window.adminCart = []; window.renderAdminCart(); document.getElementById('pos-client-name').value = ''; document.getElementById('pos-client-table').value = '';
             if(window.STATE.hardware.autoOpenDrawer && paymentType === 'Efectivo') window.POS.abrirCaja('Venta Efectivo');
-            window.showToast('Éxito', 'success'); window.showTicketPreview(id);
+            window.playBeep();
+            window.showToast('Venta Exitosa', 'success'); window.showTicketPreview(id);
         };
 
         window.getInvoiceHtml = (orderId) => {
             const o = window.STATE.orders.find(x => x.id === orderId); if(!o) return ''; const sub = o.total / 1.18; const itbis = o.total - sub;
-            const itemsHtml = o.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom: 2px; font-weight:bold;"><span style="flex:1;">- ${i.title}</span><span>$${parseFloat(i.price).toFixed(2)}</span></div>${i.note ? `<div style="font-size: 10px; font-weight:bold; color: #000; padding-left: 10px; margin-bottom: 4px; text-transform: uppercase;">!!! NOTA: ${i.note}</div>` : ''}`).join('');
-            // Ticket limpio, sin códigos de barras, optimizado para lectura rápida y ahorro de tinta.
-            return `<div style="font-family:'Space Mono', monospace; color:#000; width:100%; padding: 15px; box-sizing: border-box; background: white;"><div style="text-align:center; border-bottom:2px dashed #000; padding-bottom:10px; margin-bottom:10px;"><h2 style="font-size:22px; font-weight:900; margin:0; text-transform:uppercase; letter-spacing: -1px;">LA PAPA CALIENTE</h2><p style="font-size:11px; margin:6px 0; border:2px solid #000; display:inline-block; padding: 2px 8px; font-weight:bold;">COMPROBANTE</p><p style="font-size:11px; margin:4px 0 0 0; font-weight:bold;">${new Date(o.timestamp).toLocaleString()}</p></div><div style="font-size:12px; margin-bottom:10px; line-height: 1.5; padding: 8px; background: #f4f4f4; border-radius: 6px; border: 1px solid #ddd;"><p style="margin:0; font-weight:900; font-size:14px;">TICKET: ${o.id}</p><p style="margin:0;"><strong>TIPO:</strong> ${o.type} ${o.table ? `(#${o.table})` : ''}</p><p style="margin:0;"><strong>CLIENTE:</strong> ${o.name}</p><p style="margin:0;"><strong>PAGO:</strong> ${o.payment}</p></div><div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:10px 0; margin-bottom:10px;">${itemsHtml}</div><div style="font-size:12px; line-height: 1.5; font-weight:bold;"><div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>$${sub.toFixed(2)}</span></div><div style="display:flex; justify-content:space-between;"><span>ITBIS (18%):</span><span>$${itbis.toFixed(2)}</span></div></div><div style="font-size:20px; font-weight:900; display:flex; justify-content:space-between; margin-top:5px; border-top:2px dashed #000; padding-top:8px; margin-bottom:10px;"><span>TOTAL:</span><span>$${o.total.toFixed(2)}</span></div><div style="text-align:center; font-size:12px; font-weight:bold; margin-top:15px; background: #000; color: #fff; padding: 6px; border-radius: 4px;">¡VUELVE PRONTO!</div></div>`;
+            const itemsHtml = o.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom: 4px; font-weight:bold; border-bottom: 1px dotted #ccc; padding-bottom: 2px;"><span style="flex:1;">- ${i.title}</span><span>$${parseFloat(i.price).toFixed(2)}</span></div>${i.note ? `<div style="font-size: 10px; font-weight:bold; color: #000; padding-left: 10px; margin-bottom: 4px; text-transform: uppercase;">↳ Nota: ${i.note}</div>` : ''}`).join('');
+            
+            // Toma el logo desde los ajustes. Si no hay, usa un icono por defecto.
+            const logoUrl = window.STATE.settings.logo || 'https://placehold.co/200x200/000/FFF?text=PAPA';
+
+            return `<div style="font-family:'Space Mono', monospace; color:#000; width:100%; max-width: 300px; margin: 0 auto; padding: 10px; box-sizing: border-box; background: white;">
+                
+                <!-- SECCIÓN LOGO -->
+                <div style="text-align:center; margin-bottom: 10px;">
+                    <img src="${logoUrl}" style="max-width: 90px; max-height: 90px; filter: grayscale(100%) contrast(1.5); margin: 0 auto; display: block; border-radius: 8px;">
+                </div>
+                
+                <!-- SECCIÓN CABECERA CENTRALIZADA -->
+                <div style="text-align:center; border-bottom:2px dashed #000; padding-bottom:10px; margin-bottom:10px;">
+                    <h2 style="font-size:22px; font-weight:900; margin:0; text-transform:uppercase; letter-spacing: -1px;">LA PAPA CALIENTE</h2>
+                    <p style="font-size:11px; margin:6px 0; border:2px solid #000; display:inline-block; padding: 2px 8px; font-weight:bold; background: #000; color: #fff;">COMPROBANTE: ${o.id}</p>
+                    <p style="font-size:11px; margin:2px 0 0 0; font-weight:bold;">${new Date(o.timestamp).toLocaleString()}</p>
+                </div>
+                
+                <!-- SECCIÓN DATOS CLIENTE -->
+                <div style="font-size:12px; margin-bottom:10px; line-height: 1.5; padding: 8px; border: 1px solid #000; border-radius: 4px; text-align: center; background: #f9f9f9;">
+                    <p style="margin:0;"><strong>TIPO:</strong> ${o.type} ${o.table ? `(#${o.table})` : ''}</p>
+                    <p style="margin:0;"><strong>CLIENTE:</strong> ${o.name}</p>
+                    <p style="margin:0;"><strong>PAGO:</strong> ${o.payment}</p>
+                </div>
+                
+                <!-- SECCIÓN PRODUCTOS -->
+                <div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:10px 0; margin-bottom:10px;">
+                    ${itemsHtml}
+                </div>
+                
+                <!-- SECCIÓN TOTALES -->
+                <div style="font-size:12px; line-height: 1.5; font-weight:bold;">
+                    <div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>$${sub.toFixed(2)}</span></div>
+                    <div style="display:flex; justify-content:space-between;"><span>ITBIS (18%):</span><span>$${itbis.toFixed(2)}</span></div>
+                </div>
+                <div style="font-size:20px; font-weight:900; display:flex; justify-content:space-between; margin-top:5px; border-top:2px dashed #000; padding-top:8px; margin-bottom:15px;">
+                    <span>TOTAL:</span><span>$${o.total.toFixed(2)}</span>
+                </div>
+                
+                <!-- SECCIÓN CÓDIGO QR Y DESPEDIDA -->
+                <div style="text-align:center; margin-top: 15px; padding-top: 15px; border-top: 2px dashed #000;">
+                    <p style="font-size:11px; font-weight:bold; margin-bottom: 5px;">¡Síguenos en nuestras redes!</p>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://instagram.com/&margin=0" style="width: 100px; height: 100px; margin: 0 auto; display: block;" />
+                    <p style="font-size:12px; font-weight:bold; margin-top: 8px; background: #000; color: #fff; padding: 6px; border-radius: 4px;">¡GRACIAS POR SU COMPRA!</p>
+                </div>
+            </div>`;
         };
         
         window.showTicketPreview = (orderId) => { window.currentPreviewOrderId = orderId; const html = window.getInvoiceHtml(orderId); if(!html) return; document.getElementById('ticketPreviewContent').innerHTML = html; window.openModal('ticketPreviewModal'); };
