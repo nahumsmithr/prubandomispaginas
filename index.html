@@ -636,20 +636,26 @@
             try {
                 app = initializeApp(firebaseConfig); db = getDatabase(app);
                 onValue(ref(db, 'lapapacaliente/erp_state'), (snapshot) => {
-                    if (snapshot.exists() && !isSaving) {
+                    if (snapshot.exists()) {
                         const cloudData = snapshot.val();
                         
-                        /* --- REPARADOR AUTOMÁTICO DE FIREBASE --- */
-                        /* Firebase corrompe los Arrays si se eliminan elementos del medio. Esto lo soluciona en vivo. */
-                        if (cloudData.orders && !Array.isArray(cloudData.orders)) cloudData.orders = Object.values(cloudData.orders);
-                        if (cloudData.menu && !Array.isArray(cloudData.menu)) cloudData.menu = Object.values(cloudData.menu);
-                        if (cloudData.ingredients && !Array.isArray(cloudData.ingredients)) cloudData.ingredients = Object.values(cloudData.ingredients);
-                        if (cloudData.gallery && !Array.isArray(cloudData.gallery)) cloudData.gallery = Object.values(cloudData.gallery);
+                        // REEMPLAZO ABSOLUTO: Si Firebase borra una lista porque quedó vacía, forzamos un array vacío [] localmente.
+                        window.STATE.menu = cloudData.menu ? (Array.isArray(cloudData.menu) ? cloudData.menu : Object.values(cloudData.menu)) : [];
+                        window.STATE.ingredients = cloudData.ingredients ? (Array.isArray(cloudData.ingredients) ? cloudData.ingredients : Object.values(cloudData.ingredients)) : [];
+                        window.STATE.orders = cloudData.orders ? (Array.isArray(cloudData.orders) ? cloudData.orders : Object.values(cloudData.orders)) : [];
+                        window.STATE.gallery = cloudData.gallery ? (Array.isArray(cloudData.gallery) ? cloudData.gallery : Object.values(cloudData.gallery)) : [];
                         
-                        const cloudOrders = cloudData.orders || [];
+                        window.STATE.caja = cloudData.caja || { isOpen: false, startAmt: 0, total: 0, moves: [], usuario: null, turnoId: null, startTime: null };
+                        if (!window.STATE.caja.moves) window.STATE.caja.moves = [];
+                        
+                        window.STATE.settings = cloudData.settings || { logo: '', cover: '', phone: '', apiKey: '', mapEmbed: '', mapLink: '', banks: [], customBasePrice: 6.00, customExtraPrice: 1.50 };
+                        if (!window.STATE.settings.banks) window.STATE.settings.banks = [];
+                        
+                        window.STATE.hardware = cloudData.hardware || { bridgeUrl: 'http://localhost:3000', autoOpenDrawer: true };
+                        
                         if (!isInitialLoad && window.STATE.currentUser) {
                             let hasNewOrders = false;
-                            cloudOrders.forEach(o => {
+                            window.STATE.orders.forEach(o => {
                                 if (!knownOrderIds.has(o.id) && o.status === 'Pendiente') {
                                     hasNewOrders = true;
                                 }
@@ -659,23 +665,17 @@
                                 window.showToast("🔔 ¡NUEVA ORDEN RECIBIDA!", "success");
                             }
                         }
-                        cloudOrders.forEach(o => knownOrderIds.add(o.id));
+                        window.STATE.orders.forEach(o => knownOrderIds.add(o.id));
                         isInitialLoad = false;
-                        
-                        window.STATE = { ...window.STATE, ...cloudData };
-                        if (!window.STATE.menu) window.STATE.menu = [];
-                        if (!window.STATE.ingredients) window.STATE.ingredients = [];
-                        if (!window.STATE.orders) window.STATE.orders = [];
-                        if (!window.STATE.gallery) window.STATE.gallery = [];
-                        if (!window.STATE.caja) window.STATE.caja = { isOpen: false, startAmt: 0, total: 0, moves: [], usuario: null, turnoId: null, startTime: null };
-                        if (!window.STATE.caja.moves) window.STATE.caja.moves = [];
-                        if (!window.STATE.settings) window.STATE.settings = { logo: '', cover: '', phone: '', apiKey: '', mapEmbed: '', mapLink: '', banks: [], customBasePrice: 6.00, customExtraPrice: 1.50 };
-                        if (!window.STATE.settings.banks) window.STATE.settings.banks = [];
-                        if (!window.STATE.hardware) window.STATE.hardware = { bridgeUrl: 'http://localhost:3000', autoOpenDrawer: true };
                         
                         const loginLogoEl = document.getElementById('login-brand-logo');
                         if (loginLogoEl && window.STATE.settings.logo) loginLogoEl.src = window.STATE.settings.logo;
-                        window.renderAdminViews();
+                        
+                        // Refresco instantáneo de TODA la interfaz
+                        if (typeof window.renderAdminViews === 'function') {
+                            window.renderAdminViews();
+                        }
+                        
                     } else if(!snapshot.exists()) { window.secureSave(); }
                 }, (error) => {});
             } catch(e) {}
@@ -683,12 +683,14 @@
 
         window.secureSave = async () => {
             if(db) {
-                isSaving = true;
                 try {
-                    window.STATE.menu = window.STATE.menu || []; window.STATE.ingredients = window.STATE.ingredients || []; window.STATE.orders = window.STATE.orders || []; window.STATE.settings.banks = window.STATE.settings.banks || [];
+                    window.STATE.menu = window.STATE.menu || []; 
+                    window.STATE.ingredients = window.STATE.ingredients || []; 
+                    window.STATE.orders = window.STATE.orders || []; 
+                    window.STATE.settings.banks = window.STATE.settings.banks || [];
                     await set(ref(db, 'lapapacaliente/erp_state'), window.STATE);
                 } 
-                catch(e) {} finally { setTimeout(() => isSaving = false, 500); }
+                catch(e) {} 
             }
         };
 
