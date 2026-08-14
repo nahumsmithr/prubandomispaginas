@@ -639,6 +639,13 @@
                     if (snapshot.exists() && !isSaving) {
                         const cloudData = snapshot.val();
                         
+                        /* --- REPARADOR AUTOMÁTICO DE FIREBASE --- */
+                        /* Firebase corrompe los Arrays si se eliminan elementos del medio. Esto lo soluciona en vivo. */
+                        if (cloudData.orders && !Array.isArray(cloudData.orders)) cloudData.orders = Object.values(cloudData.orders);
+                        if (cloudData.menu && !Array.isArray(cloudData.menu)) cloudData.menu = Object.values(cloudData.menu);
+                        if (cloudData.ingredients && !Array.isArray(cloudData.ingredients)) cloudData.ingredients = Object.values(cloudData.ingredients);
+                        if (cloudData.gallery && !Array.isArray(cloudData.gallery)) cloudData.gallery = Object.values(cloudData.gallery);
+                        
                         const cloudOrders = cloudData.orders || [];
                         if (!isInitialLoad && window.STATE.currentUser) {
                             let hasNewOrders = false;
@@ -809,6 +816,14 @@
             if(!window.STATE.currentUser) return; window.renderKDS();
             if(window.STATE.currentUser === 'admin') {
                 window.renderDashboardMetrics(); window.renderCaja(); window.renderBankAccounts();
+                
+                /* --- REFRESCO GLOBAL EN TIEMPO REAL --- */
+                /* Fuerza a que TODAS las pantallas se actualicen instantáneamente si hay cambios en Firebase */
+                window.renderAdminTerminal(); 
+                window.renderOrdersHistory(); 
+                window.renderIngredients(); 
+                window.renderAdminCatalog();
+
                 if(document.getElementById('set-phone')) document.getElementById('set-phone').value = window.STATE.settings.phone || '';
                 if(document.getElementById('set-api-key')) document.getElementById('set-api-key').value = window.STATE.settings.apiKey || '';
                 if(document.getElementById('set-map-embed')) document.getElementById('set-map-embed').value = window.STATE.settings.mapEmbed || '';
