@@ -712,34 +712,32 @@
                     if(res.ok) { window.showToast("Impresión Local PC Enviada"); return; }
                 } catch(e) {}
 
-                if (window.POS.isApp || window.POS.isAndroid) {
+                // Intento Silencioso de RawBT (Si falla, pasa a nativo sin abrir ventanas raras)
+                if (window.POS.isApp || /Android/i.test(navigator.userAgent)) {
                     try {
                         const rawbtPort = 40228;
                         const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, { method: 'POST', body: datosHtml });
-                        if (res.ok) { window.showToast("Impresión enviada (App Creator / RawBT)"); return; }
+                        if (res.ok) { window.showToast("Impresión enviada por BT"); return; }
                     } catch(e) {
-                        console.log("Fallo server local RawBT, intentando enlace rawbt...");
-                    }
-                    try {
-                        const base64Data = btoa(unescape(encodeURIComponent(datosHtml)));
-                        window.location.href = "rawbt:base64," + base64Data;
-                        window.showToast("Enviado a impresora móvil Bluetooth");
-                        return;
-                    } catch (err) {
-                        window.showToast("Error de permisos en WebView", "error");
+                        console.log("RawBT local inactivo, usando diálogo de impresión del sistema...");
                     }
                 }
 
+                // IMPRESIÓN WEB UNIVERSAL (iOS, Safari, Mac, Windows, Android Nativo)
                 try {
-                    window.showToast(window.POS.isIOS ? "Abriendo AirPrint (iOS)..." : "Preparando impresión web...");
+                    window.showToast("Preparando impresión...");
                     document.getElementById('thermal-print-area').innerHTML = datosHtml;
                     document.body.classList.add('thermal-printing');
+                    
+                    // RETRASO CRUCIAL (250ms): Safari de Apple necesita esto para cargar el CSS antes de imprimir
                     setTimeout(() => { 
                         window.print(); 
-                        document.body.classList.remove('thermal-printing'); 
-                    }, 500);
+                        setTimeout(() => {
+                            document.body.classList.remove('thermal-printing'); 
+                        }, 500);
+                    }, 250);
                 } catch (err) {
-                    window.showToast("Error al abrir diálogo de impresión", "error");
+                    window.showToast("Error al abrir diálogo", "error");
                     document.body.classList.remove('thermal-printing');
                 }
             },
