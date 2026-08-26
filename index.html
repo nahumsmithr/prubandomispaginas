@@ -780,29 +780,54 @@
                 }
             },
             
+            // Codifica una cadena de bytes crudos (0-255) a percent-encoding SIN pasar por UTF-8.
+            // encodeURIComponent normal corrompe bytes > 0x7F (como el 0xFA del pulso de gaveta),
+            // porque los reinterpreta como un carácter Unicode y los expande a multi-byte UTF-8.
+            _rawBytesToPercentEncoding: (str) => {
+                let out = '';
+                for (let i = 0; i < str.length; i++) {
+                    const code = str.charCodeAt(i) & 0xFF;
+                    out += '%' + code.toString(16).padStart(2, '0').toUpperCase();
+                }
+                return out;
+            },
+
             abrirCaja: async (reason = "Manual") => {
                 if (window.AndroidPOS && typeof window.AndroidPOS.openDrawer === 'function') { window.AndroidPOS.openDrawer(); return; }
-                try {
-                    const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 1500);
-                    const res = await fetch(`${window.STATE.hardware.bridgeUrl || 'http://localhost:3000'}/api/drawer/open`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user: window.STATE.currentUser, reason }), signal: controller.signal });
-                    clearTimeout(timeoutId);
-                    if(res.ok) return window.showToast("Gaveta Abierta (PC)");
-                } catch(e) {}
 
+                const comandoGaveta = "\x1B\x70\x00\x19\xFA";
                 const isAndroid = /Android/i.test(navigator.userAgent);
+
+                // 1) PRIMERO y de forma SÍNCRONA (sin await antes) intentamos RawBT por intent.
+                //    Esto tiene que dispararse mientras el toque del usuario sigue "fresco"; si se
+                //    intenta después de otras esperas, Chrome bloquea la apertura de la app en silencio.
                 if (window.POS.isApp || isAndroid) {
-                    const comandoGaveta = "\x1B\x70\x00\x19\xFA";
                     try {
-                        const rawbtPort = 40228;
-                        const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, { method: 'POST', body: comandoGaveta });
-                        if (res.ok) { window.showToast("Caja abierta (Servidor RawBT)"); return; }
-                    } catch(e) {}
-                    try {
-                        const rawbtUrl = "intent://rawbt:" + encodeURIComponent(comandoGaveta) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
+                        const encoded = window.POS._rawBytesToPercentEncoding(comandoGaveta);
+                        const rawbtUrl = "intent://rawbt:" + encoded + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dru.a402d.rawbtprinter;end;";
                         window.location.href = rawbtUrl;
-                        return window.showToast("Orden enviada a caja registradora");
-                    } catch (err) { window.showToast("Error al abrir caja", "error"); }
+                        window.showToast("Orden enviada a caja registradora");
+                    } catch (err) { console.log("RawBT intent falló", err); }
                 }
+
+                // 2) En paralelo, sin bloquear ni retrasar lo anterior, probamos otros bridges
+                //    (servidor local en PC, o "Server for RawBT" si está instalado) como respaldo/log.
+                (async () => {
+                    try {
+                        const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 1500);
+                        const res = await fetch(`${window.STATE.hardware.bridgeUrl || 'http://localhost:3000'}/api/drawer/open`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user: window.STATE.currentUser, reason }), signal: controller.signal });
+                        clearTimeout(timeoutId);
+                        if (res.ok) window.showToast("Gaveta Abierta (PC)");
+                    } catch (e) {}
+
+                    if (isAndroid || window.POS.isApp) {
+                        try {
+                            const rawbtPort = 40228;
+                            const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, { method: 'POST', body: comandoGaveta });
+                            if (res.ok) window.showToast("Caja abierta (Servidor RawBT)");
+                        } catch (e) {}
+                    }
+                })();
             },
             
             compartir: async (title, text) => {
