@@ -19,6 +19,9 @@
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050505">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512x512.png">
 
     <script>
         window.tailwind = {
@@ -122,7 +125,11 @@
                 <span id="role-badge" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 text-[9px] px-2 py-0.5 rounded font-bold uppercase shrink-0">Admin</span>
                 <span id="hw-status-badge" class="bg-purple-500/10 text-purple-400 border border-purple-500/30 text-[9px] px-2 py-0.5 rounded font-bold uppercase shrink-0 hidden items-center gap-1"><i class="ph-bold ph-device-mobile"></i> Modo App</span>
             </div>
-            <button onclick="window.logoutAdmin()" class="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-colors shrink-0 flex items-center gap-2"><i class="ph-bold ph-sign-out"></i> <span class="hidden sm:inline">Salir</span></button>
+            <div class="flex items-center gap-2 shrink-0">
+                <button id="btn-enable-notifications" onclick="window.requestNotificationPermission()" class="hidden bg-zinc-800/60 text-papa-yellow hover:bg-zinc-700 px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-colors items-center gap-2"><i class="ph-bold ph-bell-ringing"></i> <span class="hidden sm:inline">Activar Avisos</span></button>
+                <button id="btn-install-app" onclick="window.triggerInstallApp()" class="hidden bg-papa-fire/20 text-papa-fire hover:bg-papa-fire hover:text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-colors items-center gap-2"><i class="ph-bold ph-device-mobile"></i> <span class="hidden sm:inline">Instalar App</span></button>
+                <button onclick="window.logoutAdmin()" class="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-colors flex items-center gap-2"><i class="ph-bold ph-sign-out"></i> <span class="hidden sm:inline">Salir</span></button>
+            </div>
         </div>
         
         <!-- SIDEBAR & CONTENT -->
@@ -607,7 +614,7 @@
         };
         
         window.adminCart = []; window.currentEditOrderId = null; window.currentPreviewOrderId = null;
-        let app, db, isSaving = false; let isInitialLoad = true; let knownOrderIds = new Set();
+        let app, db, isSaving = false; let isInitialLoad = true; let knownOrderIds = new Set(); let knownLowStockIds = new Set();
         
         window.playBeep = () => { 
             try { 
@@ -655,15 +662,37 @@
                         
                         if (!isInitialLoad && window.STATE.currentUser) {
                             let hasNewOrders = false;
+                            let newOrdersCount = 0;
                             window.STATE.orders.forEach(o => {
                                 if (!knownOrderIds.has(o.id) && o.status === 'Pendiente') {
-                                    hasNewOrders = true;
+                                    hasNewOrders = true; newOrdersCount++;
                                 }
                             });
                             if (hasNewOrders) {
                                 window.playNewOrderSound();
                                 window.showToast("🔔 ¡NUEVA ORDEN RECIBIDA!", "success");
+                                if (typeof window.notifyUser === 'function') {
+                                    window.notifyUser(
+                                        '🔔 Nueva orden recibida',
+                                        newOrdersCount > 1 ? `${newOrdersCount} órdenes nuevas pendientes` : 'Tienes una nueva orden pendiente',
+                                        'orders', 'nueva-orden'
+                                    );
+                                }
                             }
+
+                            const lowStockNow = (window.STATE.ingredients || []).filter(i => parseFloat(i.stock || 0) <= parseFloat(i.min || 0));
+                            const lowStockNewlyCrossed = lowStockNow.filter(i => !knownLowStockIds.has(i.id));
+                            if (lowStockNewlyCrossed.length > 0 && typeof window.notifyUser === 'function') {
+                                const names = lowStockNewlyCrossed.slice(0, 3).map(i => i.name).join(', ');
+                                window.notifyUser(
+                                    '⚠️ Stock bajo de insumos',
+                                    lowStockNewlyCrossed.length > 3 ? `${names} y ${lowStockNewlyCrossed.length - 3} más` : names,
+                                    'ingredients', 'stock-bajo'
+                                );
+                            }
+                            knownLowStockIds = new Set(lowStockNow.map(i => i.id));
+                        } else {
+                            knownLowStockIds = new Set((window.STATE.ingredients || []).filter(i => parseFloat(i.stock || 0) <= parseFloat(i.min || 0)).map(i => i.id));
                         }
                         window.STATE.orders.forEach(o => knownOrderIds.add(o.id));
                         isInitialLoad = false;
@@ -1587,6 +1616,102 @@
 
         setInterval(() => { if(window.STATE.currentUser && !document.getElementById('panel-admin-kds').classList.contains('hidden')) { window.renderKDS(); window.renderDashboardMetrics(); } }, 15000);
         initCloudSystem();
+    </script>
+
+    <!-- ===================== PWA: instalación, service worker y notificaciones ===================== -->
+    <script>
+        window.deferredInstallPrompt = null;
+
+        // 1. Registrar el Service Worker (cache del cascarón de la app + notificaciones en segundo plano)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
+            });
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data?.type === 'NAVIGATE_PANEL' && typeof window.switchAdminPanel === 'function') {
+                    window.switchAdminPanel(event.data.panel);
+                }
+            });
+        }
+
+        // 2. Botón "Instalar App" — captura el evento nativo del navegador y lo dispara manualmente
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            window.deferredInstallPrompt = e;
+            const btn = document.getElementById('btn-install-app');
+            if (btn) { btn.classList.remove('hidden'); btn.classList.add('flex'); }
+        });
+
+        window.triggerInstallApp = async () => {
+            const btn = document.getElementById('btn-install-app');
+            if (!window.deferredInstallPrompt) {
+                window.showToast('Ya está instalada o tu navegador no lo soporta aún', 'error');
+                return;
+            }
+            window.deferredInstallPrompt.prompt();
+            const { outcome } = await window.deferredInstallPrompt.userChoice;
+            if (outcome === 'accepted') window.showToast('¡App instalada!');
+            window.deferredInstallPrompt = null;
+            if (btn) { btn.classList.add('hidden'); btn.classList.remove('flex'); }
+        };
+
+        window.addEventListener('appinstalled', () => {
+            const btn = document.getElementById('btn-install-app');
+            if (btn) { btn.classList.add('hidden'); btn.classList.remove('flex'); }
+        });
+
+        // 3. Permisos y disparo de notificaciones del sistema (nueva orden, stock bajo, etc.)
+        window.updateNotificationButtonVisibility = () => {
+            const btn = document.getElementById('btn-enable-notifications');
+            if (!btn) return;
+            if (!('Notification' in window) || Notification.permission === 'granted') {
+                btn.classList.add('hidden'); btn.classList.remove('flex');
+            } else {
+                btn.classList.remove('hidden'); btn.classList.add('flex');
+            }
+        };
+
+        window.requestNotificationPermission = async () => {
+            if (!('Notification' in window)) {
+                window.showToast('Este navegador no soporta notificaciones', 'error');
+                return;
+            }
+            const perm = await Notification.requestPermission();
+            if (perm === 'granted') window.showToast('🔔 Avisos activados');
+            else if (perm === 'denied') window.showToast('Notificaciones bloqueadas por el navegador', 'error');
+            window.updateNotificationButtonVisibility();
+        };
+
+        // Punto único desde el que el resto de la app pide una notificación real del sistema.
+        // Si la pestaña está en primer plano no duplica aviso (ya hay toast + sonido).
+        window.notifyUser = async (title, body, panel, tag) => {
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+            if (document.visibilityState === 'visible') return;
+            try {
+                const reg = await navigator.serviceWorker.getRegistration();
+                if (reg) {
+                    reg.active?.postMessage({ type: 'SHOW_NOTIFICATION', payload: { title, body, panel, tag } });
+                } else {
+                    new Notification(title, { body, icon: './icons/icon-192x192.png', tag });
+                }
+            } catch (e) {}
+        };
+
+        // 4. Abrir directo en el panel indicado por la URL (?panel=orders) al entrar desde un acceso directo/notificación
+        window.addEventListener('DOMContentLoaded', () => {
+            window.updateNotificationButtonVisibility();
+            const params = new URLSearchParams(window.location.search);
+            const panel = params.get('panel');
+            if (panel) {
+                const tryOpen = setInterval(() => {
+                    if (window.STATE?.currentUser && typeof window.switchAdminPanel === 'function') {
+                        window.switchAdminPanel(panel);
+                        clearInterval(tryOpen);
+                    }
+                }, 500);
+                setTimeout(() => clearInterval(tryOpen), 15000);
+            }
+        });
     </script>
 </body>
 </html>
