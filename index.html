@@ -826,6 +826,29 @@
                             const res = await fetch(`http://127.0.0.1:${rawbtPort}/`, { method: 'POST', body: comandoGaveta });
                             if (res.ok) window.showToast("Caja abierta (Servidor RawBT)");
                         } catch (e) {}
+
+                        // "Server for RawBT" (app aparte, opcional): expone un WebSocket local en
+                        // el propio dispositivo (puerto 40213) que NO depende de un toque reciente
+                        // del usuario — por eso es el método recomendado para aperturas automáticas
+                        // (después de cobrar, cierre Z, etc). Si esa app no está instalada/corriendo,
+                        // esto simplemente falla en silencio y no afecta nada más.
+                        try {
+                            await new Promise((resolve, reject) => {
+                                const ws = new WebSocket('ws://127.0.0.1:40213');
+                                const timeout = setTimeout(() => { ws.close(); reject(new Error('timeout')); }, 1200);
+                                ws.binaryType = 'arraybuffer';
+                                ws.onopen = () => {
+                                    const bytes = new Uint8Array(comandoGaveta.length);
+                                    for (let i = 0; i < comandoGaveta.length; i++) bytes[i] = comandoGaveta.charCodeAt(i) & 0xFF;
+                                    ws.send(bytes);
+                                    clearTimeout(timeout);
+                                    window.showToast("Caja abierta (Server for RawBT)");
+                                    setTimeout(() => ws.close(), 300);
+                                    resolve();
+                                };
+                                ws.onerror = () => { clearTimeout(timeout); reject(new Error('ws error')); };
+                            });
+                        } catch (e) {}
                     }
                 })();
             },
